@@ -1,0 +1,7 @@
+{
+  "name": "Copy of 智居 AI -supabase版",
+  "description": "基于 React 和 Gemini 的智能房产管理平台，提供租房/售房管理、AI 智能匹配、自动话术生成及多级权限管理系统。",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}
