@@ -812,6 +812,37 @@ const App: React.FC = () => {
     const handlePaste = (e: React.ClipboardEvent) => { const items = e.clipboardData.items; for (let i = 0; i < items.length; i++) { if (items[i].type.indexOf('image') !== -1) { const blob = items[i].getAsFile(); if (blob) { const reader = new FileReader(); reader.onload = (event) => { setAiInputImage(event.target?.result as string); }; reader.readAsDataURL(blob); e.preventDefault(); } } } };
     const handleSmartFill = async () => { if (!aiInputText && !aiInputImage) { alert("请先输入文本或粘贴图片！"); return; } setIsAiParsing(true); const data = await parsePropertyInfoWithAI(aiInputText, aiInputImage || undefined); if (data) { setNewProperty(prev => ({ ...prev, title: data.title || prev.title, type: PropertyType.RENT, category: (data.category as any) || prev.category, price: data.price || prev.price, area: data.area || prev.area, layout: data.layout || prev.layout, address: data.address || prev.address, description: data.description || prev.description, commuteInfo: data.commuteInfo || prev.commuteInfo })); if (data.province) setNewPropertyProvince(data.province); if (data.city) setNewPropertyCity(data.city); if (data.district) setNewPropertyDistrict(data.district); if (data.tags && Array.isArray(data.tags)) { setNewPropertyTags(prev => Array.from(new Set([...prev, ...data.tags]))); } if (data.contacts && Array.isArray(data.contacts)) { setNewPropertyLandlordContacts(data.contacts); } alert("AI 识别完成！请检查已填入的信息。"); } else { alert("识别失败，请重试。"); } setIsAiParsing(false); };
 
+    const handleAutoLocate = () => {
+        if (!navigator.geolocation) { alert("浏览器不支持地理定位"); return; }
+        navigator.geolocation.getCurrentPosition(
+            (pos) => {
+                const { latitude, longitude } = pos.coords;
+                setNewProperty(prev => ({ ...prev, coordinates: { lat: latitude, lng: longitude } }));
+                // Try reverse geocoding via OSM (Free, no key required for client-side low volume)
+                fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`)
+                    .then(r => r.json())
+                    .then(data => {
+                        if (data && data.address) {
+                            const addr = data.address;
+                            // Try to match province/city
+                            const prov = Object.keys(CASCADING_REGIONS).find(p => addr.state?.includes(p)) || '北京';
+                            setNewPropertyProvince(prov);
+                            const cityMap = CASCADING_REGIONS[prov] || {};
+                            const city = Object.keys(cityMap).find(c => addr.city?.includes(c)) || Object.keys(cityMap)[0];
+                            setNewPropertyCity(city);
+                            const dists = cityMap[city] || [];
+                            const dist = dists.find(d => (addr.suburb || addr.district)?.includes(d)) || dists[0];
+                            setNewPropertyDistrict(dist);
+
+                            setNewProperty(prev => ({ ...prev, address: data.display_name || '定位地址' }));
+                            alert("定位成功！已自动更新位置信息。");
+                        }
+                    }).catch(() => alert(`定位成功 (Lat:${latitude.toFixed(2)}, Lng:${longitude.toFixed(2)})，未能解析详细地址。`));
+            },
+            (err) => alert("定位失败，请检查浏览器定位权限。")
+        );
+    };
+
     const handleCreateOrder = async (action: 'VIEWING' | 'SIGN') => {
         if (!selectedProperty || !currentUser) return;
         const newOrder: Order = {
@@ -979,6 +1010,25 @@ const App: React.FC = () => {
                                 </div>
                                 <div className="col-span-12 md:col-span-6"><label className="block text-sm font-bold text-slate-700 mb-1">租金 (元/月)</label><input type="number" className="w-full p-2.5 bg-slate-50 text-slate-900 border border-slate-300 rounded-lg" value={newProperty.price || ''} onChange={e => setNewProperty({ ...newProperty, price: Number(e.target.value) })} /></div>
                                 <div className="col-span-12 md:col-span-6"><label className="block text-sm font-bold text-slate-700 mb-1">面积 (㎡)</label><input type="number" className="w-full p-2.5 bg-slate-50 text-slate-900 border border-slate-300 rounded-lg" value={newProperty.area || ''} onChange={e => setNewProperty({ ...newProperty, area: Number(e.target.value) })} /></div>
+
+                                <div className="col-span-12 border-t border-slate-200 pt-3 mt-1 pb-3">
+                                    <label className="block text-sm font-bold text-slate-700 mb-2">地理位置</label>
+                                    <div className="grid grid-cols-3 gap-2 mb-2">
+                                        <select className="p-2 border rounded-lg bg-slate-50 text-slate-800 text-sm" value={newPropertyProvince} onChange={e => setNewPropertyProvince(e.target.value)}>
+                                            {Object.keys(CASCADING_REGIONS).map(p => <option key={p} value={p}>{p}</option>)}
+                                        </select>
+                                        <select className="p-2 border rounded-lg bg-slate-50 text-slate-800 text-sm" value={newPropertyCity} onChange={e => setNewPropertyCity(e.target.value)}>
+                                            {Object.keys(CASCADING_REGIONS[newPropertyProvince] || {}).map(c => <option key={c} value={c}>{c}</option>)}
+                                        </select>
+                                        <select className="p-2 border rounded-lg bg-slate-50 text-slate-800 text-sm" value={newPropertyDistrict} onChange={e => setNewPropertyDistrict(e.target.value)}>
+                                            {(CASCADING_REGIONS[newPropertyProvince]?.[newPropertyCity] || []).map(d => <option key={d} value={d}>{d}</option>)}
+                                        </select>
+                                    </div>
+                                    <div className="flex gap-2">
+                                        <input className="flex-1 p-2.5 bg-slate-50 text-slate-900 border border-slate-300 rounded-lg" placeholder="详细地址 (小区/街道/门牌号)..." value={newProperty.address || ''} onChange={e => setNewProperty({ ...newProperty, address: e.target.value })} />
+                                        <button onClick={handleAutoLocate} className="px-4 bg-indigo-600 text-white rounded-lg font-bold text-sm hover:bg-indigo-700 flex items-center whitespace-nowrap">📍 自动定位</button>
+                                    </div>
+                                </div>
 
                                 <div className="col-span-12 md:col-span-4"><label className="block text-sm font-bold text-slate-700 mb-1">楼号</label><input className="w-full p-2.5 bg-slate-50 text-slate-900 border border-slate-300 rounded-lg" value={newPropertyDetails.buildingNum || ''} onChange={e => setNewPropertyDetails({ ...newPropertyDetails, buildingNum: e.target.value })} /></div>
                                 <div className="col-span-12 md:col-span-4"><label className="block text-sm font-bold text-slate-700 mb-1">单元号</label><input className="w-full p-2.5 bg-slate-50 text-slate-900 border border-slate-300 rounded-lg" value={newPropertyDetails.unitNum || ''} onChange={e => setNewPropertyDetails({ ...newPropertyDetails, unitNum: e.target.value })} /></div>
