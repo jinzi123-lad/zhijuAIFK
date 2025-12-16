@@ -7,62 +7,62 @@
 import { Property, PropertyType, User, UserRole, LandlordType, KnowledgeItem, PropertyStatus, Order, OrderStatus, SystemLog, Client, ClientStatus, Permission } from './types';
 
 export const PERMISSION_LABELS: Record<Permission, string> = {
-    'PROPERTY_CREATE': '发布房源',
-    'PROPERTY_EDIT': '编辑房源',
-    'PROPERTY_DELETE': '删除房源',
-    'PROPERTY_VIEW_ALL': '查看全部房源 (不限归属)',
-    'PROPERTY_MANAGE_OWN': '仅管理自有房源',
-    'CLIENT_CREATE': '录入客源',
-    'CLIENT_EDIT': '编辑客户',
-    'CLIENT_VIEW_ALL': '查看客源公海/全部客户',
-    'CLIENT_ASSIGN': '分配/转移客户',
-    'ORDER_MANAGE': '订单/合同管理',
-    'DATA_EXPORT': '导出业务数据 (Excel)',
-    'VIEW_DASHBOARD': '查看经营数据大屏',
-    'USER_MANAGE': '管理下属/账号',
-    'SYSTEM_SETTINGS': '系统设置管理'
+  'PROPERTY_CREATE': '发布房源',
+  'PROPERTY_EDIT': '编辑房源',
+  'PROPERTY_DELETE': '删除房源',
+  'PROPERTY_VIEW_ALL': '查看全部房源 (不限归属)',
+  'PROPERTY_MANAGE_OWN': '仅管理自有房源',
+  'CLIENT_CREATE': '录入客源',
+  'CLIENT_EDIT': '编辑客户',
+  'CLIENT_VIEW_ALL': '查看客源公海/全部客户',
+  'CLIENT_ASSIGN': '分配/转移客户',
+  'ORDER_MANAGE': '订单/合同管理',
+  'DATA_EXPORT': '导出业务数据 (Excel)',
+  'VIEW_DASHBOARD': '查看经营数据大屏',
+  'USER_MANAGE': '管理下属/账号',
+  'SYSTEM_SETTINGS': '系统设置管理'
 };
 
 export const PERMISSION_GROUPS = [
-    { name: '房源中心', perms: ['PROPERTY_CREATE', 'PROPERTY_EDIT', 'PROPERTY_DELETE', 'PROPERTY_VIEW_ALL', 'PROPERTY_MANAGE_OWN'] as Permission[] },
-    { name: '客源 CRM', perms: ['CLIENT_CREATE', 'CLIENT_EDIT', 'CLIENT_VIEW_ALL', 'CLIENT_ASSIGN'] as Permission[] },
-    { name: '交易与数据', perms: ['ORDER_MANAGE', 'DATA_EXPORT', 'VIEW_DASHBOARD'] as Permission[] },
-    { name: '系统安全', perms: ['USER_MANAGE', 'SYSTEM_SETTINGS'] as Permission[] }
+  { name: '房源中心', perms: ['PROPERTY_CREATE', 'PROPERTY_EDIT', 'PROPERTY_DELETE', 'PROPERTY_VIEW_ALL', 'PROPERTY_MANAGE_OWN'] as Permission[] },
+  { name: '客源 CRM', perms: ['CLIENT_CREATE', 'CLIENT_EDIT', 'CLIENT_VIEW_ALL', 'CLIENT_ASSIGN'] as Permission[] },
+  { name: '交易与数据', perms: ['ORDER_MANAGE', 'DATA_EXPORT', 'VIEW_DASHBOARD'] as Permission[] },
+  { name: '系统安全', perms: ['USER_MANAGE', 'SYSTEM_SETTINGS'] as Permission[] }
 ];
 
 export const ALL_PERMISSIONS = Object.entries(PERMISSION_LABELS).map(([value, label]) => ({
-    value: value as Permission,
-    label
+  value: value as Permission,
+  label
 }));
 
 export const ROLE_DEFAULT_PERMISSIONS: Record<UserRole, Permission[]> = {
-    [UserRole.SUPER_ADMIN]: [
-        'PROPERTY_CREATE', 'PROPERTY_EDIT', 'PROPERTY_DELETE', 'PROPERTY_VIEW_ALL',
-        'CLIENT_CREATE', 'CLIENT_EDIT', 'CLIENT_VIEW_ALL', 'CLIENT_ASSIGN',
-        'ORDER_MANAGE', 'DATA_EXPORT', 'VIEW_DASHBOARD',
-        'USER_MANAGE', 'SYSTEM_SETTINGS'
-    ],
-    [UserRole.ADMIN]: [
-        'PROPERTY_CREATE', 'PROPERTY_EDIT', 'PROPERTY_DELETE', 'PROPERTY_VIEW_ALL',
-        'CLIENT_CREATE', 'CLIENT_EDIT', 'CLIENT_VIEW_ALL', 'CLIENT_ASSIGN',
-        'ORDER_MANAGE', 'DATA_EXPORT', 'VIEW_DASHBOARD',
-        'USER_MANAGE'
-    ],
-    [UserRole.MANAGER]: [
-        'PROPERTY_CREATE', 'PROPERTY_EDIT', 'PROPERTY_VIEW_ALL',
-        'CLIENT_CREATE', 'CLIENT_EDIT', 'CLIENT_VIEW_ALL', 'CLIENT_ASSIGN',
-        'ORDER_MANAGE', 'VIEW_DASHBOARD',
-        'USER_MANAGE'
-    ],
-    [UserRole.SALES]: [
-        'PROPERTY_CREATE', 'PROPERTY_EDIT', 
-        'CLIENT_CREATE', 'CLIENT_EDIT',
-        'ORDER_MANAGE', 'VIEW_DASHBOARD'
-    ],
-    [UserRole.LANDLORD]: [
-        'PROPERTY_MANAGE_OWN'
-    ],
-    [UserRole.USER]: []
+  [UserRole.SUPER_ADMIN]: [
+    'PROPERTY_CREATE', 'PROPERTY_EDIT', 'PROPERTY_DELETE', 'PROPERTY_VIEW_ALL',
+    'CLIENT_CREATE', 'CLIENT_EDIT', 'CLIENT_VIEW_ALL', 'CLIENT_ASSIGN',
+    'ORDER_MANAGE', 'DATA_EXPORT', 'VIEW_DASHBOARD',
+    'USER_MANAGE', 'SYSTEM_SETTINGS'
+  ],
+  [UserRole.ADMIN]: [
+    'PROPERTY_CREATE', 'PROPERTY_EDIT', 'PROPERTY_DELETE', 'PROPERTY_VIEW_ALL',
+    'CLIENT_CREATE', 'CLIENT_EDIT', 'CLIENT_VIEW_ALL', 'CLIENT_ASSIGN',
+    'ORDER_MANAGE', 'DATA_EXPORT', 'VIEW_DASHBOARD',
+    'USER_MANAGE'
+  ],
+  [UserRole.MANAGER]: [
+    'PROPERTY_CREATE', 'PROPERTY_EDIT', 'PROPERTY_VIEW_ALL',
+    'CLIENT_CREATE', 'CLIENT_EDIT', 'CLIENT_VIEW_ALL', 'CLIENT_ASSIGN',
+    'ORDER_MANAGE', 'VIEW_DASHBOARD',
+    'USER_MANAGE'
+  ],
+  [UserRole.SALES]: [
+    'PROPERTY_CREATE', 'PROPERTY_EDIT',
+    'CLIENT_CREATE', 'CLIENT_EDIT',
+    'ORDER_MANAGE', 'VIEW_DASHBOARD'
+  ],
+  [UserRole.LANDLORD]: [
+    'PROPERTY_MANAGE_OWN'
+  ],
+  [UserRole.USER]: []
 };
 
 // Initial Mock Users
@@ -171,8 +171,7 @@ export const DETAILED_OPTIONS = {
   soundproofing: ['双层真空玻璃(优)', '普通玻璃(良)', '临街噪音大(差)', '隔音效果一般'],
   fireSafety: ['消防设施齐全有效', '配备灭火器', '无烟雾报警器', '消防设施缺失'],
   doorLock: ['智能指纹/密码锁', 'C级防盗锁芯', '普通机械锁', '锁具老旧需更换'],
-  paymentMethod: ['付三押一', '付一押一', '半年付', '年付', '面议'],
-  depositRatio: ['1个月', '2个月', '3个月', '无押金'],
+  paymentMethod: ['押一付一', '押二付一', '押一付二', '押一付三', '其他押金方式', '免押金'],
   breachTerms: ['标准违约责任', '严格违约赔偿', '协商解决', '未明确'],
   securityLevel: ['24h保安巡逻', '门禁严密', '普通小区管理', '开放式小区'],
   propertyMgmt: ['品牌物业(万科/绿城等)', '普通物业', '街道办/自管', '无物业'],
@@ -192,11 +191,11 @@ export const PRESET_TAGS = {
 
 // Knowledge Base Categories
 export const KNOWLEDGE_CATEGORIES = [
-    '政策法规',
-    '销售话术',
-    '业务流程',
-    '培训资料',
-    '纠纷案例'
+  '政策法规',
+  '销售话术',
+  '业务流程',
+  '培训资料',
+  '纠纷案例'
 ];
 
 // Mock Knowledge Base Data
@@ -221,13 +220,13 @@ export const INITIAL_KNOWLEDGE_BASE: KnowledgeItem[] = [
 
 // Mock System Logs
 export const INITIAL_SYSTEM_LOGS: SystemLog[] = [
-    { id: 1, action: '登录系统', user: 'admin', ip: '192.168.1.10', time: '2023-10-27 10:23:45', status: '成功' },
-    { id: 2, action: '修改房源 [bj01]', user: 'sales', ip: '192.168.1.15', time: '2023-10-27 09:15:22', status: '成功' },
-    { id: 3, action: '删除用户 [u_05]', user: '123 (超级管理员)', ip: '192.168.1.2', time: '2023-10-26 16:40:11', status: '成功' },
-    { id: 4, action: '导出报表', user: 'admin', ip: '192.168.1.10', time: '2023-10-26 14:20:00', status: '成功' },
-    { id: 5, action: '尝试登录', user: 'unknown', ip: '202.106.0.1', time: '2023-10-26 03:11:05', status: '失败' },
-    { id: 6, action: '修改系统设置', user: '123 (超级管理员)', ip: '192.168.1.2', time: '2023-10-25 11:22:33', status: '成功' },
-    { id: 7, action: '查看房源详情 [bj04]', user: 'sales', ip: '192.168.1.15', time: '2023-10-25 10:05:01', status: '成功' },
+  { id: 1, action: '登录系统', user: 'admin', ip: '192.168.1.10', time: '2023-10-27 10:23:45', status: '成功' },
+  { id: 2, action: '修改房源 [bj01]', user: 'sales', ip: '192.168.1.15', time: '2023-10-27 09:15:22', status: '成功' },
+  { id: 3, action: '删除用户 [u_05]', user: '123 (超级管理员)', ip: '192.168.1.2', time: '2023-10-26 16:40:11', status: '成功' },
+  { id: 4, action: '导出报表', user: 'admin', ip: '192.168.1.10', time: '2023-10-26 14:20:00', status: '成功' },
+  { id: 5, action: '尝试登录', user: 'unknown', ip: '202.106.0.1', time: '2023-10-26 03:11:05', status: '失败' },
+  { id: 6, action: '修改系统设置', user: '123 (超级管理员)', ip: '192.168.1.2', time: '2023-10-25 11:22:33', status: '成功' },
+  { id: 7, action: '查看房源详情 [bj04]', user: 'sales', ip: '192.168.1.15', time: '2023-10-25 10:05:01', status: '成功' },
 ];
 
 // --- 1. Manual Properties (Rent Only) ---
@@ -254,10 +253,10 @@ const MANUAL_PROPERTIES: Property[] = [
     landlordType: LandlordType.INDIVIDUAL,
     landlordContacts: [{ name: '王先生', phone: '13800138000', wechat: 'wang_cbd', note: '房东在国外，联系请提前预约' }],
     details: {
-        utilitiesStatus: '水电燃气家电全正常',
-        wallCondition: '墙面完好无瑕疵',
-        paymentMethod: '付一押一',
-        moveInDate: '随时入住'
+      utilitiesStatus: '水电燃气家电全正常',
+      wallCondition: '墙面完好无瑕疵',
+      paymentMethod: '付一押一',
+      moveInDate: '随时入住'
     }
   },
   // 3. Tongzhou - Loft Rent
@@ -515,77 +514,77 @@ const MANUAL_PROPERTIES: Property[] = [
 
 // --- 2. Helper to Generate 150 more Mock Rental Properties ---
 const generateMoreProperties = (): Property[] => {
-    const properties: Property[] = [];
-    const districts = ['朝阳', '海淀', '东城', '西城', '丰台', '通州', '昌平', '大兴', '顺义', '房山'];
-    const bizCircles: Record<string, string[]> = {
-        '朝阳': ['国贸', '三里屯', '望京', '朝阳公园', '大望路', '双井', '劲松', '奥体'],
-        '海淀': ['中关村', '五道口', '万柳', '清河', '上地', '公主坟', '知春路'],
-        '东城': ['东直门', '王府井', '崇文门', '安定门', '东四', '和平里'],
-        '西城': ['金融街', '西单', '阜成门', '月坛', '德胜门'],
-        '丰台': ['科技园', '六里桥', '方庄', '大红门', '丽泽'],
-        '通州': ['运河核心区', '梨园', '马驹桥', '宋庄'],
-        '昌平': ['回龙观', '天通苑', '沙河', '南口'],
-        '大兴': ['亦庄', '黄村', '西红门', '旧宫'],
-        '顺义': ['后沙峪', '首都机场', '顺义城', '马坡'],
-        '房山': ['长阳', '良乡', '窦店']
-    };
-    
-    // Config templates for different property types
-    const rentTypes = [
-        { cat: '住宅', layouts: ['1室1厅', '2室1厅', '3室1厅', '2室2厅', '3室2厅'], tags: ['精装修', '近地铁', '采光好', '随时入住', '民用水电', '带暖气', '南北通透'] },
-        { cat: '城市公寓', layouts: ['1室0厅', '1室1厅', 'Loft'], tags: ['拎包入住', '酒店式管理', '落地窗', '可月付', '独立卫浴', '开放式厨房'] },
-        { cat: '城中村公寓', layouts: ['单间', '一房一厅', '复式阁楼'], tags: ['押一付一', '独卫', '近地铁', '便宜', '光线好', '拎包入住'] },
-        { cat: '别墅', layouts: ['4室2厅', '5室3厅', '独栋', '联排'], tags: ['带花园', '私密性好', '带车库', '豪华装修', '低密度', '天然氧吧'] },
-        { cat: '写字楼', layouts: ['100平米', '200平米', '整层', '联合办公'], tags: ['甲级写字楼', '可注册', '交通便利', '含物业费', '高层视野', '新风系统'] },
-        { cat: '商铺', layouts: ['临街', '底商', '内铺', '档口'], tags: ['人流量大', '可餐饮', '门头宽', '成熟社区', '转角铺', '展示面好'] }
-    ];
+  const properties: Property[] = [];
+  const districts = ['朝阳', '海淀', '东城', '西城', '丰台', '通州', '昌平', '大兴', '顺义', '房山'];
+  const bizCircles: Record<string, string[]> = {
+    '朝阳': ['国贸', '三里屯', '望京', '朝阳公园', '大望路', '双井', '劲松', '奥体'],
+    '海淀': ['中关村', '五道口', '万柳', '清河', '上地', '公主坟', '知春路'],
+    '东城': ['东直门', '王府井', '崇文门', '安定门', '东四', '和平里'],
+    '西城': ['金融街', '西单', '阜成门', '月坛', '德胜门'],
+    '丰台': ['科技园', '六里桥', '方庄', '大红门', '丽泽'],
+    '通州': ['运河核心区', '梨园', '马驹桥', '宋庄'],
+    '昌平': ['回龙观', '天通苑', '沙河', '南口'],
+    '大兴': ['亦庄', '黄村', '西红门', '旧宫'],
+    '顺义': ['后沙峪', '首都机场', '顺义城', '马坡'],
+    '房山': ['长阳', '良乡', '窦店']
+  };
 
-    for (let i = 1; i <= 150; i++) {
-        const district = districts[Math.floor(Math.random() * districts.length)];
-        const circles = bizCircles[district] || [district];
-        const location = circles[Math.floor(Math.random() * circles.length)];
-        
-        // Random Type & Layout
-        const typeConfig = rentTypes[Math.floor(Math.random() * rentTypes.length)];
-        const layout = typeConfig.layouts[Math.floor(Math.random() * typeConfig.layouts.length)];
-        
-        // Price logic
-        let price = 0;
-        let area = 0;
-        if (typeConfig.cat === '别墅') { price = 25000 + Math.random() * 50000; area = 200 + Math.random() * 300; }
-        else if (typeConfig.cat === '写字楼') { price = 10000 + Math.random() * 100000; area = 100 + Math.random() * 500; }
-        else if (typeConfig.cat === '商铺') { price = 8000 + Math.random() * 30000; area = 50 + Math.random() * 200; }
-        else if (typeConfig.cat === '城中村公寓') { price = 800 + Math.random() * 2000; area = 15 + Math.random() * 30; }
-        else { price = 3000 + Math.random() * 15000; area = 40 + Math.random() * 100; }
+  // Config templates for different property types
+  const rentTypes = [
+    { cat: '住宅', layouts: ['1室1厅', '2室1厅', '3室1厅', '2室2厅', '3室2厅'], tags: ['精装修', '近地铁', '采光好', '随时入住', '民用水电', '带暖气', '南北通透'] },
+    { cat: '城市公寓', layouts: ['1室0厅', '1室1厅', 'Loft'], tags: ['拎包入住', '酒店式管理', '落地窗', '可月付', '独立卫浴', '开放式厨房'] },
+    { cat: '城中村公寓', layouts: ['单间', '一房一厅', '复式阁楼'], tags: ['押一付一', '独卫', '近地铁', '便宜', '光线好', '拎包入住'] },
+    { cat: '别墅', layouts: ['4室2厅', '5室3厅', '独栋', '联排'], tags: ['带花园', '私密性好', '带车库', '豪华装修', '低密度', '天然氧吧'] },
+    { cat: '写字楼', layouts: ['100平米', '200平米', '整层', '联合办公'], tags: ['甲级写字楼', '可注册', '交通便利', '含物业费', '高层视野', '新风系统'] },
+    { cat: '商铺', layouts: ['临街', '底商', '内铺', '档口'], tags: ['人流量大', '可餐饮', '门头宽', '成熟社区', '转角铺', '展示面好'] }
+  ];
 
-        price = Math.floor(price / 100) * 100;
-        area = Math.floor(area);
+  for (let i = 1; i <= 150; i++) {
+    const district = districts[Math.floor(Math.random() * districts.length)];
+    const circles = bizCircles[district] || [district];
+    const location = circles[Math.floor(Math.random() * circles.length)];
 
-        const latBase = 39.9;
-        const lngBase = 116.4;
-        const lat = latBase + (Math.random() - 0.5) * 0.2;
-        const lng = lngBase + (Math.random() - 0.5) * 0.2;
+    // Random Type & Layout
+    const typeConfig = rentTypes[Math.floor(Math.random() * rentTypes.length)];
+    const layout = typeConfig.layouts[Math.floor(Math.random() * typeConfig.layouts.length)];
 
-        properties.push({
-            id: `gen_${i}`,
-            title: `北京${district}${location} ${layout} ${typeConfig.cat}整租`,
-            type: PropertyType.RENT,
-            category: typeConfig.cat as any,
-            status: PropertyStatus.AVAILABLE,
-            price: price,
-            area: area,
-            layout: layout,
-            location: `北京${district}`,
-            address: `${location}某小区`,
-            tags: typeConfig.tags.sort(() => 0.5 - Math.random()).slice(0, 3),
-            imageUrl: `https://picsum.photos/400/300?random=${1000+i}`,
-            description: '自动生成的模拟房源数据，仅供展示使用。房屋状态良好，随时可看。',
-            coordinates: { lat, lng },
-            leaseTerms: ['年租'],
-            landlordType: LandlordType.INDIVIDUAL
-        });
-    }
-    return properties;
+    // Price logic
+    let price = 0;
+    let area = 0;
+    if (typeConfig.cat === '别墅') { price = 25000 + Math.random() * 50000; area = 200 + Math.random() * 300; }
+    else if (typeConfig.cat === '写字楼') { price = 10000 + Math.random() * 100000; area = 100 + Math.random() * 500; }
+    else if (typeConfig.cat === '商铺') { price = 8000 + Math.random() * 30000; area = 50 + Math.random() * 200; }
+    else if (typeConfig.cat === '城中村公寓') { price = 800 + Math.random() * 2000; area = 15 + Math.random() * 30; }
+    else { price = 3000 + Math.random() * 15000; area = 40 + Math.random() * 100; }
+
+    price = Math.floor(price / 100) * 100;
+    area = Math.floor(area);
+
+    const latBase = 39.9;
+    const lngBase = 116.4;
+    const lat = latBase + (Math.random() - 0.5) * 0.2;
+    const lng = lngBase + (Math.random() - 0.5) * 0.2;
+
+    properties.push({
+      id: `gen_${i}`,
+      title: `北京${district}${location} ${layout} ${typeConfig.cat}整租`,
+      type: PropertyType.RENT,
+      category: typeConfig.cat as any,
+      status: PropertyStatus.AVAILABLE,
+      price: price,
+      area: area,
+      layout: layout,
+      location: `北京${district}`,
+      address: `${location}某小区`,
+      tags: typeConfig.tags.sort(() => 0.5 - Math.random()).slice(0, 3),
+      imageUrl: `https://picsum.photos/400/300?random=${1000 + i}`,
+      description: '自动生成的模拟房源数据，仅供展示使用。房屋状态良好，随时可看。',
+      coordinates: { lat, lng },
+      leaseTerms: ['年租'],
+      landlordType: LandlordType.INDIVIDUAL
+    });
+  }
+  return properties;
 };
 
 // Combine Manual + Generated
@@ -593,38 +592,38 @@ export const MOCK_PROPERTIES: Property[] = [...MANUAL_PROPERTIES, ...generateMor
 
 // --- 3. Mock Orders ---
 export const MOCK_ORDERS: Order[] = [
-    {
-        id: 'ord_01',
-        propertyId: 'bj01',
-        propertyTitle: '国贸CBD全景落地窗豪宅',
-        propertyImage: 'https://picsum.photos/400/300?random=101',
-        clientId: 'c_01',
-        clientName: '张伟先生',
-        clientPhone: '13812345678',
-        agentId: '3',
-        agentName: '金牌房产顾问',
-        type: PropertyType.RENT,
-        price: 35000,
-        status: OrderStatus.VIEWING,
-        viewingDate: '2023-10-28 14:00',
-        createdAt: '2023-10-26'
-    },
-    {
-        id: 'ord_02',
-        propertyId: 'bj03',
-        propertyTitle: '通州运河核心区 精装Loft',
-        propertyImage: 'https://picsum.photos/400/300?random=103',
-        clientId: 'c_04',
-        clientName: '赵小妹',
-        clientPhone: '15011112222',
-        agentId: '3',
-        agentName: '金牌房产顾问',
-        type: PropertyType.RENT,
-        price: 5500,
-        status: OrderStatus.PENDING,
-        contractDate: '2023-10-29',
-        createdAt: '2023-10-27'
-    }
+  {
+    id: 'ord_01',
+    propertyId: 'bj01',
+    propertyTitle: '国贸CBD全景落地窗豪宅',
+    propertyImage: 'https://picsum.photos/400/300?random=101',
+    clientId: 'c_01',
+    clientName: '张伟先生',
+    clientPhone: '13812345678',
+    agentId: '3',
+    agentName: '金牌房产顾问',
+    type: PropertyType.RENT,
+    price: 35000,
+    status: OrderStatus.VIEWING,
+    viewingDate: '2023-10-28 14:00',
+    createdAt: '2023-10-26'
+  },
+  {
+    id: 'ord_02',
+    propertyId: 'bj03',
+    propertyTitle: '通州运河核心区 精装Loft',
+    propertyImage: 'https://picsum.photos/400/300?random=103',
+    clientId: 'c_04',
+    clientName: '赵小妹',
+    clientPhone: '15011112222',
+    agentId: '3',
+    agentName: '金牌房产顾问',
+    type: PropertyType.RENT,
+    price: 5500,
+    status: OrderStatus.PENDING,
+    contractDate: '2023-10-29',
+    createdAt: '2023-10-27'
+  }
 ];
 
 export const ROLE_LABELS: Record<UserRole, string> = {
