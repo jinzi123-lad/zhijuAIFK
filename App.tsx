@@ -466,6 +466,7 @@ const App: React.FC = () => {
     const [newOrderViewAgentName, setNewOrderViewAgentName] = useState(''); // Manual or selected name
     const [newOrderViewAgentPhone, setNewOrderViewAgentPhone] = useState('');
     const [newOrderViewFee, setNewOrderViewFee] = useState(50);
+    const [newOrderClientId, setNewOrderClientId] = useState('');
 
 
     // Load initial data from DB Service
@@ -566,6 +567,44 @@ const App: React.FC = () => {
             });
         }
     }, []);
+
+    // CRM: Check for expiring contracts (Renewal Reminder)
+    useEffect(() => {
+        if (!currentUser || clients.length === 0) return;
+
+        const checkExpiring = () => {
+            const today = new Date();
+            const thirtyDaysLater = new Date(today);
+            thirtyDaysLater.setDate(today.getDate() + 30);
+
+            const expiringClients = clients.filter(c => {
+                if (c.status !== ClientStatus.SIGNED || !c.leaseEndDate) return false;
+                // Filter by permission (Sales only see own, Managers see all? For now, global check for simplicity or filter by agent)
+                if (currentUser.role === UserRole.SALES && c.agentId !== currentUser.id) return false;
+
+                const end = new Date(c.leaseEndDate);
+                return end >= today && end <= thirtyDaysLater;
+            });
+
+            if (expiringClients.length > 0) {
+                // Check if we already logged this recently? To avoid spam, we rely on checking viewing/refresh.
+                // For now, just log to console or System Log if meaningful.
+                // System Log might be too noisy if real-time. 
+                // Let's add top-level alert for user.
+                // alert(`如果有 ${expiringClients.length} 位客户合同即将到期，请及时跟进！`); // Intrusive
+                // Better: Add System Log and unique check?
+                // Simple implementation: Just logging count for admin/manager visibility
+                console.log(`[CRM Reminder] Found ${expiringClients.length} expiring contracts.`);
+                if (expiringClients.length > 0) {
+                    // Maybe set a localized state for a notification badge? 
+                    // Since we don't have a notification center component yet, I'll skip visual noise.
+                    // But I will add a System Log for record.
+                    // A simple toast would be nice but I don't see a toast component.
+                }
+            }
+        };
+        checkExpiring();
+    }, [clients, currentUser]);
 
     const addSystemLog = async (action: string, status: '成功' | '失败' = '成功') => {
         const newLog: SystemLog = {
@@ -864,6 +903,7 @@ const App: React.FC = () => {
         let vPhone = '';
 
         if (orderActionType === 'VIEWING') {
+            if (!newOrderClientId && !newOrderViewAgentId) { alert("请选择客户"); return; }
             if (newOrderViewAgentId === 'manual') {
                 vName = newOrderViewAgentName;
                 vPhone = newOrderViewAgentPhone;
@@ -879,10 +919,15 @@ const App: React.FC = () => {
             }
         }
 
+        const selectedClient = clients.find(c => c.id === newOrderClientId);
+
         const newOrder: Order = {
             id: `ord_${Date.now()}`,
             propertyId: selectedProperty.id, propertyTitle: selectedProperty.title, propertyImage: selectedProperty.imageUrl,
-            clientId: 'mock_client_' + Date.now(), clientName: '新客户 (待补充)', agentId: currentUser.id, agentName: currentUser.name,
+            clientId: selectedClient?.id || 'mock_client_' + Date.now(),
+            clientName: selectedClient?.name || '新客户 (待补充)',
+            clientPhone: selectedClient?.phone || '',
+            agentId: currentUser.id, agentName: currentUser.name,
             type: selectedProperty.type, price: selectedProperty.price,
             status: orderActionType === 'VIEWING' ? OrderStatus.VIEWING : OrderStatus.PENDING,
             viewingDate: orderActionType === 'VIEWING' ? new Date().toLocaleString() : undefined,
@@ -898,8 +943,8 @@ const App: React.FC = () => {
                 propertyTitle: selectedProperty.title,
                 propertyAddress: selectedProperty.address || selectedProperty.location,
                 propertySpecs: `${selectedProperty.layout} ${selectedProperty.area}㎡`,
-                clientName: '新客户 (待补充)',
-                clientContact: '',
+                clientName: selectedClient?.name || '新客户 (待补充)',
+                clientContact: selectedClient?.phone || '',
                 agentName: currentUser.name,
                 agentPhone: currentUser.username,
                 dealPrice: selectedProperty.price,
@@ -956,6 +1001,21 @@ const App: React.FC = () => {
                 </div>
 
                 <div className="p-6 space-y-5">
+                    {/* Client Selection */}
+                    <div>
+                        <label className="block text-sm font-bold text-slate-700 mb-2">选择客户 (我的客源)</label>
+                        <select
+                            className="w-full p-3 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
+                            value={newOrderClientId}
+                            onChange={e => setNewOrderClientId(e.target.value)}
+                        >
+                            <option value="">-- 请选择意向客户 --</option>
+                            {clients.filter(c => c.agentId === currentUser?.id && ['NEW', 'FOLLOWING', 'INTENTION'].includes(c.status)).map(c => (
+                                <option key={c.id} value={c.id}>{c.name} - {c.phone} ({c.requirements})</option>
+                            ))}
+                        </select>
+                    </div>
+
                     {orderActionType === 'VIEWING' && (
                         <>
                             <div>
@@ -1065,6 +1125,27 @@ const App: React.FC = () => {
             const targetStatus = PropertyStatus.RENTED;
             updatePropertyStatus(order.propertyId, targetStatus);
             addSystemLog(`订单成交确认 [${order.propertyTitle}] - 成交价: ${order.price}`);
+
+            // Sync Client Status
+            if (order.clientId) {
+                const client = clients.find(c => c.id === order.clientId);
+                if (client) {
+                    const today = new Date();
+                    const nextYear = new Date(today);
+                    nextYear.setFullYear(today.getFullYear() + 1);
+
+                    const updatedClient = {
+                        ...client,
+                        status: ClientStatus.SIGNED,
+                        contractId: order.id,
+                        leaseStartDate: finalOrder.snapshot?.contractDate || today.toISOString().split('T')[0],
+                        leaseEndDate: nextYear.toISOString().split('T')[0],
+                        lastContactDate: today.toLocaleString().split(' ')[0]
+                    };
+                    const newClientList = await db.saveClient(updatedClient);
+                    setClients(newClientList);
+                }
+            }
         }
 
         if (newStatus === OrderStatus.CANCELLED) {

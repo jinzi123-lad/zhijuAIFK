@@ -176,25 +176,34 @@ export interface KnowledgeItem {
 
 // -- CRM: Client Management Types --
 export enum ClientStatus {
-  PENDING = 'PENDING',     // 待分配 (New from Acquisition Channel)
+  PENDING = 'PENDING',     // 待分配
   NEW = 'NEW',             // 新客
   FOLLOWING = 'FOLLOWING', // 跟进中
   INTENTION = 'INTENTION', // 高意向
-  DEAL = 'DEAL',           // 已成交
-  INVALID = 'INVALID'      // 无效/流失
+  SIGNED = 'SIGNED',       // 已签约 (成交)
+  ARCHIVED = 'ARCHIVED'    // 已归档 (历史/无效)
 }
 
 export interface Client {
   id: string;
   name: string;
   phone: string;
-  requirements: string; // 需求描述 (e.g. "朝阳两居 预算8000")
+  requirements: string; // 需求描述
   budget: string;
   status: ClientStatus;
-  source: string; // 来源 (e.g. "上门", "网络")
-  agentId?: string; // 归属人 (Optional for PENDING)
+  source: string; // 来源
+  agentId?: string; // 归属人
   lastContactDate: string;
   notes?: string;
+
+  // Lifecycle & Archive
+  archiveReason?: string;
+  archivedAt?: string;
+
+  // Contract Info (Renewal)
+  contractId?: string;
+  leaseStartDate?: string;
+  leaseEndDate?: string;
 }
 
 // -- Order Management Types --

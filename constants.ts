@@ -174,6 +174,32 @@ export const MOCK_CLIENTS: Client[] = [
     source: '上门客',
     agentId: '3',
     lastContactDate: '2023-10-29'
+  },
+  // Historical
+  {
+    id: 'c_05',
+    name: '陈先生 (已签)',
+    phone: '13600136000',
+    requirements: '两居室',
+    budget: '8000',
+    status: ClientStatus.SIGNED,
+    source: '网络',
+    agentId: '3',
+    lastContactDate: '2023-09-01',
+    leaseStartDate: '2023-09-05',
+    leaseEndDate: '2024-09-05'
+  },
+  {
+    id: 'c_06',
+    name: '赵女士 (已归档)',
+    phone: '13500135000',
+    requirements: '一居室',
+    budget: '5000',
+    status: ClientStatus.ARCHIVED,
+    source: '网络',
+    agentId: '3',
+    lastContactDate: '2023-08-01',
+    archiveReason: '已在别处租房'
   }
 ];
 
