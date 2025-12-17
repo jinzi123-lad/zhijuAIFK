@@ -6,12 +6,10 @@ export enum UserRole {
   MANAGER = 'MANAGER',         // 主管
   SALES = 'SALES',             // 销售
   LANDLORD = 'LANDLORD',       // 房东
-  USER = 'USER',               // 普通用户
-  FINANCE = 'FINANCE',         // 财务专员
-  ADMIN_STAFF = 'ADMIN_STAFF'  // 行政/运营
+  USER = 'USER'                // 普通用户
 }
 
-export type Permission =
+export type Permission = 
   | 'PROPERTY_CREATE' | 'PROPERTY_EDIT' | 'PROPERTY_DELETE' | 'PROPERTY_VIEW_ALL' | 'PROPERTY_MANAGE_OWN'
   | 'CLIENT_CREATE' | 'CLIENT_EDIT' | 'CLIENT_VIEW_ALL' | 'CLIENT_ASSIGN'
   | 'ORDER_MANAGE' | 'DATA_EXPORT' | 'VIEW_DASHBOARD'
@@ -24,14 +22,14 @@ export interface User {
   password?: string; // Only for mock auth logic
   role: UserRole;
   name: string;
-
+  
   // Hierarchy & Grouping
   managerId?: string; // ID of direct supervisor
   group?: string;     // e.g. "Sales Team A", "Marketing"
-
+  
   // Granular Permissions
   permissions: Permission[];
-
+  
   favorites?: string[]; // List of favorited property IDs
 }
 
@@ -80,14 +78,14 @@ export interface PropertyDetailedInfo {
 
   // Documents
   documentUrls?: string[]; // IDs, Deeds, Contracts
-
+  
   // Inspection / Physical Condition
   utilitiesStatus?: string; // 水电燃气家电状态
   wallCondition?: string;   // 墙面窗边状况 (裂缝/水印/掉皮)
   soundproofing?: string;   // 门窗隔音
   fireSafety?: string;      // 消防设施
   doorLock?: string;        // 门锁牢固度
-
+  
   // Financial & Lease Terms
   paymentMethod?: string;   // 租金支付方式
   depositRatio?: string;    // 押金比例
@@ -101,39 +99,29 @@ export interface PropertyDetailedInfo {
   nearbyFacilities?: string[]; // 周边配套 (Traffic, Medical, Shopping)
 }
 
-// -- Viewing Agent Entity --
-export interface ViewingAgent {
-  id: string;
-  name: string;
-  phone: string;
-  region: string;      // e.g., "Chaoyang District"
-  defaultFee?: number; // Default viewing fee
-  status: 'ACTIVE' | 'INACTIVE';
-}
-
 export interface Property {
   id: string;
   title: string;
   type: PropertyType;
-  category: PropertyCategory;
+  category: PropertyCategory; 
   status?: PropertyStatus; // New status field
   price: number; // For Corporate, this can be the starting price
   area: number; // For Corporate, this can be the starting area
-  layout: string;
+  layout: string; 
   location: string;
   address: string;
   tags: string[];
-  imageUrl: string;
-  imageUrls?: string[];
-  videoUrls?: string[];
+  imageUrl: string; 
+  imageUrls?: string[]; 
+  videoUrls?: string[]; 
   description: string;
   commuteInfo?: string;
-  coordinates: { lat: number; lng: number };
-  floorPlanUrl?: string;
-  vrUrl?: string;
-  leaseTerms?: string[];
-  leaseCommissions?: Record<string, string>;
-
+  coordinates: { lat: number; lng: number }; 
+  floorPlanUrl?: string; 
+  vrUrl?: string;        
+  leaseTerms?: string[]; 
+  leaseCommissions?: Record<string, string>; 
+  
   // New Fields for Multi-Unit Support
   landlordType?: LandlordType;
   units?: PropertyUnit[];
@@ -210,42 +198,21 @@ export interface Order {
   propertyId: string;
   propertyTitle: string;
   propertyImage?: string;
-  unitId?: string;       // [NEW] Linked Unit ID
-  unitName?: string;     // For corporate units
-
-  // [NEW] Snapshot of property and deal at the time of completion
-  snapshot?: {
-    propertyTitle: string;
-    propertyAddress: string;
-    propertySpecs: string;
-    unitName?: string;
-    clientName: string;
-    clientContact: string;
-    agentName: string;
-    agentPhone: string;
-    dealPrice: number;
-    contractDate: string;
-  };
-
+  unitName?: string; // For corporate units
+  
   clientId: string; // Link to Client
   clientName: string;
   clientPhone?: string;
-
+  
   agentId: string;
   agentName: string;
-
+  
   type: PropertyType; // Rent Only
-  price: number;      // Deal price (or viewing fee input in some contexts)
-  commission?: number;
-
-  // [NEW] Viewing Agent Info
-  viewingAgentName?: string;  // Can be manual input
-  viewingAgentPhone?: string;
-  viewingFee?: number;        // Custom fee for this specific order
-  viewingStatus?: 'ASSIGNED' | 'PENDING_DEAL' | 'PAID' | 'VOID';
-
+  price: number;      // Deal price
+  commission?: number; 
+  
   status: OrderStatus;
-
+  
   viewingDate?: string; // For VIEWING
   contractDate?: string; // For PENDING/COMPLETED
   createdAt: string;
@@ -269,7 +236,7 @@ export interface SystemConfig {
   supportPhone: string;
   maintenanceMode: boolean;
   allowRegistration: boolean;
-
+  
   // Custom AI Config
   useCustomAI?: boolean;
   aiProvider: 'GEMINI' | 'OPENAI_COMPATIBLE'; // New: Choose between Gemini SDK or Generic OpenAI format

@@ -4,7 +4,7 @@
 
 
 
-import { Property, PropertyType, User, UserRole, LandlordType, KnowledgeItem, PropertyStatus, Order, OrderStatus, SystemLog, Client, ClientStatus, Permission, ViewingAgent } from './types';
+import { Property, PropertyType, User, UserRole, LandlordType, KnowledgeItem, PropertyStatus, Order, OrderStatus, SystemLog, Client, ClientStatus, Permission } from './types';
 
 export const PERMISSION_LABELS: Record<Permission, string> = {
   'PROPERTY_CREATE': '发布房源',
@@ -62,9 +62,7 @@ export const ROLE_DEFAULT_PERMISSIONS: Record<UserRole, Permission[]> = {
   [UserRole.LANDLORD]: [
     'PROPERTY_MANAGE_OWN'
   ],
-  [UserRole.USER]: [],
-  [UserRole.FINANCE]: ['DATA_EXPORT', 'VIEW_DASHBOARD'],
-  [UserRole.ADMIN_STAFF]: ['USER_MANAGE', 'CLIENT_ASSIGN', 'PROPERTY_VIEW_ALL', 'CLIENT_VIEW_ALL']
+  [UserRole.USER]: []
 };
 
 // Initial Mock Users
@@ -102,26 +100,6 @@ export const INITIAL_USERS: User[] = [
     favorites: []
   },
   {
-    id: 'finance_01',
-    username: 'finance',
-    password: '123',
-    role: UserRole.FINANCE,
-    name: '财务专员-李姐',
-    group: '财务部',
-    permissions: ROLE_DEFAULT_PERMISSIONS[UserRole.FINANCE],
-    favorites: []
-  },
-  {
-    id: 'admin_01',
-    username: 'admin_staff',
-    password: '123',
-    role: UserRole.ADMIN_STAFF,
-    name: '行政-小王',
-    group: '行政部',
-    permissions: ROLE_DEFAULT_PERMISSIONS[UserRole.ADMIN_STAFF],
-    favorites: []
-  },
-  {
     id: 'l_01',
     username: 'landlord_wang',
     password: 'password',
@@ -141,13 +119,6 @@ export const INITIAL_USERS: User[] = [
     permissions: ROLE_DEFAULT_PERMISSIONS[UserRole.USER],
     favorites: []
   }
-];
-
-// Mock Viewing Agents
-export const MOCK_VIEWING_AGENTS: ViewingAgent[] = [
-  { id: 'va_01', name: '张带看', phone: '13800138001', region: '朝阳区', defaultFee: 50, status: 'ACTIVE' },
-  { id: 'va_02', name: '李跑腿', phone: '13900139002', region: '海淀区', defaultFee: 60, status: 'ACTIVE' },
-  { id: 'va_03', name: '王钥匙', phone: '13700137003', region: '丰台区', defaultFee: 40, status: 'INACTIVE' }
 ];
 
 // Mock Clients (CRM)
@@ -661,9 +632,7 @@ export const ROLE_LABELS: Record<UserRole, string> = {
   [UserRole.MANAGER]: '业务主管',
   [UserRole.SALES]: '房产顾问',
   [UserRole.LANDLORD]: '房东业主',
-  [UserRole.USER]: '注册用户',
-  [UserRole.FINANCE]: '财务专员',
-  [UserRole.ADMIN_STAFF]: '行政专员'
+  [UserRole.USER]: '注册用户'
 };
 
 export const ROLE_COLORS: Record<UserRole, string> = {
@@ -672,7 +641,5 @@ export const ROLE_COLORS: Record<UserRole, string> = {
   [UserRole.MANAGER]: 'bg-indigo-100 text-indigo-700',
   [UserRole.SALES]: 'bg-blue-100 text-blue-700',
   [UserRole.LANDLORD]: 'bg-orange-100 text-orange-700',
-  [UserRole.USER]: 'bg-green-100 text-green-700',
-  [UserRole.FINANCE]: 'bg-yellow-100 text-yellow-700',
-  [UserRole.ADMIN_STAFF]: 'bg-pink-100 text-pink-700'
+  [UserRole.USER]: 'bg-green-100 text-green-700'
 };

@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { User, UserRole, Property, PropertyType, PropertyCategory, PropertyViewConfig, LandlordType, PropertyUnit, KnowledgeItem, Order, OrderStatus, PropertyStatus, LandlordContact, PropertyDetailedInfo, SystemLog, SystemConfig, Client, ClientStatus, Permission, ViewingAgent } from './types';
+import { User, UserRole, Property, PropertyType, PropertyCategory, PropertyViewConfig, LandlordType, PropertyUnit, KnowledgeItem, Order, OrderStatus, PropertyStatus, LandlordContact, PropertyDetailedInfo, SystemLog, SystemConfig, Client, ClientStatus, Permission } from './types';
 import { ROLE_COLORS, ROLE_LABELS, CASCADING_REGIONS, LEASE_TERM_OPTIONS, PRESET_TAGS, DETAILED_OPTIONS, PERMISSION_LABELS, ROLE_DEFAULT_PERMISSIONS, PERMISSION_GROUPS, ALL_PERMISSIONS } from './constants';
 import Layout from './components/Layout';
 import PropertyCard from './components/PropertyCard';
@@ -100,7 +100,7 @@ const UserManagement = ({ users, currentUser, onAddUser, onUpdateUser, onDeleteU
 
     // Filter users based on active tab
     const filteredUsers = users.filter(u => {
-        if (activeTab === 'EMPLOYEE') return [UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.MANAGER, UserRole.SALES, UserRole.FINANCE, UserRole.ADMIN_STAFF].includes(u.role);
+        if (activeTab === 'EMPLOYEE') return [UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.MANAGER, UserRole.SALES].includes(u.role);
         if (activeTab === 'LANDLORD') return u.role === UserRole.LANDLORD;
         if (activeTab === 'USER') return u.role === UserRole.USER;
         return false;
@@ -273,8 +273,6 @@ const UserManagement = ({ users, currentUser, onAddUser, onUpdateUser, onDeleteU
                                                 <>
                                                     <option value={UserRole.ADMIN}>管理员 (区域经理)</option>
                                                     <option value={UserRole.MANAGER}>主管 (团队Leader)</option>
-                                                    <option value={UserRole.FINANCE}>财务专员</option>
-                                                    <option value={UserRole.ADMIN_STAFF}>行政/运营</option>
                                                     <option value={UserRole.SALES}>销售 (房产顾问)</option>
                                                 </>
                                             )}
@@ -457,30 +455,19 @@ const App: React.FC = () => {
     const [orders, setOrders] = useState<Order[]>([]);
     const [clients, setClients] = useState<Client[]>([]);
     const [systemLogs, setSystemLogs] = useState<SystemLog[]>([]);
-    const [viewingAgents, setViewingAgents] = useState<ViewingAgent[]>([]);
-
-    // Order Modal State
-    const [isOrderModalOpen, setIsOrderModalOpen] = useState(false);
-    const [orderActionType, setOrderActionType] = useState<'VIEWING' | 'SIGN'>('VIEWING');
-    const [newOrderViewAgentId, setNewOrderViewAgentId] = useState('');
-    const [newOrderViewAgentName, setNewOrderViewAgentName] = useState(''); // Manual or selected name
-    const [newOrderViewAgentPhone, setNewOrderViewAgentPhone] = useState('');
-    const [newOrderViewFee, setNewOrderViewFee] = useState(50);
-
 
     // Load initial data from DB Service
     useEffect(() => {
         const loadData = async () => {
             setDataLoading(true);
-            const [loadedConfig, loadedProps, loadedUsers, loadedClients, loadedOrders, loadedLogs, loadedKnowledge, loadedAgents] = await Promise.all([
+            const [loadedConfig, loadedProps, loadedUsers, loadedClients, loadedOrders, loadedLogs, loadedKnowledge] = await Promise.all([
                 db.getConfig(systemConfig),
                 db.getProperties(),
                 db.getUsers(),
                 db.getClients(),
                 db.getOrders(),
                 db.getLogs(),
-                db.getKnowledge(),
-                db.getViewingAgents()
+                db.getKnowledge()
             ]);
 
             setSystemConfig(loadedConfig);
@@ -490,7 +477,6 @@ const App: React.FC = () => {
             setOrders(loadedOrders);
             setSystemLogs(loadedLogs);
             setKnowledgeEntries(loadedKnowledge);
-            setViewingAgents(loadedAgents);
 
             // Config AI
             if (loadedConfig.useCustomAI && loadedConfig.aiApiKey) {
@@ -857,174 +843,31 @@ const App: React.FC = () => {
         );
     };
 
-    const submitOrder = async () => {
+    const handleCreateOrder = async (action: 'VIEWING' | 'SIGN') => {
         if (!selectedProperty || !currentUser) return;
-
-        let vName = '';
-        let vPhone = '';
-
-        if (orderActionType === 'VIEWING') {
-            if (newOrderViewAgentId === 'manual') {
-                vName = newOrderViewAgentName;
-                vPhone = newOrderViewAgentPhone;
-                if (!vName || !vPhone) { alert("请填写临时带看人员姓名和电话"); return; }
-            } else if (newOrderViewAgentId) {
-                const agent = viewingAgents.find(a => a.id === newOrderViewAgentId);
-                if (agent) {
-                    vName = agent.name;
-                    vPhone = agent.phone;
-                }
-            } else {
-                alert("请选择带看人员"); return;
-            }
-        }
-
         const newOrder: Order = {
             id: `ord_${Date.now()}`,
             propertyId: selectedProperty.id, propertyTitle: selectedProperty.title, propertyImage: selectedProperty.imageUrl,
             clientId: 'mock_client_' + Date.now(), clientName: '新客户 (待补充)', agentId: currentUser.id, agentName: currentUser.name,
             type: selectedProperty.type, price: selectedProperty.price,
-            status: orderActionType === 'VIEWING' ? OrderStatus.VIEWING : OrderStatus.PENDING,
-            viewingDate: orderActionType === 'VIEWING' ? new Date().toLocaleString() : undefined,
-            contractDate: orderActionType === 'SIGN' ? new Date().toLocaleString() : undefined,
-            createdAt: new Date().toISOString().split('T')[0],
-            // New Fields
-            unitId: (selectedProperty.landlordType === LandlordType.CORPORATE && selectedProperty.units && selectedProperty.units.length > 0) ? selectedProperty.units[0].id : undefined, // Default to first unit or null
-            viewingAgentName: vName,
-            viewingAgentPhone: vPhone,
-            viewingFee: orderActionType === 'VIEWING' ? Number(newOrderViewFee) : 0,
-            viewingStatus: orderActionType === 'VIEWING' ? 'ASSIGNED' : undefined,
-            snapshot: orderActionType === 'SIGN' ? {
-                propertyTitle: selectedProperty.title,
-                propertyAddress: selectedProperty.address || selectedProperty.location,
-                propertySpecs: `${selectedProperty.layout} ${selectedProperty.area}㎡`,
-                clientName: '新客户 (待补充)',
-                clientContact: '',
-                agentName: currentUser.name,
-                agentPhone: currentUser.username,
-                dealPrice: selectedProperty.price,
-                contractDate: new Date().toISOString().split('T')[0]
-            } : undefined
+            status: action === 'VIEWING' ? OrderStatus.VIEWING : OrderStatus.PENDING,
+            viewingDate: action === 'VIEWING' ? new Date().toLocaleString() : undefined, contractDate: action === 'SIGN' ? new Date().toLocaleString() : undefined,
+            createdAt: new Date().toISOString().split('T')[0]
         };
 
         const updatedOrders = await db.saveOrder(newOrder);
         setOrders(updatedOrders);
 
-        if (orderActionType === 'SIGN') {
+        if (action === 'SIGN') {
             updatePropertyStatus(selectedProperty.id, PropertyStatus.LOCKED);
             alert("订单已创建，房源已标记为“签约中”");
             addSystemLog(`创建签约订单 [${selectedProperty.title}]`);
         } else {
-            alert(`预约看房成功！\n带看人员：${vName}\n带看费：${newOrder.viewingFee}元 (成交后结算)`);
-            addSystemLog(`创建看房订单 [${selectedProperty.title}] - 带看人: ${vName}`);
+            alert("预约看房成功，订单已创建");
+            addSystemLog(`创建看房订单 [${selectedProperty.title}]`);
         }
-        setIsOrderModalOpen(false);
         setActivePage('orders'); setSelectedProperty(null);
     };
-
-    const handleCreateOrder = (action: 'VIEWING' | 'SIGN') => {
-        if (!selectedProperty || !currentUser) return;
-        setOrderActionType(action);
-        if (action === 'VIEWING') {
-            // Reset Form
-            setNewOrderViewAgentId('');
-            setNewOrderViewAgentName('');
-            setNewOrderViewAgentPhone('');
-            setNewOrderViewFee(50);
-            setIsOrderModalOpen(true);
-        } else {
-            // Direct Sign or Modal? For now allow direct sign but utilize submitOrder for consistency if needed, 
-            // but submitOrder expects viewing agent logic if VIEWING. 
-            // We can just call submitOrder directly for SIGN as it bypasses viewing logic check.
-            setIsOrderModalOpen(true); // Let's open modal for SIGN too to confirm? No, just trigger submit for SIGN to keep it simple as per request? 
-            // design doc: "简化成交流程... 销售直接确认成交". 
-            // Let's just confirm.
-            if (window.confirm("确认直接发起签约成交流程吗?")) {
-                submitOrder();
-            }
-        }
-    };
-
-    const renderOrderCreationModal = () => (
-        <div className="fixed inset-0 bg-black/60 z-[70] flex items-center justify-center p-4">
-            <div className="bg-white rounded-xl w-[500px] max-w-full shadow-2xl overflow-hidden animate-fade-in-up">
-                <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-indigo-50">
-                    <h3 className="text-lg font-bold text-indigo-900">
-                        {orderActionType === 'VIEWING' ? '预约带看 (派单)' : '发起签约'}
-                    </h3>
-                    <button onClick={() => setIsOrderModalOpen(false)} className="text-indigo-400 hover:text-indigo-600 font-bold">×</button>
-                </div>
-
-                <div className="p-6 space-y-5">
-                    {orderActionType === 'VIEWING' && (
-                        <>
-                            <div>
-                                <label className="block text-sm font-bold text-slate-700 mb-2">选择带看人员 (销/带分离)</label>
-                                <select
-                                    className="w-full p-3 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
-                                    value={newOrderViewAgentId}
-                                    onChange={e => {
-                                        setNewOrderViewAgentId(e.target.value);
-                                        if (e.target.value && e.target.value !== 'manual') {
-                                            const agent = viewingAgents.find(a => a.id === e.target.value);
-                                            if (agent) setNewOrderViewFee(agent.defaultFee || 50);
-                                        }
-                                    }}
-                                >
-                                    <option value="">-- 请选择带看专员 --</option>
-                                    {viewingAgents.map(agent => (
-                                        <option key={agent.id} value={agent.id}>{agent.name} ({agent.region}) - ¥{agent.defaultFee}/次</option>
-                                    ))}
-                                    <option value="manual">➕ 自定义 / 临时人员</option>
-                                </select>
-                            </div>
-
-                            {newOrderViewAgentId === 'manual' && (
-                                <div className="bg-slate-50 p-3 rounded-lg border border-slate-200 grid grid-cols-2 gap-3">
-                                    <div>
-                                        <label className="block text-xs font-bold text-slate-500 mb-1">姓名</label>
-                                        <input className="w-full p-2 border rounded text-sm" value={newOrderViewAgentName} onChange={e => setNewOrderViewAgentName(e.target.value)} placeholder="带看人姓名" />
-                                    </div>
-                                    <div>
-                                        <label className="block text-xs font-bold text-slate-500 mb-1">电话</label>
-                                        <input className="w-full p-2 border rounded text-sm" value={newOrderViewAgentPhone} onChange={e => setNewOrderViewAgentPhone(e.target.value)} placeholder="联系电话" />
-                                    </div>
-                                </div>
-                            )}
-
-                            <div>
-                                <label className="block text-sm font-bold text-slate-700 mb-2">带看劳务费 (成交后结算)</label>
-                                <div className="relative">
-                                    <span className="absolute left-3 top-2.5 text-slate-500">¥</span>
-                                    <input
-                                        type="number"
-                                        className="w-full pl-7 pr-3 py-2.5 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-500 font-bold text-indigo-600"
-                                        value={newOrderViewFee}
-                                        onChange={e => setNewOrderViewFee(Number(e.target.value))}
-                                    />
-                                    <span className="absolute right-3 top-3 text-xs text-orange-500 font-medium">不成交不收费</span>
-                                </div>
-                            </div>
-                        </>
-                    )}
-
-                    {orderActionType === 'SIGN' && (
-                        <div className="text-center py-6">
-                            <p className="text-slate-600">确认直接发起签约流程？</p>
-                            <p className="text-xs text-slate-400 mt-2">房源将被锁定，等待财务审核或自动归档。</p>
-                        </div>
-                    )}
-                </div>
-
-                <div className="p-4 border-t border-slate-100 flex gap-3 bg-slate-50">
-                    <button onClick={() => setIsOrderModalOpen(false)} className="flex-1 py-2.5 text-slate-500 font-bold hover:bg-slate-200 rounded-lg transition-colors">取消</button>
-                    <button onClick={submitOrder} className="flex-1 py-2.5 bg-indigo-600 text-white font-bold rounded-lg hover:bg-indigo-700 shadow-lg shadow-indigo-200 transition-all active:scale-95">
-                        {orderActionType === 'VIEWING' ? '确认派单' : '确认成交'}
-                    </button>
-                </div>
-            </div>
-        </div>
-    );
     const updatePropertyStatus = async (pid: string, status: PropertyStatus) => {
         const prop = properties.find(p => p.id === pid);
         if (prop) {
@@ -1037,45 +880,18 @@ const App: React.FC = () => {
         const order = orders.find(o => o.id === orderId);
         if (!order) return;
 
-        let finalOrder = { ...order, status: newStatus };
+        const updatedOrder = { ...order, status: newStatus };
+        const updatedOrders = await db.saveOrder(updatedOrder);
+        setOrders(updatedOrders);
 
-        // Deal Confirmation Logic
         if (newStatus === OrderStatus.COMPLETED) {
-            // Generate Snapshot at completion
-            const finalProp = properties.find(p => p.id === order.propertyId);
-            const agentUser = users.find(u => u.id === order.agentId);
-
-            finalOrder.snapshot = {
-                propertyTitle: finalProp?.title || order.propertyTitle,
-                propertyAddress: finalProp?.address || finalProp?.location || '',
-                propertySpecs: finalProp ? `${finalProp.layout} ${finalProp.area}㎡` : '',
-                clientName: order.clientName,
-                clientContact: order.clientPhone || '',
-                agentName: order.agentName,
-                agentPhone: agentUser?.username || '', // Assuming username serves as phone/contact ID as per convention
-                dealPrice: order.price,
-                contractDate: new Date().toISOString().split('T')[0]
-            };
-
-            // Update Viewing Agent Status
-            if (finalOrder.viewingStatus === 'ASSIGNED') {
-                finalOrder.viewingStatus = 'PENDING_DEAL'; // Fee is now due
-            }
-
             const targetStatus = PropertyStatus.RENTED;
             updatePropertyStatus(order.propertyId, targetStatus);
-            addSystemLog(`订单成交确认 [${order.propertyTitle}] - 成交价: ${order.price}`);
+            addSystemLog(`订单成交 [${order.propertyTitle}]`);
         }
-
-        if (newStatus === OrderStatus.CANCELLED) {
-            if (finalOrder.viewingStatus) finalOrder.viewingStatus = 'VOID'; // No deal, no pay
-            if (order.status === OrderStatus.PENDING) {
-                updatePropertyStatus(order.propertyId, PropertyStatus.AVAILABLE);
-            }
+        if (newStatus === OrderStatus.CANCELLED && order.status === OrderStatus.PENDING) {
+            updatePropertyStatus(order.propertyId, PropertyStatus.AVAILABLE);
         }
-
-        const updatedOrders = await db.saveOrder(finalOrder);
-        setOrders(updatedOrders);
     };
 
     const handleAddClient = async (client: Client) => {
@@ -1571,7 +1387,6 @@ const App: React.FC = () => {
     return (
         <Layout user={currentUser} onLogout={handleLogout} activePage={activePage} onNavigate={setActivePage}>
             {isAddModalOpen && renderAddPropertyModal()}
-            {isOrderModalOpen && renderOrderCreationModal()}
             <AIChatBot knowledgeBase={knowledgeEntries} />
 
             {activePage === 'properties' && (

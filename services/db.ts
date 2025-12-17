@@ -1,6 +1,6 @@
 import { supabase } from './supabaseClient';
-import { Property, User, Client, Order, SystemLog, KnowledgeItem, SystemConfig } from '../types';
-import { INITIAL_USERS, MOCK_PROPERTIES, MOCK_CLIENTS, MOCK_ORDERS, INITIAL_SYSTEM_LOGS, INITIAL_KNOWLEDGE_BASE } from '../constants';
+import { Property, User, Client, Order, SystemLog, KnowledgeItem, SystemConfig, ViewingAgent } from '../types';
+import { INITIAL_USERS, MOCK_PROPERTIES, MOCK_CLIENTS, MOCK_ORDERS, INITIAL_SYSTEM_LOGS, INITIAL_KNOWLEDGE_BASE, MOCK_VIEWING_AGENTS } from '../constants';
 
 // --- Local In-Memory Store (Fallback for Mock Mode) ---
 let _mockProperties = [...MOCK_PROPERTIES];
@@ -177,233 +177,240 @@ const handleDBResponse = async <T>(
 };
 
 export const db = {
-  // --- Properties ---
-  getProperties: async (): Promise<Property[]> => {
-    try {
-        const { data, error } = await supabase.from('properties').select('*').order('created_at', { ascending: false });
-        if (error) throw error;
-        return data.map(mapPropertyFromDB);
-    } catch (e) {
-        return _mockProperties;
-    }
-  },
-  saveProperty: async (item: Property): Promise<Property[]> => {
-    try {
-        const { error } = await supabase.from('properties').upsert(mapPropertyToDB(item));
-        if (error) throw error;
-        return db.getProperties();
-    } catch (e) {
-        // Fallback: update local mock
-        const index = _mockProperties.findIndex(p => p.id === item.id);
-        if (index >= 0) _mockProperties[index] = item;
-        else _mockProperties.unshift(item);
-        return _mockProperties;
-    }
-  },
-  deleteProperty: async (id: string): Promise<Property[]> => {
-    try {
-        const { error } = await supabase.from('properties').delete().eq('id', id);
-        if (error) throw error;
-        return db.getProperties();
-    } catch (e) {
-        _mockProperties = _mockProperties.filter(p => p.id !== id);
-        return _mockProperties;
-    }
-  },
-
-  // --- Users ---
-  getUsers: async (): Promise<User[]> => {
-    try {
-        const { data, error } = await supabase.from('erp_users').select('*');
-        if (error) throw error;
-        if (data.length === 0) return _mockUsers;
-        return data.map(mapUserFromDB);
-    } catch (e) {
-        return _mockUsers;
-    }
-  },
-  saveUser: async (item: User): Promise<User[]> => {
-    try {
-        const { error } = await supabase.from('erp_users').upsert(mapUserToDB(item));
-        if (error) throw error;
-        return db.getUsers();
-    } catch (e) {
-        const index = _mockUsers.findIndex(u => u.id === item.id);
-        if (index >= 0) _mockUsers[index] = item;
-        else _mockUsers.push(item);
-        return _mockUsers;
-    }
-  },
-  deleteUser: async (id: string): Promise<User[]> => {
-    try {
-        const { error } = await supabase.from('erp_users').delete().eq('id', id);
-        if (error) throw error;
-        return db.getUsers();
-    } catch (e) {
-        _mockUsers = _mockUsers.filter(u => u.id !== id);
-        return _mockUsers;
-    }
-  },
-
-  // --- Clients ---
-  getClients: async (): Promise<Client[]> => {
-    try {
-        const { data, error } = await supabase.from('clients').select('*').order('created_at', { ascending: false });
-        if (error) throw error;
-        return data.map(mapClientFromDB);
-    } catch (e) {
-        return _mockClients;
-    }
-  },
-  saveClient: async (item: Client): Promise<Client[]> => {
-    try {
-        const { error } = await supabase.from('clients').upsert(mapClientToDB(item));
-        if (error) throw error;
-        return db.getClients();
-    } catch (e) {
-        const index = _mockClients.findIndex(c => c.id === item.id);
-        if (index >= 0) _mockClients[index] = item;
-        else _mockClients.unshift(item);
-        return _mockClients;
-    }
-  },
-
-  // --- Orders ---
-  getOrders: async (): Promise<Order[]> => {
-    try {
-        const { data, error } = await supabase.from('orders').select('*').order('created_at', { ascending: false });
-        if (error) throw error;
-        return data.map(mapOrderFromDB);
-    } catch (e) {
-        return _mockOrders;
-    }
-  },
-  saveOrder: async (item: Order): Promise<Order[]> => {
-    try {
-        const { error } = await supabase.from('orders').upsert(mapOrderToDB(item));
-        if (error) throw error;
-        return db.getOrders();
-    } catch (e) {
-        const index = _mockOrders.findIndex(o => o.id === item.id);
-        if (index >= 0) _mockOrders[index] = item;
-        else _mockOrders.unshift(item);
-        return _mockOrders;
-    }
-  },
-
-  // --- Knowledge ---
-  getKnowledge: async (): Promise<KnowledgeItem[]> => {
-    try {
-        const { data, error } = await supabase.from('knowledge').select('*').order('created_at', { ascending: false });
-        if (error) throw error;
-        return data.map(mapKnowledgeFromDB);
-    } catch (e) {
-        return _mockKnowledge;
-    }
-  },
-  saveKnowledge: async (item: KnowledgeItem): Promise<KnowledgeItem[]> => {
-    try {
-        const { error } = await supabase.from('knowledge').upsert(mapKnowledgeToDB(item));
-        if (error) throw error;
-        return db.getKnowledge();
-    } catch (e) {
-        const index = _mockKnowledge.findIndex(k => k.id === item.id);
-        if (index >= 0) _mockKnowledge[index] = item;
-        else _mockKnowledge.unshift(item);
-        return _mockKnowledge;
-    }
-  },
-  deleteKnowledge: async (id: string): Promise<KnowledgeItem[]> => {
-    try {
-        const { error } = await supabase.from('knowledge').delete().eq('id', id);
-        if (error) throw error;
-        return db.getKnowledge();
-    } catch (e) {
-        _mockKnowledge = _mockKnowledge.filter(k => k.id !== id);
-        return _mockKnowledge;
-    }
-  },
-
-  // --- Logs ---
-  getLogs: async (): Promise<SystemLog[]> => {
-    try {
-        const { data, error } = await supabase.from('system_logs').select('*').order('created_at', { ascending: false }).limit(50);
-        if (error) throw error;
-        return data.map(mapLogFromDB);
-    } catch (e) {
-        return _mockLogs;
-    }
-  },
-  addLog: async (item: SystemLog): Promise<SystemLog[]> => {
-    try {
-        const { error } = await supabase.from('system_logs').insert(mapLogToDB(item));
-        if (error) throw error;
-        return db.getLogs();
-    } catch (e) {
-        // Fallback: Add to local mock array
-        _mockLogs = [item, ..._mockLogs].slice(0, 50);
-        return _mockLogs;
-    }
-  },
-
-  // --- Config ---
-  getConfig: async (defaults: SystemConfig): Promise<SystemConfig> => {
-    try {
-        const { data, error } = await supabase.from('system_config').select('config_json').eq('id', 'global').single();
-        if (error || !data) throw error || new Error('No config');
-        return { ...defaults, ...data.config_json };
-    } catch (e) {
-        return _mockConfig ? { ...defaults, ..._mockConfig } : defaults;
-    }
-  },
-  saveConfig: async (config: SystemConfig): Promise<SystemConfig> => {
-    try {
-        const { error } = await supabase.from('system_config').upsert({ id: 'global', config_json: config });
-        if (error) throw error;
-        return config;
-    } catch (e) {
-        _mockConfig = config;
-        return config;
-    }
-  },
-
-  // --- Reset & Seed (Initialize Demo Data) ---
-  resetDB: async () => {
-    if (window.confirm('⚠️ 警告：这将清空 Supabase 数据库并重新写入演示数据。\n(如果当前未连接 Supabase，此操作只会重置本地演示数据)')) {
+    // --- Properties ---
+    getProperties: async (): Promise<Property[]> => {
         try {
-            // Attempt Supabase Reset
-            const { error } = await supabase.from('properties').delete().neq('id', '0');
-            if (error) throw error; // If this fails, assume disconnected and reset local
-
-            await supabase.from('erp_users').delete().neq('id', '0');
-            await supabase.from('clients').delete().neq('id', '0');
-            await supabase.from('orders').delete().neq('id', '0');
-            await supabase.from('knowledge').delete().neq('id', '0');
-            await supabase.from('system_logs').delete().neq('id', 0);
-
-            // Seed Constants
-            await supabase.from('properties').insert(MOCK_PROPERTIES.map(mapPropertyToDB));
-            await supabase.from('erp_users').insert(INITIAL_USERS.map(mapUserToDB));
-            await supabase.from('clients').insert(MOCK_CLIENTS.map(mapClientToDB));
-            await supabase.from('orders').insert(MOCK_ORDERS.map(mapOrderToDB));
-            await supabase.from('knowledge').insert(INITIAL_KNOWLEDGE_BASE.map(mapKnowledgeToDB));
-            await supabase.from('system_logs').insert(INITIAL_SYSTEM_LOGS.map(mapLogToDB));
-            
-            alert('✅ 云端数据库已成功初始化！页面将刷新。');
-            window.location.reload();
+            const { data, error } = await supabase.from('properties').select('*').order('created_at', { ascending: false });
+            if (error) throw error;
+            return data.map(mapPropertyFromDB);
         } catch (e) {
-            // Reset Local Mock Data
-            _mockProperties = [...MOCK_PROPERTIES];
-            _mockUsers = [...INITIAL_USERS];
-            _mockClients = [...MOCK_CLIENTS];
-            _mockOrders = [...MOCK_ORDERS];
-            _mockKnowledge = [...INITIAL_KNOWLEDGE_BASE];
-            _mockLogs = [...INITIAL_SYSTEM_LOGS];
-            
-            console.warn('Supabase Reset Failed (Offline Mode), reset local data.');
-            alert('⚠️ 无法连接云端数据库，已重置本地演示数据。');
-            window.location.reload();
+            return _mockProperties;
+        }
+    },
+    saveProperty: async (item: Property): Promise<Property[]> => {
+        try {
+            const { error } = await supabase.from('properties').upsert(mapPropertyToDB(item));
+            if (error) throw error;
+            return db.getProperties();
+        } catch (e) {
+            // Fallback: update local mock
+            const index = _mockProperties.findIndex(p => p.id === item.id);
+            if (index >= 0) _mockProperties[index] = item;
+            else _mockProperties.unshift(item);
+            return _mockProperties;
+        }
+    },
+    deleteProperty: async (id: string): Promise<Property[]> => {
+        try {
+            const { error } = await supabase.from('properties').delete().eq('id', id);
+            if (error) throw error;
+            return db.getProperties();
+        } catch (e) {
+            _mockProperties = _mockProperties.filter(p => p.id !== id);
+            return _mockProperties;
+        }
+    },
+
+    // --- Users ---
+    getUsers: async (): Promise<User[]> => {
+        try {
+            const { data, error } = await supabase.from('erp_users').select('*');
+            if (error) throw error;
+            if (data.length === 0) return _mockUsers;
+            return data.map(mapUserFromDB);
+        } catch (e) {
+            return _mockUsers;
+        }
+    },
+    saveUser: async (item: User): Promise<User[]> => {
+        try {
+            const { error } = await supabase.from('erp_users').upsert(mapUserToDB(item));
+            if (error) throw error;
+            return db.getUsers();
+        } catch (e) {
+            const index = _mockUsers.findIndex(u => u.id === item.id);
+            if (index >= 0) _mockUsers[index] = item;
+            else _mockUsers.push(item);
+            return _mockUsers;
+        }
+    },
+    deleteUser: async (id: string): Promise<User[]> => {
+        try {
+            const { error } = await supabase.from('erp_users').delete().eq('id', id);
+            if (error) throw error;
+            return db.getUsers();
+        } catch (e) {
+            _mockUsers = _mockUsers.filter(u => u.id !== id);
+            return _mockUsers;
+        }
+    },
+
+    // --- Clients ---
+    getClients: async (): Promise<Client[]> => {
+        try {
+            const { data, error } = await supabase.from('clients').select('*').order('created_at', { ascending: false });
+            if (error) throw error;
+            return data.map(mapClientFromDB);
+        } catch (e) {
+            return _mockClients;
+        }
+    },
+    saveClient: async (item: Client): Promise<Client[]> => {
+        try {
+            const { error } = await supabase.from('clients').upsert(mapClientToDB(item));
+            if (error) throw error;
+            return db.getClients();
+        } catch (e) {
+            const index = _mockClients.findIndex(c => c.id === item.id);
+            if (index >= 0) _mockClients[index] = item;
+            else _mockClients.unshift(item);
+            return _mockClients;
+        }
+    },
+
+    // --- Orders ---
+    getOrders: async (): Promise<Order[]> => {
+        try {
+            const { data, error } = await supabase.from('orders').select('*').order('created_at', { ascending: false });
+            if (error) throw error;
+            return data.map(mapOrderFromDB);
+        } catch (e) {
+            return _mockOrders;
+        }
+    },
+    saveOrder: async (item: Order): Promise<Order[]> => {
+        try {
+            const { error } = await supabase.from('orders').upsert(mapOrderToDB(item));
+            if (error) throw error;
+            return db.getOrders();
+        } catch (e) {
+            const index = _mockOrders.findIndex(o => o.id === item.id);
+            if (index >= 0) _mockOrders[index] = item;
+            else _mockOrders.unshift(item);
+            return _mockOrders;
+        }
+    },
+
+    // --- Viewing Agents ---
+    getViewingAgents: async (): Promise<ViewingAgent[]> => {
+        // Simulate API delay
+        await new Promise(r => setTimeout(r, 200));
+        return [...MOCK_VIEWING_AGENTS];
+    },
+
+    // --- Knowledge ---
+    getKnowledge: async (): Promise<KnowledgeItem[]> => {
+        try {
+            const { data, error } = await supabase.from('knowledge').select('*').order('created_at', { ascending: false });
+            if (error) throw error;
+            return data.map(mapKnowledgeFromDB);
+        } catch (e) {
+            return _mockKnowledge;
+        }
+    },
+    saveKnowledge: async (item: KnowledgeItem): Promise<KnowledgeItem[]> => {
+        try {
+            const { error } = await supabase.from('knowledge').upsert(mapKnowledgeToDB(item));
+            if (error) throw error;
+            return db.getKnowledge();
+        } catch (e) {
+            const index = _mockKnowledge.findIndex(k => k.id === item.id);
+            if (index >= 0) _mockKnowledge[index] = item;
+            else _mockKnowledge.unshift(item);
+            return _mockKnowledge;
+        }
+    },
+    deleteKnowledge: async (id: string): Promise<KnowledgeItem[]> => {
+        try {
+            const { error } = await supabase.from('knowledge').delete().eq('id', id);
+            if (error) throw error;
+            return db.getKnowledge();
+        } catch (e) {
+            _mockKnowledge = _mockKnowledge.filter(k => k.id !== id);
+            return _mockKnowledge;
+        }
+    },
+
+    // --- Logs ---
+    getLogs: async (): Promise<SystemLog[]> => {
+        try {
+            const { data, error } = await supabase.from('system_logs').select('*').order('created_at', { ascending: false }).limit(50);
+            if (error) throw error;
+            return data.map(mapLogFromDB);
+        } catch (e) {
+            return _mockLogs;
+        }
+    },
+    addLog: async (item: SystemLog): Promise<SystemLog[]> => {
+        try {
+            const { error } = await supabase.from('system_logs').insert(mapLogToDB(item));
+            if (error) throw error;
+            return db.getLogs();
+        } catch (e) {
+            // Fallback: Add to local mock array
+            _mockLogs = [item, ..._mockLogs].slice(0, 50);
+            return _mockLogs;
+        }
+    },
+
+    // --- Config ---
+    getConfig: async (defaults: SystemConfig): Promise<SystemConfig> => {
+        try {
+            const { data, error } = await supabase.from('system_config').select('config_json').eq('id', 'global').single();
+            if (error || !data) throw error || new Error('No config');
+            return { ...defaults, ...data.config_json };
+        } catch (e) {
+            return _mockConfig ? { ...defaults, ..._mockConfig } : defaults;
+        }
+    },
+    saveConfig: async (config: SystemConfig): Promise<SystemConfig> => {
+        try {
+            const { error } = await supabase.from('system_config').upsert({ id: 'global', config_json: config });
+            if (error) throw error;
+            return config;
+        } catch (e) {
+            _mockConfig = config;
+            return config;
+        }
+    },
+
+    // --- Reset & Seed (Initialize Demo Data) ---
+    resetDB: async () => {
+        if (window.confirm('⚠️ 警告：这将清空 Supabase 数据库并重新写入演示数据。\n(如果当前未连接 Supabase，此操作只会重置本地演示数据)')) {
+            try {
+                // Attempt Supabase Reset
+                const { error } = await supabase.from('properties').delete().neq('id', '0');
+                if (error) throw error; // If this fails, assume disconnected and reset local
+
+                await supabase.from('erp_users').delete().neq('id', '0');
+                await supabase.from('clients').delete().neq('id', '0');
+                await supabase.from('orders').delete().neq('id', '0');
+                await supabase.from('knowledge').delete().neq('id', '0');
+                await supabase.from('system_logs').delete().neq('id', 0);
+
+                // Seed Constants
+                await supabase.from('properties').insert(MOCK_PROPERTIES.map(mapPropertyToDB));
+                await supabase.from('erp_users').insert(INITIAL_USERS.map(mapUserToDB));
+                await supabase.from('clients').insert(MOCK_CLIENTS.map(mapClientToDB));
+                await supabase.from('orders').insert(MOCK_ORDERS.map(mapOrderToDB));
+                await supabase.from('knowledge').insert(INITIAL_KNOWLEDGE_BASE.map(mapKnowledgeToDB));
+                await supabase.from('system_logs').insert(INITIAL_SYSTEM_LOGS.map(mapLogToDB));
+
+                alert('✅ 云端数据库已成功初始化！页面将刷新。');
+                window.location.reload();
+            } catch (e) {
+                // Reset Local Mock Data
+                _mockProperties = [...MOCK_PROPERTIES];
+                _mockUsers = [...INITIAL_USERS];
+                _mockClients = [...MOCK_CLIENTS];
+                _mockOrders = [...MOCK_ORDERS];
+                _mockKnowledge = [...INITIAL_KNOWLEDGE_BASE];
+                _mockLogs = [...INITIAL_SYSTEM_LOGS];
+
+                console.warn('Supabase Reset Failed (Offline Mode), reset local data.');
+                alert('⚠️ 无法连接云端数据库，已重置本地演示数据。');
+                window.location.reload();
+            }
         }
     }
-  }
 };
