@@ -1776,6 +1776,10 @@ const App: React.FC = () => {
             )}
 
             {activePage === 'acquisition' && (
+                <ClientManagement clients={clients} currentUser={currentUser!} onAddClient={handleAddClient} onUpdateClient={handleUpdateClient} />
+            )}
+
+            {activePage === 'channels' && (
                 <AcquisitionChannel clients={clients} users={users} onAddClient={handleAddClient} onAssignClient={handleAssignClient} />
             )}
 

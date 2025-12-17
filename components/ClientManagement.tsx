@@ -1,14 +1,15 @@
 
 import React, { useState } from 'react';
-import { Client, ClientStatus } from '../types';
+import { Client, ClientStatus, User } from '../types';
 
 interface ClientManagementProps {
     clients: Client[];
     onAddClient: (client: Client) => void;
     onUpdateClient: (id: string, updates: Partial<Client>) => void;
+    currentUser: User;
 }
 
-const ClientManagement: React.FC<ClientManagementProps> = ({ clients, onAddClient, onUpdateClient }) => {
+const ClientManagement: React.FC<ClientManagementProps> = ({ clients, onAddClient, onUpdateClient, currentUser }) => {
     const [activeTab, setActiveTab] = useState<'ACTIVE' | 'HISTORY'>('ACTIVE');
     const [filterStatus, setFilterStatus] = useState<string>('ALL');
     const [searchTerm, setSearchTerm] = useState('');
@@ -17,6 +18,14 @@ const ClientManagement: React.FC<ClientManagementProps> = ({ clients, onAddClien
     const [isArchiveModalOpen, setIsArchiveModalOpen] = useState(false);
     const [archiveTargetId, setArchiveTargetId] = useState<string | null>(null);
     const [archiveReason, setArchiveReason] = useState('');
+
+    // Add Client Modal State
+    const [isAddClientModalOpen, setIsAddClientModalOpen] = useState(false);
+    const [newClientName, setNewClientName] = useState('');
+    const [newClientPhone, setNewClientPhone] = useState('');
+    const [newClientReq, setNewClientReq] = useState('');
+    const [newClientBudget, setNewClientBudget] = useState('');
+    const [newClientSource, setNewClientSource] = useState('上门');
 
     const filteredClients = clients.filter(c => {
         // Tab Filter
@@ -78,6 +87,30 @@ const ClientManagement: React.FC<ClientManagementProps> = ({ clients, onAddClien
         setIsArchiveModalOpen(true);
     };
 
+    const handleCreateClient = () => {
+        if (!newClientName || !newClientPhone) {
+            alert("姓名和电话必填");
+            return;
+        }
+
+        const newClient: Client = {
+            id: `c_${Date.now()}`,
+            name: newClientName,
+            phone: newClientPhone,
+            requirements: newClientReq || '暂无需求描述',
+            budget: newClientBudget || '待定',
+            status: ClientStatus.NEW,
+            source: newClientSource,
+            agentId: currentUser.id, // Auto-assign to current user
+            lastContactDate: new Date().toISOString().split('T')[0]
+        };
+
+        onAddClient(newClient);
+        setIsAddClientModalOpen(false);
+        // Reset form
+        setNewClientName(''); setNewClientPhone(''); setNewClientReq(''); setNewClientBudget('');
+    };
+
     return (
         <div className="space-y-6">
             <div className="flex justify-between items-center">
@@ -102,6 +135,7 @@ const ClientManagement: React.FC<ClientManagementProps> = ({ clients, onAddClien
                     </div>
                     {activeTab === 'ACTIVE' && (
                         <button
+                            onClick={() => setIsAddClientModalOpen(true)}
                             className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 transition-colors shadow-lg shadow-indigo-200"
                         >
                             + 录入新客
@@ -222,6 +256,58 @@ const ClientManagement: React.FC<ClientManagementProps> = ({ clients, onAddClien
                         <div className="flex gap-3">
                             <button onClick={() => setIsArchiveModalOpen(false)} className="flex-1 py-2 text-slate-500 hover:bg-slate-100 rounded-lg">取消</button>
                             <button onClick={handleArchive} className="flex-1 py-2 bg-slate-800 text-white rounded-lg hover:bg-slate-900 font-bold">确认归档</button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Add Client Modal */}
+            {isAddClientModalOpen && (
+                <div className="fixed inset-0 bg-black/50 z-[80] flex items-center justify-center p-4">
+                    <div className="bg-white rounded-xl w-[500px] max-w-full p-6 animate-fade-in-up shadow-2xl">
+                        <div className="flex justify-between items-center mb-6">
+                            <h3 className="text-lg font-bold text-slate-800">录入新客户</h3>
+                            <button onClick={() => setIsAddClientModalOpen(false)} className="text-slate-400 hover:text-slate-600">×</button>
+                        </div>
+
+                        <div className="space-y-4">
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-sm font-bold text-slate-700 mb-2">客户姓名 *</label>
+                                    <input className="w-full p-3 border rounded-lg bg-slate-50 focus:bg-white transition-colors" value={newClientName} onChange={e => setNewClientName(e.target.value)} placeholder="称呼" />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-bold text-slate-700 mb-2">联系电话 *</label>
+                                    <input className="w-full p-3 border rounded-lg bg-slate-50 focus:bg-white transition-colors" value={newClientPhone} onChange={e => setNewClientPhone(e.target.value)} placeholder="手机号" />
+                                </div>
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-bold text-slate-700 mb-2">购房/租房需求</label>
+                                <textarea className="w-full p-3 border rounded-lg bg-slate-50 focus:bg-white h-20 transition-colors" value={newClientReq} onChange={e => setNewClientReq(e.target.value)} placeholder="例如: 朝阳区两居室，近地铁..." />
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-sm font-bold text-slate-700 mb-2">预算范围</label>
+                                    <input className="w-full p-3 border rounded-lg bg-slate-50 focus:bg-white transition-colors" value={newClientBudget} onChange={e => setNewClientBudget(e.target.value)} placeholder="例如: 5000-8000" />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-bold text-slate-700 mb-2">来源渠道</label>
+                                    <select className="w-full p-3 border rounded-lg bg-slate-50 focus:bg-white outline-none" value={newClientSource} onChange={e => setNewClientSource(e.target.value)}>
+                                        <option value="上门">上门</option>
+                                        <option value="网络端口">网络端口</option>
+                                        <option value="老客户推荐">老客户推荐</option>
+                                        <option value="转介绍">转介绍</option>
+                                        <option value="其他">其他</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div className="pt-4 border-t border-slate-100 flex justify-end gap-3 mt-2">
+                                <button onClick={() => setIsAddClientModalOpen(false)} className="px-5 py-2.5 text-slate-500 font-bold hover:bg-slate-100 rounded-lg">取消</button>
+                                <button onClick={handleCreateClient} className="px-5 py-2.5 bg-indigo-600 text-white font-bold rounded-lg hover:bg-indigo-700 shadow-lg shadow-indigo-200">确认录入</button>
+                            </div>
                         </div>
                     </div>
                 </div>
