@@ -29,7 +29,8 @@
   ],
   "exclude": [
     "node_modules",
-    "vite.config.ts"
+    "vite.config.ts",
+    "backup_restore_point"
   ],
   "references": [
     {
