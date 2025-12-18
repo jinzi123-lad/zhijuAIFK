@@ -757,1149 +757,1184 @@ const App: React.FC = () => {
         setDisplayedProperties(result);
     };
 
-    useEffect(() => {
-        applyFilters();
-    }, [filterProvince, filterCity, filterDistrict, filterCategory, filterPrice, customMinPrice, customMaxPrice, properties, activePage]);
+}, [filterProvince, filterCity, filterDistrict, filterCategory, filterPrice, customMinPrice, customMaxPrice, properties, activePage]);
 
-    const parseLocation = (loc: string) => {
-        let p = '上海'; let c = '上海'; let d = '徐汇';
-        for (const prov in CASCADING_REGIONS) {
-            if (loc.includes(prov)) {
-                p = prov;
-                const cities = CASCADING_REGIONS[prov];
-                for (const city in cities) {
-                    if (loc.includes(city) && city !== prov) c = city;
-                    const dists = cities[city];
-                    if (dists) { for (const dist of dists) { if (loc.includes(dist)) { c = city; d = dist; } } }
-                }
-                break;
-            }
-        }
-        return { p, c, d };
-    };
+// Auto-locate default filters on mount
+useEffect(() => {
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition((pos) => {
+            const { latitude, longitude } = pos.coords;
+            // Use a reliable reverse geocoding service (OSM Nominatim)
+            fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`)
+                .then(r => r.json())
+                .then(data => {
+                    if (data && data.address) {
+                        const addr = data.address;
+                        // Match Province
+                        const prov = Object.keys(CASCADING_REGIONS).find(p => addr.state?.includes(p));
 
-    const handleOpenAdd = () => {
-        setEditingPropertyId(null);
-        setNewProperty({ type: PropertyType.RENT, category: '住宅', tags: [], location: '上海徐汇', coordinates: { lat: 31.2304, lng: 121.4737 } });
-        setNewPropertyTags([]); setNewPropertyLeaseTerms([]); setNewPropertyLeaseCommissions({});
-        setNewPropertyAdditionalImages([]); setNewPropertyVideos([]); setNewPropertyProvince('上海'); setNewPropertyCity('上海'); setNewPropertyDistrict('徐汇');
-        setNewPropertyLandlordType(LandlordType.INDIVIDUAL); setNewPropertyUnits([]); setNewPropertyLandlordContacts([{ name: '', phone: '' }]);
-        setNewPropertyDetails({}); setNewPropertyDocuments([]); setNewPropertySurroundings([]); setNewPropertyFacilities([]);
-        setAiInputText(''); setAiInputImage(null); setActiveTab('BASIC'); setIsAddModalOpen(true);
-    };
-    const handleOpenEdit = (property: Property) => {
-        setEditingPropertyId(property.id); setNewProperty({ ...property });
-        setNewPropertyTags(property.tags || []); setNewPropertyLeaseTerms(property.leaseTerms || []);
-        setNewPropertyLeaseCommissions(property.leaseCommissions || {}); setNewPropertyAdditionalImages(property.imageUrls || []);
-        setNewPropertyVideos(property.videoUrls || []); setNewPropertyLandlordType(property.landlordType || LandlordType.INDIVIDUAL);
-        setNewPropertyUnits(property.units || []); setNewPropertyLandlordContacts(property.landlordContacts && property.landlordContacts.length > 0 ? property.landlordContacts : [{ name: '', phone: '' }]);
-        const { p, c, d } = parseLocation(property.location); setNewPropertyProvince(p); setNewPropertyCity(c); setNewPropertyDistrict(d);
-        if (property.details) {
-            setNewPropertyDetails(property.details); setNewPropertyDocuments(property.details.documentUrls || []);
-            setNewPropertySurroundings(property.details.surroundings || []); setNewPropertyFacilities(property.details.nearbyFacilities || []);
-        } else { setNewPropertyDetails({}); setNewPropertyDocuments([]); setNewPropertySurroundings([]); setNewPropertyFacilities([]); }
-        setAiInputText(''); setAiInputImage(null); setActiveTab('BASIC'); setIsAddModalOpen(true);
-    };
+                        if (prov) {
+                            setFilterProvince(prov);
 
-    const handleSaveProperty = async () => {
-        // Validation: Check Basic Info Required Fields (Title, Price, Area, Payment Method)
-        if (!newProperty.title || !newProperty.price || !newProperty.area || !newPropertyDetails.paymentMethod) {
-            alert("请完善基础信息（包括标题、价格、面积、支付方式等）");
-            return;
-        }
-        const locationStr = `${newPropertyProvince}${newPropertyCity !== newPropertyProvince ? newPropertyCity : ''}${newPropertyDistrict}`;
-        const validContacts = newPropertyLandlordContacts.filter(c => c.name.trim() !== '' && c.phone.trim() !== '');
-        const p: Property = {
-            id: editingPropertyId || `new_${Date.now()}`,
-            title: newProperty.title || '未命名房源',
-            type: PropertyType.RENT,
-            category: newProperty.category as PropertyCategory,
-            status: newProperty.status || PropertyStatus.AVAILABLE,
-            price: Number(newProperty.price),
-            area: Number(newProperty.area),
-            layout: newProperty.layout || '1室0厅',
-            location: locationStr,
-            address: newProperty.address || `${newPropertyCity}${newPropertyDistrict}`,
-            tags: newPropertyTags,
-            imageUrl: newProperty.imageUrl || 'https://picsum.photos/400/300?random=' + Date.now(),
-            imageUrls: newPropertyAdditionalImages, videoUrls: newPropertyVideos, floorPlanUrl: newProperty.floorPlanUrl, vrUrl: newProperty.vrUrl,
-            description: newProperty.description || '暂无描述', commuteInfo: newProperty.commuteInfo, coordinates: newProperty.coordinates || { lat: 31.2304, lng: 121.4737 },
-            leaseTerms: newPropertyLeaseTerms, leaseCommissions: newPropertyLeaseCommissions,
-            landlordType: newPropertyLandlordType, units: newPropertyLandlordType === LandlordType.CORPORATE ? newPropertyUnits : [], landlordContacts: validContacts,
-            details: { ...newPropertyDetails, documentUrls: newPropertyDocuments, surroundings: newPropertySurroundings, nearbyFacilities: newPropertyFacilities }
-        };
-
-        const updatedList = await db.saveProperty(p);
-        setProperties([...updatedList]);
-
-        if (editingPropertyId) {
-            addSystemLog(`修改房源信息 [${p.title}]`);
-            if (selectedProperty && selectedProperty.id === editingPropertyId) setSelectedProperty(p);
-        } else {
-            addSystemLog(`发布新房源 [${p.title}]`);
-        }
-        resetFilters(); // Auto reset filters to show the new property immediately
-        setIsAddModalOpen(false);
-    };
-    const handleDeleteProperty = async (id: string) => {
-        const p = properties.find(i => i.id === id);
-        const updatedList = await db.deleteProperty(id);
-        setProperties(updatedList);
-        addSystemLog(`删除房源 [${p?.title || id}]`);
-        if (selectedProperty && selectedProperty.id === id) setSelectedProperty(null);
-    };
-
-    const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>, field: 'imageUrl' | 'floorPlanUrl') => { if (e.target.files && e.target.files[0]) { const file = e.target.files[0]; const url = URL.createObjectURL(file as any); setNewProperty(prev => ({ ...prev, [field]: url })); } };
-    const handleUnitImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => { if (e.target.files && e.target.files[0]) { const file = e.target.files[0]; const url = URL.createObjectURL(file as any); setTempUnit(prev => ({ ...prev, imageUrl: url })); } };
-    const handleMultipleFilesUpload = (e: React.ChangeEvent<HTMLInputElement>, type: 'IMAGES' | 'VIDEOS' | 'DOCS') => { if (e.target.files && e.target.files.length > 0) { const newUrls: string[] = []; Array.from(e.target.files).forEach(file => { newUrls.push(URL.createObjectURL(file as any)); }); if (type === 'IMAGES') { setNewPropertyAdditionalImages(prev => [...prev, ...newUrls]); } else if (type === 'VIDEOS') { setNewPropertyVideos(prev => [...prev, ...newUrls]); } else if (type === 'DOCS') { setNewPropertyDocuments(prev => [...prev, ...newUrls]); } } };
-    const toggleLeaseTerm = (term: string) => { if (newPropertyLeaseTerms.includes(term)) { setNewPropertyLeaseTerms(prev => prev.filter(t => t !== term)); const newComms = { ...newPropertyLeaseCommissions }; delete newComms[term]; setNewPropertyLeaseCommissions(newComms); } else { setNewPropertyLeaseTerms(prev => [...prev, term]); } };
-    const handleCommissionChange = (term: string, value: string) => { setNewPropertyLeaseCommissions(prev => ({ ...prev, [term]: value })); };
-    const handleAddUnit = () => { if (!tempUnit.name || !tempUnit.price) return; const unit: PropertyUnit = { id: `u_${Date.now()}`, name: tempUnit.name, price: tempUnit.price, area: tempUnit.area || 0, layout: tempUnit.layout || '1室1厅', imageUrl: tempUnit.imageUrl, description: tempUnit.description }; setNewPropertyUnits([...newPropertyUnits, unit]); setTempUnit({ name: '', price: 0, area: 0, layout: '1室1厅' }); };
-    const handleRemoveUnit = (id: string) => { setNewPropertyUnits(newPropertyUnits.filter(u => u.id !== id)); };
-    const toggleTag = (tag: string) => { if (newPropertyTags.includes(tag)) { setNewPropertyTags(prev => prev.filter(t => t !== tag)); } else { setNewPropertyTags(prev => [...prev, tag]); } };
-    const addCustomTag = () => { const trimmed = customTagInput.trim(); if (trimmed && !newPropertyTags.includes(trimmed)) { setNewPropertyTags(prev => [...prev, trimmed]); } setCustomTagInput(''); };
-    const toggleDetailArray = (current: string[], setter: React.Dispatch<React.SetStateAction<string[]>>, item: string) => { if (current.includes(item)) { setter(current.filter(i => i !== item)); } else { setter([...current, item]); } };
-    const addContact = () => { setNewPropertyLandlordContacts([...newPropertyLandlordContacts, { name: '', phone: '' }]); };
-    const removeContact = (index: number) => { const updated = [...newPropertyLandlordContacts]; updated.splice(index, 1); setNewPropertyLandlordContacts(updated); };
-    const updateContact = (index: number, field: keyof LandlordContact, value: string) => { const updated = [...newPropertyLandlordContacts]; updated[index] = { ...updated[index], [field]: value }; setNewPropertyLandlordContacts(updated); };
-    const handlePaste = (e: React.ClipboardEvent) => { const items = e.clipboardData.items; for (let i = 0; i < items.length; i++) { if (items[i].type.indexOf('image') !== -1) { const blob = items[i].getAsFile(); if (blob) { const reader = new FileReader(); reader.onload = (event) => { setAiInputImage(event.target?.result as string); }; reader.readAsDataURL(blob); e.preventDefault(); } } } };
-    const handleSmartFill = async () => { if (!aiInputText && !aiInputImage) { alert("请先输入文本或粘贴图片！"); return; } setIsAiParsing(true); const data = await parsePropertyInfoWithAI(aiInputText, aiInputImage || undefined); if (data) { setNewProperty(prev => ({ ...prev, title: data.title || prev.title, type: PropertyType.RENT, category: (data.category as any) || prev.category, price: data.price || prev.price, area: data.area || prev.area, layout: data.layout || prev.layout, address: data.address || prev.address, description: data.description || prev.description, commuteInfo: data.commuteInfo || prev.commuteInfo })); if (data.province) setNewPropertyProvince(data.province); if (data.city) setNewPropertyCity(data.city); if (data.district) setNewPropertyDistrict(data.district); if (data.tags && Array.isArray(data.tags)) { setNewPropertyTags(prev => Array.from(new Set([...prev, ...data.tags]))); } if (data.contacts && Array.isArray(data.contacts)) { setNewPropertyLandlordContacts(data.contacts); } alert("AI 识别完成！请检查已填入的信息。"); } else { alert("识别失败，请重试。"); } setIsAiParsing(false); };
-
-    const handleAutoLocate = () => {
-        if (!navigator.geolocation) { alert("浏览器不支持地理定位"); return; }
-        navigator.geolocation.getCurrentPosition(
-            (pos) => {
-                const { latitude, longitude } = pos.coords;
-                setNewProperty(prev => ({ ...prev, coordinates: { lat: latitude, lng: longitude } }));
-                // Try reverse geocoding via OSM (Free, no key required for client-side low volume)
-                fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`)
-                    .then(r => r.json())
-                    .then(data => {
-                        if (data && data.address) {
-                            const addr = data.address;
-                            // Try to match province/city
-                            const prov = Object.keys(CASCADING_REGIONS).find(p => addr.state?.includes(p)) || '北京';
-                            setNewPropertyProvince(prov);
+                            // Match City
                             const cityMap = CASCADING_REGIONS[prov] || {};
-                            const city = Object.keys(cityMap).find(c => addr.city?.includes(c)) || Object.keys(cityMap)[0];
-                            setNewPropertyCity(city);
-                            const dists = cityMap[city] || [];
-                            const dist = dists.find(d => (addr.suburb || addr.district)?.includes(d)) || dists[0];
-                            setNewPropertyDistrict(dist);
+                            // Nominatim might return city as "Shanghai City" or just "Shanghai"
+                            // keys are "上海".
+                            const city = Object.keys(cityMap).find(c => addr.city?.includes(c) || addr.town?.includes(c));
 
-                            setNewProperty(prev => ({ ...prev, address: data.display_name || '定位地址' }));
+                            if (city && city !== prov) {
+                                setFilterCity(city);
+                            } else if (prov === '上海' || prov === '北京' || prov === '天津' || prov === '重庆') {
+                                // For municipalities, set city to same as province if logic allows, or keep '全部' if distinct
+                                // In CASCADING_REGIONS for Shanghai: { "上海": ["徐汇", ...] }
+                                setFilterCity(prov);
+                            }
                         }
-                    }).catch(() => console.log(`定位成功 (Lat:${latitude.toFixed(2)}, Lng:${longitude.toFixed(2)})，未能解析详细地址。`));
-            },
-            (err) => alert("定位失败，请检查浏览器定位权限。")
-        );
+                    }
+                }).catch(e => console.log('Auto-locate filter error:', e));
+        }, (err) => console.log('Geolocation failed:', err));
+    }
+}, []);
+
+const parseLocation = (loc: string) => {
+    let p = '上海'; let c = '上海'; let d = '徐汇';
+    for (const prov in CASCADING_REGIONS) {
+        if (loc.includes(prov)) {
+            p = prov;
+            const cities = CASCADING_REGIONS[prov];
+            for (const city in cities) {
+                if (loc.includes(city) && city !== prov) c = city;
+                const dists = cities[city];
+                if (dists) { for (const dist of dists) { if (loc.includes(dist)) { c = city; d = dist; } } }
+            }
+            break;
+        }
+    }
+    return { p, c, d };
+};
+
+const handleOpenAdd = () => {
+    setEditingPropertyId(null);
+    setNewProperty({ type: PropertyType.RENT, category: '住宅', tags: [], location: '上海徐汇', coordinates: { lat: 31.2304, lng: 121.4737 } });
+    setNewPropertyTags([]); setNewPropertyLeaseTerms([]); setNewPropertyLeaseCommissions({});
+    setNewPropertyAdditionalImages([]); setNewPropertyVideos([]); setNewPropertyProvince('上海'); setNewPropertyCity('上海'); setNewPropertyDistrict('徐汇');
+    setNewPropertyLandlordType(LandlordType.INDIVIDUAL); setNewPropertyUnits([]); setNewPropertyLandlordContacts([{ name: '', phone: '' }]);
+    setNewPropertyDetails({}); setNewPropertyDocuments([]); setNewPropertySurroundings([]); setNewPropertyFacilities([]);
+    setAiInputText(''); setAiInputImage(null); setActiveTab('BASIC'); setIsAddModalOpen(true);
+};
+const handleOpenEdit = (property: Property) => {
+    setEditingPropertyId(property.id); setNewProperty({ ...property });
+    setNewPropertyTags(property.tags || []); setNewPropertyLeaseTerms(property.leaseTerms || []);
+    setNewPropertyLeaseCommissions(property.leaseCommissions || {}); setNewPropertyAdditionalImages(property.imageUrls || []);
+    setNewPropertyVideos(property.videoUrls || []); setNewPropertyLandlordType(property.landlordType || LandlordType.INDIVIDUAL);
+    setNewPropertyUnits(property.units || []); setNewPropertyLandlordContacts(property.landlordContacts && property.landlordContacts.length > 0 ? property.landlordContacts : [{ name: '', phone: '' }]);
+    const { p, c, d } = parseLocation(property.location); setNewPropertyProvince(p); setNewPropertyCity(c); setNewPropertyDistrict(d);
+    if (property.details) {
+        setNewPropertyDetails(property.details); setNewPropertyDocuments(property.details.documentUrls || []);
+        setNewPropertySurroundings(property.details.surroundings || []); setNewPropertyFacilities(property.details.nearbyFacilities || []);
+    } else { setNewPropertyDetails({}); setNewPropertyDocuments([]); setNewPropertySurroundings([]); setNewPropertyFacilities([]); }
+    setAiInputText(''); setAiInputImage(null); setActiveTab('BASIC'); setIsAddModalOpen(true);
+};
+
+const handleSaveProperty = async () => {
+    // Validation: Check Basic Info Required Fields (Title, Price, Area, Payment Method)
+    if (!newProperty.title || !newProperty.price || !newProperty.area || !newPropertyDetails.paymentMethod) {
+        alert("请完善基础信息（包括标题、价格、面积、支付方式等）");
+        return;
+    }
+    const locationStr = `${newPropertyProvince}${newPropertyCity !== newPropertyProvince ? newPropertyCity : ''}${newPropertyDistrict}`;
+    const validContacts = newPropertyLandlordContacts.filter(c => c.name.trim() !== '' && c.phone.trim() !== '');
+    const p: Property = {
+        id: editingPropertyId || `new_${Date.now()}`,
+        title: newProperty.title || '未命名房源',
+        type: PropertyType.RENT,
+        category: newProperty.category as PropertyCategory,
+        status: newProperty.status || PropertyStatus.AVAILABLE,
+        price: Number(newProperty.price),
+        area: Number(newProperty.area),
+        layout: newProperty.layout || '1室0厅',
+        location: locationStr,
+        address: newProperty.address || `${newPropertyCity}${newPropertyDistrict}`,
+        tags: newPropertyTags,
+        imageUrl: newProperty.imageUrl || 'https://picsum.photos/400/300?random=' + Date.now(),
+        imageUrls: newPropertyAdditionalImages, videoUrls: newPropertyVideos, floorPlanUrl: newProperty.floorPlanUrl, vrUrl: newProperty.vrUrl,
+        description: newProperty.description || '暂无描述', commuteInfo: newProperty.commuteInfo, coordinates: newProperty.coordinates || { lat: 31.2304, lng: 121.4737 },
+        leaseTerms: newPropertyLeaseTerms, leaseCommissions: newPropertyLeaseCommissions,
+        landlordType: newPropertyLandlordType, units: newPropertyLandlordType === LandlordType.CORPORATE ? newPropertyUnits : [], landlordContacts: validContacts,
+        details: { ...newPropertyDetails, documentUrls: newPropertyDocuments, surroundings: newPropertySurroundings, nearbyFacilities: newPropertyFacilities }
     };
 
-    const submitOrder = async () => {
-        if (!selectedProperty || !currentUser) return;
+    const updatedList = await db.saveProperty(p);
+    setProperties([...updatedList]);
 
-        let vName = '';
-        let vPhone = '';
+    if (editingPropertyId) {
+        addSystemLog(`修改房源信息 [${p.title}]`);
+        if (selectedProperty && selectedProperty.id === editingPropertyId) setSelectedProperty(p);
+    } else {
+        addSystemLog(`发布新房源 [${p.title}]`);
+    }
+    resetFilters(); // Auto reset filters to show the new property immediately
+    setIsAddModalOpen(false);
+};
+const handleDeleteProperty = async (id: string) => {
+    const p = properties.find(i => i.id === id);
+    const updatedList = await db.deleteProperty(id);
+    setProperties(updatedList);
+    addSystemLog(`删除房源 [${p?.title || id}]`);
+    if (selectedProperty && selectedProperty.id === id) setSelectedProperty(null);
+};
 
-        if (orderActionType === 'VIEWING') {
-            if (!newOrderClientId && !newOrderViewAgentId) { alert("请选择客户"); return; }
-            if (newOrderViewAgentId === 'manual') {
-                vName = newOrderViewAgentName;
-                vPhone = newOrderViewAgentPhone;
-                if (!vName || !vPhone) { alert("请填写临时带看人员姓名和电话"); return; }
-            } else if (newOrderViewAgentId) {
-                const agent = viewingAgents.find(a => a.id === newOrderViewAgentId);
-                if (agent) {
-                    vName = agent.name;
-                    vPhone = agent.phone;
-                }
-            } else {
-                alert("请选择带看人员"); return;
+const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>, field: 'imageUrl' | 'floorPlanUrl') => { if (e.target.files && e.target.files[0]) { const file = e.target.files[0]; const url = URL.createObjectURL(file as any); setNewProperty(prev => ({ ...prev, [field]: url })); } };
+const handleUnitImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => { if (e.target.files && e.target.files[0]) { const file = e.target.files[0]; const url = URL.createObjectURL(file as any); setTempUnit(prev => ({ ...prev, imageUrl: url })); } };
+const handleMultipleFilesUpload = (e: React.ChangeEvent<HTMLInputElement>, type: 'IMAGES' | 'VIDEOS' | 'DOCS') => { if (e.target.files && e.target.files.length > 0) { const newUrls: string[] = []; Array.from(e.target.files).forEach(file => { newUrls.push(URL.createObjectURL(file as any)); }); if (type === 'IMAGES') { setNewPropertyAdditionalImages(prev => [...prev, ...newUrls]); } else if (type === 'VIDEOS') { setNewPropertyVideos(prev => [...prev, ...newUrls]); } else if (type === 'DOCS') { setNewPropertyDocuments(prev => [...prev, ...newUrls]); } } };
+const toggleLeaseTerm = (term: string) => { if (newPropertyLeaseTerms.includes(term)) { setNewPropertyLeaseTerms(prev => prev.filter(t => t !== term)); const newComms = { ...newPropertyLeaseCommissions }; delete newComms[term]; setNewPropertyLeaseCommissions(newComms); } else { setNewPropertyLeaseTerms(prev => [...prev, term]); } };
+const handleCommissionChange = (term: string, value: string) => { setNewPropertyLeaseCommissions(prev => ({ ...prev, [term]: value })); };
+const handleAddUnit = () => { if (!tempUnit.name || !tempUnit.price) return; const unit: PropertyUnit = { id: `u_${Date.now()}`, name: tempUnit.name, price: tempUnit.price, area: tempUnit.area || 0, layout: tempUnit.layout || '1室1厅', imageUrl: tempUnit.imageUrl, description: tempUnit.description }; setNewPropertyUnits([...newPropertyUnits, unit]); setTempUnit({ name: '', price: 0, area: 0, layout: '1室1厅' }); };
+const handleRemoveUnit = (id: string) => { setNewPropertyUnits(newPropertyUnits.filter(u => u.id !== id)); };
+const toggleTag = (tag: string) => { if (newPropertyTags.includes(tag)) { setNewPropertyTags(prev => prev.filter(t => t !== tag)); } else { setNewPropertyTags(prev => [...prev, tag]); } };
+const addCustomTag = () => { const trimmed = customTagInput.trim(); if (trimmed && !newPropertyTags.includes(trimmed)) { setNewPropertyTags(prev => [...prev, trimmed]); } setCustomTagInput(''); };
+const toggleDetailArray = (current: string[], setter: React.Dispatch<React.SetStateAction<string[]>>, item: string) => { if (current.includes(item)) { setter(current.filter(i => i !== item)); } else { setter([...current, item]); } };
+const addContact = () => { setNewPropertyLandlordContacts([...newPropertyLandlordContacts, { name: '', phone: '' }]); };
+const removeContact = (index: number) => { const updated = [...newPropertyLandlordContacts]; updated.splice(index, 1); setNewPropertyLandlordContacts(updated); };
+const updateContact = (index: number, field: keyof LandlordContact, value: string) => { const updated = [...newPropertyLandlordContacts]; updated[index] = { ...updated[index], [field]: value }; setNewPropertyLandlordContacts(updated); };
+const handlePaste = (e: React.ClipboardEvent) => { const items = e.clipboardData.items; for (let i = 0; i < items.length; i++) { if (items[i].type.indexOf('image') !== -1) { const blob = items[i].getAsFile(); if (blob) { const reader = new FileReader(); reader.onload = (event) => { setAiInputImage(event.target?.result as string); }; reader.readAsDataURL(blob); e.preventDefault(); } } } };
+const handleSmartFill = async () => { if (!aiInputText && !aiInputImage) { alert("请先输入文本或粘贴图片！"); return; } setIsAiParsing(true); const data = await parsePropertyInfoWithAI(aiInputText, aiInputImage || undefined); if (data) { setNewProperty(prev => ({ ...prev, title: data.title || prev.title, type: PropertyType.RENT, category: (data.category as any) || prev.category, price: data.price || prev.price, area: data.area || prev.area, layout: data.layout || prev.layout, address: data.address || prev.address, description: data.description || prev.description, commuteInfo: data.commuteInfo || prev.commuteInfo })); if (data.province) setNewPropertyProvince(data.province); if (data.city) setNewPropertyCity(data.city); if (data.district) setNewPropertyDistrict(data.district); if (data.tags && Array.isArray(data.tags)) { setNewPropertyTags(prev => Array.from(new Set([...prev, ...data.tags]))); } if (data.contacts && Array.isArray(data.contacts)) { setNewPropertyLandlordContacts(data.contacts); } alert("AI 识别完成！请检查已填入的信息。"); } else { alert("识别失败，请重试。"); } setIsAiParsing(false); };
+
+const handleAutoLocate = () => {
+    if (!navigator.geolocation) { alert("浏览器不支持地理定位"); return; }
+    navigator.geolocation.getCurrentPosition(
+        (pos) => {
+            const { latitude, longitude } = pos.coords;
+            setNewProperty(prev => ({ ...prev, coordinates: { lat: latitude, lng: longitude } }));
+            // Try reverse geocoding via OSM (Free, no key required for client-side low volume)
+            fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`)
+                .then(r => r.json())
+                .then(data => {
+                    if (data && data.address) {
+                        const addr = data.address;
+                        // Try to match province/city
+                        const prov = Object.keys(CASCADING_REGIONS).find(p => addr.state?.includes(p)) || '北京';
+                        setNewPropertyProvince(prov);
+                        const cityMap = CASCADING_REGIONS[prov] || {};
+                        const city = Object.keys(cityMap).find(c => addr.city?.includes(c)) || Object.keys(cityMap)[0];
+                        setNewPropertyCity(city);
+                        const dists = cityMap[city] || [];
+                        const dist = dists.find(d => (addr.suburb || addr.district)?.includes(d)) || dists[0];
+                        setNewPropertyDistrict(dist);
+
+                        setNewProperty(prev => ({ ...prev, address: data.display_name || '定位地址' }));
+                    }
+                }).catch(() => console.log(`定位成功 (Lat:${latitude.toFixed(2)}, Lng:${longitude.toFixed(2)})，未能解析详细地址。`));
+        },
+        (err) => alert("定位失败，请检查浏览器定位权限。")
+    );
+};
+
+const submitOrder = async () => {
+    if (!selectedProperty || !currentUser) return;
+
+    let vName = '';
+    let vPhone = '';
+
+    if (orderActionType === 'VIEWING') {
+        if (!newOrderClientId && !newOrderViewAgentId) { alert("请选择客户"); return; }
+        if (newOrderViewAgentId === 'manual') {
+            vName = newOrderViewAgentName;
+            vPhone = newOrderViewAgentPhone;
+            if (!vName || !vPhone) { alert("请填写临时带看人员姓名和电话"); return; }
+        } else if (newOrderViewAgentId) {
+            const agent = viewingAgents.find(a => a.id === newOrderViewAgentId);
+            if (agent) {
+                vName = agent.name;
+                vPhone = agent.phone;
             }
+        } else {
+            alert("请选择带看人员"); return;
         }
+    }
 
-        const selectedClient = clients.find(c => c.id === newOrderClientId);
+    const selectedClient = clients.find(c => c.id === newOrderClientId);
 
-        const newOrder: Order = {
-            id: `ord_${Date.now()}`,
-            propertyId: selectedProperty.id, propertyTitle: selectedProperty.title, propertyImage: selectedProperty.imageUrl,
-            clientId: selectedClient?.id || 'mock_client_' + Date.now(),
+    const newOrder: Order = {
+        id: `ord_${Date.now()}`,
+        propertyId: selectedProperty.id, propertyTitle: selectedProperty.title, propertyImage: selectedProperty.imageUrl,
+        clientId: selectedClient?.id || 'mock_client_' + Date.now(),
+        clientName: selectedClient?.name || '新客户 (待补充)',
+        clientPhone: selectedClient?.phone || '',
+        agentId: currentUser.id, agentName: currentUser.name,
+        type: selectedProperty.type, price: selectedProperty.price,
+        status: orderActionType === 'VIEWING' ? OrderStatus.VIEWING : OrderStatus.PENDING,
+        viewingDate: orderActionType === 'VIEWING' ? new Date().toLocaleString() : undefined,
+        contractDate: orderActionType === 'SIGN' ? new Date().toLocaleString() : undefined,
+        createdAt: new Date().toISOString().split('T')[0],
+        // New Fields
+        unitId: (selectedProperty.landlordType === LandlordType.CORPORATE && selectedProperty.units && selectedProperty.units.length > 0) ? selectedProperty.units[0].id : undefined, // Default to first unit or null
+        viewingAgentName: vName,
+        viewingAgentPhone: vPhone,
+        viewingFee: orderActionType === 'VIEWING' ? Number(newOrderViewFee) : 0,
+        viewingStatus: orderActionType === 'VIEWING' ? 'ASSIGNED' : undefined,
+        snapshot: orderActionType === 'SIGN' ? {
+            propertyTitle: selectedProperty.title,
+            propertyAddress: selectedProperty.address || selectedProperty.location,
+            propertySpecs: `${selectedProperty.layout} ${selectedProperty.area}㎡`,
             clientName: selectedClient?.name || '新客户 (待补充)',
-            clientPhone: selectedClient?.phone || '',
-            agentId: currentUser.id, agentName: currentUser.name,
-            type: selectedProperty.type, price: selectedProperty.price,
-            status: orderActionType === 'VIEWING' ? OrderStatus.VIEWING : OrderStatus.PENDING,
-            viewingDate: orderActionType === 'VIEWING' ? new Date().toLocaleString() : undefined,
-            contractDate: orderActionType === 'SIGN' ? new Date().toLocaleString() : undefined,
-            createdAt: new Date().toISOString().split('T')[0],
-            // New Fields
-            unitId: (selectedProperty.landlordType === LandlordType.CORPORATE && selectedProperty.units && selectedProperty.units.length > 0) ? selectedProperty.units[0].id : undefined, // Default to first unit or null
-            viewingAgentName: vName,
-            viewingAgentPhone: vPhone,
-            viewingFee: orderActionType === 'VIEWING' ? Number(newOrderViewFee) : 0,
-            viewingStatus: orderActionType === 'VIEWING' ? 'ASSIGNED' : undefined,
-            snapshot: orderActionType === 'SIGN' ? {
-                propertyTitle: selectedProperty.title,
-                propertyAddress: selectedProperty.address || selectedProperty.location,
-                propertySpecs: `${selectedProperty.layout} ${selectedProperty.area}㎡`,
-                clientName: selectedClient?.name || '新客户 (待补充)',
-                clientContact: selectedClient?.phone || '',
-                agentName: currentUser.name,
-                agentPhone: currentUser.username,
-                dealPrice: selectedProperty.price,
-                contractDate: new Date().toISOString().split('T')[0]
-            } : undefined
-        };
-
-        const updatedOrders = await db.saveOrder(newOrder);
-        setOrders(updatedOrders);
-
-        if (orderActionType === 'SIGN') {
-            updatePropertyStatus(selectedProperty.id, PropertyStatus.LOCKED);
-            alert("订单已创建，房源已标记为“签约中”");
-            addSystemLog(`创建签约订单 [${selectedProperty.title}]`);
-        } else {
-            alert(`预约看房成功！\n带看人员：${vName}\n带看费：${newOrder.viewingFee}元 (成交后结算)`);
-            addSystemLog(`创建看房订单 [${selectedProperty.title}] - 带看人: ${vName}`);
-        }
-        setIsOrderModalOpen(false);
-        setActivePage('orders'); setSelectedProperty(null);
+            clientContact: selectedClient?.phone || '',
+            agentName: currentUser.name,
+            agentPhone: currentUser.username,
+            dealPrice: selectedProperty.price,
+            contractDate: new Date().toISOString().split('T')[0]
+        } : undefined
     };
 
-    const handleCreateOrder = (action: 'VIEWING' | 'SIGN') => {
-        if (!selectedProperty || !currentUser) return;
-        setOrderActionType(action);
-        if (action === 'VIEWING') {
-            // Reset Form
-            setNewOrderViewAgentId('');
-            setNewOrderViewAgentName('');
-            setNewOrderViewAgentPhone('');
-            setNewOrderViewFee(50);
-            setIsOrderModalOpen(true);
-        } else {
-            // Direct Sign or Modal? For now allow direct sign but utilize submitOrder for consistency if needed, 
-            // but submitOrder expects viewing agent logic if VIEWING. 
-            // We can just call submitOrder directly for SIGN as it bypasses viewing logic check.
-            setIsOrderModalOpen(true); // Let's open modal for SIGN too to confirm? No, just trigger submit for SIGN to keep it simple as per request? 
-            // design doc: "简化成交流程... 销售直接确认成交". 
-            // Let's just confirm.
-            if (window.confirm("确认直接发起签约成交流程吗?")) {
-                submitOrder();
-            }
-        }
-    };
+    const updatedOrders = await db.saveOrder(newOrder);
+    setOrders(updatedOrders);
 
-    const renderOrderCreationModal = () => (
-        <div className="fixed inset-0 bg-black/60 z-[70] flex items-center justify-center p-4">
-            <div className="bg-white rounded-xl w-[500px] max-w-full shadow-2xl overflow-hidden animate-fade-in-up">
-                <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-indigo-50">
-                    <h3 className="text-lg font-bold text-indigo-900">
-                        {orderActionType === 'VIEWING' ? '预约带看 (派单)' : '发起签约'}
-                    </h3>
-                    <button onClick={() => setIsOrderModalOpen(false)} className="text-indigo-400 hover:text-indigo-600 font-bold">×</button>
+    if (orderActionType === 'SIGN') {
+        updatePropertyStatus(selectedProperty.id, PropertyStatus.LOCKED);
+        alert("订单已创建，房源已标记为“签约中”");
+        addSystemLog(`创建签约订单 [${selectedProperty.title}]`);
+    } else {
+        alert(`预约看房成功！\n带看人员：${vName}\n带看费：${newOrder.viewingFee}元 (成交后结算)`);
+        addSystemLog(`创建看房订单 [${selectedProperty.title}] - 带看人: ${vName}`);
+    }
+    setIsOrderModalOpen(false);
+    setActivePage('orders'); setSelectedProperty(null);
+};
+
+const handleCreateOrder = (action: 'VIEWING' | 'SIGN') => {
+    if (!selectedProperty || !currentUser) return;
+    setOrderActionType(action);
+    if (action === 'VIEWING') {
+        // Reset Form
+        setNewOrderViewAgentId('');
+        setNewOrderViewAgentName('');
+        setNewOrderViewAgentPhone('');
+        setNewOrderViewFee(50);
+        setIsOrderModalOpen(true);
+    } else {
+        // Direct Sign or Modal? For now allow direct sign but utilize submitOrder for consistency if needed, 
+        // but submitOrder expects viewing agent logic if VIEWING. 
+        // We can just call submitOrder directly for SIGN as it bypasses viewing logic check.
+        setIsOrderModalOpen(true); // Let's open modal for SIGN too to confirm? No, just trigger submit for SIGN to keep it simple as per request? 
+        // design doc: "简化成交流程... 销售直接确认成交". 
+        // Let's just confirm.
+        if (window.confirm("确认直接发起签约成交流程吗?")) {
+            submitOrder();
+        }
+    }
+};
+
+const renderOrderCreationModal = () => (
+    <div className="fixed inset-0 bg-black/60 z-[70] flex items-center justify-center p-4">
+        <div className="bg-white rounded-xl w-[500px] max-w-full shadow-2xl overflow-hidden animate-fade-in-up">
+            <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-indigo-50">
+                <h3 className="text-lg font-bold text-indigo-900">
+                    {orderActionType === 'VIEWING' ? '预约带看 (派单)' : '发起签约'}
+                </h3>
+                <button onClick={() => setIsOrderModalOpen(false)} className="text-indigo-400 hover:text-indigo-600 font-bold">×</button>
+            </div>
+
+            <div className="p-6 space-y-5">
+                {/* Client Selection */}
+                <div>
+                    <label className="block text-sm font-bold text-slate-700 mb-2">选择客户 (我的客源)</label>
+                    <select
+                        className="w-full p-3 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
+                        value={newOrderClientId}
+                        onChange={e => setNewOrderClientId(e.target.value)}
+                    >
+                        <option value="">-- 请选择意向客户 --</option>
+                        {clients.filter(c => c.agentId === currentUser?.id && ['NEW', 'FOLLOWING', 'INTENTION'].includes(c.status)).map(c => (
+                            <option key={c.id} value={c.id}>{c.name} - {c.phone} ({c.requirements})</option>
+                        ))}
+                    </select>
                 </div>
 
-                <div className="p-6 space-y-5">
-                    {/* Client Selection */}
-                    <div>
-                        <label className="block text-sm font-bold text-slate-700 mb-2">选择客户 (我的客源)</label>
-                        <select
-                            className="w-full p-3 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
-                            value={newOrderClientId}
-                            onChange={e => setNewOrderClientId(e.target.value)}
-                        >
-                            <option value="">-- 请选择意向客户 --</option>
-                            {clients.filter(c => c.agentId === currentUser?.id && ['NEW', 'FOLLOWING', 'INTENTION'].includes(c.status)).map(c => (
-                                <option key={c.id} value={c.id}>{c.name} - {c.phone} ({c.requirements})</option>
-                            ))}
-                        </select>
-                    </div>
-
-                    {orderActionType === 'VIEWING' && (
-                        <>
-                            <div>
-                                <label className="block text-sm font-bold text-slate-700 mb-2">选择带看人员 (销/带分离)</label>
-                                <select
-                                    className="w-full p-3 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
-                                    value={newOrderViewAgentId}
-                                    onChange={e => {
-                                        setNewOrderViewAgentId(e.target.value);
-                                        if (e.target.value && e.target.value !== 'manual') {
-                                            const agent = viewingAgents.find(a => a.id === e.target.value);
-                                            if (agent) setNewOrderViewFee(agent.defaultFee || 50);
-                                        }
-                                    }}
-                                >
-                                    <option value="">-- 请选择带看专员 --</option>
-                                    {viewingAgents.map(agent => (
-                                        <option key={agent.id} value={agent.id}>{agent.name} ({agent.region}) - ¥{agent.defaultFee}/次</option>
-                                    ))}
-                                    <option value="manual">➕ 自定义 / 临时人员</option>
-                                </select>
-                            </div>
-
-                            {newOrderViewAgentId === 'manual' && (
-                                <div className="bg-slate-50 p-3 rounded-lg border border-slate-200 grid grid-cols-2 gap-3">
-                                    <div>
-                                        <label className="block text-xs font-bold text-slate-500 mb-1">姓名</label>
-                                        <input className="w-full p-2 border rounded text-sm" value={newOrderViewAgentName} onChange={e => setNewOrderViewAgentName(e.target.value)} placeholder="带看人姓名" />
-                                    </div>
-                                    <div>
-                                        <label className="block text-xs font-bold text-slate-500 mb-1">电话</label>
-                                        <input className="w-full p-2 border rounded text-sm" value={newOrderViewAgentPhone} onChange={e => setNewOrderViewAgentPhone(e.target.value)} placeholder="联系电话" />
-                                    </div>
-                                </div>
-                            )}
-
-                            <div>
-                                <label className="block text-sm font-bold text-slate-700 mb-2">带看劳务费 (成交后结算)</label>
-                                <div className="relative">
-                                    <span className="absolute left-3 top-2.5 text-slate-500">¥</span>
-                                    <input
-                                        type="number"
-                                        className="w-full pl-7 pr-3 py-2.5 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-500 font-bold text-indigo-600"
-                                        value={newOrderViewFee}
-                                        onChange={e => setNewOrderViewFee(Number(e.target.value))}
-                                    />
-                                    <span className="absolute right-3 top-3 text-xs text-orange-500 font-medium">不成交不收费</span>
-                                </div>
-                            </div>
-                        </>
-                    )}
-
-                    {orderActionType === 'SIGN' && (
-                        <div className="text-center py-6">
-                            <p className="text-slate-600">确认直接发起签约流程？</p>
-                            <p className="text-xs text-slate-400 mt-2">房源将被锁定，等待财务审核或自动归档。</p>
+                {orderActionType === 'VIEWING' && (
+                    <>
+                        <div>
+                            <label className="block text-sm font-bold text-slate-700 mb-2">选择带看人员 (销/带分离)</label>
+                            <select
+                                className="w-full p-3 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
+                                value={newOrderViewAgentId}
+                                onChange={e => {
+                                    setNewOrderViewAgentId(e.target.value);
+                                    if (e.target.value && e.target.value !== 'manual') {
+                                        const agent = viewingAgents.find(a => a.id === e.target.value);
+                                        if (agent) setNewOrderViewFee(agent.defaultFee || 50);
+                                    }
+                                }}
+                            >
+                                <option value="">-- 请选择带看专员 --</option>
+                                {viewingAgents.map(agent => (
+                                    <option key={agent.id} value={agent.id}>{agent.name} ({agent.region}) - ¥{agent.defaultFee}/次</option>
+                                ))}
+                                <option value="manual">➕ 自定义 / 临时人员</option>
+                            </select>
                         </div>
-                    )}
-                </div>
 
-                <div className="p-4 border-t border-slate-100 flex gap-3 bg-slate-50">
-                    <button onClick={() => setIsOrderModalOpen(false)} className="flex-1 py-2.5 text-slate-500 font-bold hover:bg-slate-200 rounded-lg transition-colors">取消</button>
-                    <button onClick={submitOrder} className="flex-1 py-2.5 bg-indigo-600 text-white font-bold rounded-lg hover:bg-indigo-700 shadow-lg shadow-indigo-200 transition-all active:scale-95">
-                        {orderActionType === 'VIEWING' ? '确认派单' : '确认成交'}
-                    </button>
-                </div>
+                        {newOrderViewAgentId === 'manual' && (
+                            <div className="bg-slate-50 p-3 rounded-lg border border-slate-200 grid grid-cols-2 gap-3">
+                                <div>
+                                    <label className="block text-xs font-bold text-slate-500 mb-1">姓名</label>
+                                    <input className="w-full p-2 border rounded text-sm" value={newOrderViewAgentName} onChange={e => setNewOrderViewAgentName(e.target.value)} placeholder="带看人姓名" />
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-bold text-slate-500 mb-1">电话</label>
+                                    <input className="w-full p-2 border rounded text-sm" value={newOrderViewAgentPhone} onChange={e => setNewOrderViewAgentPhone(e.target.value)} placeholder="联系电话" />
+                                </div>
+                            </div>
+                        )}
+
+                        <div>
+                            <label className="block text-sm font-bold text-slate-700 mb-2">带看劳务费 (成交后结算)</label>
+                            <div className="relative">
+                                <span className="absolute left-3 top-2.5 text-slate-500">¥</span>
+                                <input
+                                    type="number"
+                                    className="w-full pl-7 pr-3 py-2.5 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-500 font-bold text-indigo-600"
+                                    value={newOrderViewFee}
+                                    onChange={e => setNewOrderViewFee(Number(e.target.value))}
+                                />
+                                <span className="absolute right-3 top-3 text-xs text-orange-500 font-medium">不成交不收费</span>
+                            </div>
+                        </div>
+                    </>
+                )}
+
+                {orderActionType === 'SIGN' && (
+                    <div className="text-center py-6">
+                        <p className="text-slate-600">确认直接发起签约流程？</p>
+                        <p className="text-xs text-slate-400 mt-2">房源将被锁定，等待财务审核或自动归档。</p>
+                    </div>
+                )}
+            </div>
+
+            <div className="p-4 border-t border-slate-100 flex gap-3 bg-slate-50">
+                <button onClick={() => setIsOrderModalOpen(false)} className="flex-1 py-2.5 text-slate-500 font-bold hover:bg-slate-200 rounded-lg transition-colors">取消</button>
+                <button onClick={submitOrder} className="flex-1 py-2.5 bg-indigo-600 text-white font-bold rounded-lg hover:bg-indigo-700 shadow-lg shadow-indigo-200 transition-all active:scale-95">
+                    {orderActionType === 'VIEWING' ? '确认派单' : '确认成交'}
+                </button>
             </div>
         </div>
-    );
-    const updatePropertyStatus = async (pid: string, status: PropertyStatus) => {
-        const prop = properties.find(p => p.id === pid);
-        if (prop) {
-            const updatedProp = { ...prop, status };
-            const newList = await db.saveProperty(updatedProp);
-            setProperties(newList);
-        }
-    };
-    const handleUpdateOrderStatus = async (orderId: string, newStatus: OrderStatus) => {
-        const order = orders.find(o => o.id === orderId);
-        if (!order) return;
+    </div>
+);
+const updatePropertyStatus = async (pid: string, status: PropertyStatus) => {
+    const prop = properties.find(p => p.id === pid);
+    if (prop) {
+        const updatedProp = { ...prop, status };
+        const newList = await db.saveProperty(updatedProp);
+        setProperties(newList);
+    }
+};
+const handleUpdateOrderStatus = async (orderId: string, newStatus: OrderStatus) => {
+    const order = orders.find(o => o.id === orderId);
+    if (!order) return;
 
-        let finalOrder = { ...order, status: newStatus };
+    let finalOrder = { ...order, status: newStatus };
 
-        // Deal Confirmation Logic
-        if (newStatus === OrderStatus.COMPLETED) {
-            // Generate Snapshot at completion
-            const finalProp = properties.find(p => p.id === order.propertyId);
-            const agentUser = users.find(u => u.id === order.agentId);
+    // Deal Confirmation Logic
+    if (newStatus === OrderStatus.COMPLETED) {
+        // Generate Snapshot at completion
+        const finalProp = properties.find(p => p.id === order.propertyId);
+        const agentUser = users.find(u => u.id === order.agentId);
 
-            finalOrder.snapshot = {
-                propertyTitle: finalProp?.title || order.propertyTitle,
-                propertyAddress: finalProp?.address || finalProp?.location || '',
-                propertySpecs: finalProp ? `${finalProp.layout} ${finalProp.area}㎡` : '',
-                clientName: order.clientName,
-                clientContact: order.clientPhone || '',
-                agentName: order.agentName,
-                agentPhone: agentUser?.username || '', // Assuming username serves as phone/contact ID as per convention
-                dealPrice: order.price,
-                contractDate: new Date().toISOString().split('T')[0]
-            };
+        finalOrder.snapshot = {
+            propertyTitle: finalProp?.title || order.propertyTitle,
+            propertyAddress: finalProp?.address || finalProp?.location || '',
+            propertySpecs: finalProp ? `${finalProp.layout} ${finalProp.area}㎡` : '',
+            clientName: order.clientName,
+            clientContact: order.clientPhone || '',
+            agentName: order.agentName,
+            agentPhone: agentUser?.username || '', // Assuming username serves as phone/contact ID as per convention
+            dealPrice: order.price,
+            contractDate: new Date().toISOString().split('T')[0]
+        };
 
-            // Update Viewing Agent Status
-            if (finalOrder.viewingStatus === 'ASSIGNED') {
-                finalOrder.viewingStatus = 'PENDING_DEAL'; // Fee is now due
-            }
-
-            const targetStatus = PropertyStatus.RENTED;
-            updatePropertyStatus(order.propertyId, targetStatus);
-            addSystemLog(`订单成交确认 [${order.propertyTitle}] - 成交价: ${order.price}`);
-
-            // Sync Client Status
-            if (order.clientId) {
-                const client = clients.find(c => c.id === order.clientId);
-                if (client) {
-                    const today = new Date();
-                    const nextYear = new Date(today);
-                    nextYear.setFullYear(today.getFullYear() + 1);
-
-                    const updatedClient = {
-                        ...client,
-                        status: ClientStatus.SIGNED,
-                        contractId: order.id,
-                        leaseStartDate: finalOrder.snapshot?.contractDate || today.toISOString().split('T')[0],
-                        leaseEndDate: nextYear.toISOString().split('T')[0],
-                        lastContactDate: today.toLocaleString().split(' ')[0]
-                    };
-                    const newClientList = await db.saveClient(updatedClient);
-                    setClients(newClientList);
-                }
-            }
+        // Update Viewing Agent Status
+        if (finalOrder.viewingStatus === 'ASSIGNED') {
+            finalOrder.viewingStatus = 'PENDING_DEAL'; // Fee is now due
         }
 
-        if (newStatus === OrderStatus.CANCELLED) {
-            if (finalOrder.viewingStatus) finalOrder.viewingStatus = 'VOID'; // No deal, no pay
-            if (order.status === OrderStatus.PENDING) {
-                updatePropertyStatus(order.propertyId, PropertyStatus.AVAILABLE);
+        const targetStatus = PropertyStatus.RENTED;
+        updatePropertyStatus(order.propertyId, targetStatus);
+        addSystemLog(`订单成交确认 [${order.propertyTitle}] - 成交价: ${order.price}`);
+
+        // Sync Client Status
+        if (order.clientId) {
+            const client = clients.find(c => c.id === order.clientId);
+            if (client) {
+                const today = new Date();
+                const nextYear = new Date(today);
+                nextYear.setFullYear(today.getFullYear() + 1);
+
+                const updatedClient = {
+                    ...client,
+                    status: ClientStatus.SIGNED,
+                    contractId: order.id,
+                    leaseStartDate: finalOrder.snapshot?.contractDate || today.toISOString().split('T')[0],
+                    leaseEndDate: nextYear.toISOString().split('T')[0],
+                    lastContactDate: today.toLocaleString().split(' ')[0]
+                };
+                const newClientList = await db.saveClient(updatedClient);
+                setClients(newClientList);
             }
         }
+    }
 
-        const updatedOrders = await db.saveOrder(finalOrder);
-        setOrders(updatedOrders);
-    };
-
-    const handleAddClient = async (client: Client) => {
-        const updated = await db.saveClient(client);
-        setClients([...updated]);
-    };
-    const handleUpdateClient = async (id: string, updates: Partial<Client>) => {
-        const client = clients.find(c => c.id === id);
-        if (client) {
-            const updatedClient = { ...client, ...updates };
-            const list = await db.saveClient(updatedClient);
-            setClients(list);
+    if (newStatus === OrderStatus.CANCELLED) {
+        if (finalOrder.viewingStatus) finalOrder.viewingStatus = 'VOID'; // No deal, no pay
+        if (order.status === OrderStatus.PENDING) {
+            updatePropertyStatus(order.propertyId, PropertyStatus.AVAILABLE);
         }
-    };
-    const handleAssignClient = async (clientId: string, agentId: string) => {
-        const client = clients.find(c => c.id === clientId);
-        if (client) {
-            const updatedClient = { ...client, agentId: agentId, status: ClientStatus.NEW };
-            const list = await db.saveClient(updatedClient);
-            setClients(list);
-            const agentName = users.find(u => u.id === agentId)?.name;
-            addSystemLog(`分配线索 [${clientId}] 给 [${agentName}]`);
-        }
-    };
+    }
 
-    const handleAddUser = async (u: User) => {
-        const list = await db.saveUser(u);
+    const updatedOrders = await db.saveOrder(finalOrder);
+    setOrders(updatedOrders);
+};
+
+const handleAddClient = async (client: Client) => {
+    const updated = await db.saveClient(client);
+    setClients([...updated]);
+};
+const handleUpdateClient = async (id: string, updates: Partial<Client>) => {
+    const client = clients.find(c => c.id === id);
+    if (client) {
+        const updatedClient = { ...client, ...updates };
+        const list = await db.saveClient(updatedClient);
+        setClients(list);
+    }
+};
+const handleAssignClient = async (clientId: string, agentId: string) => {
+    const client = clients.find(c => c.id === clientId);
+    if (client) {
+        const updatedClient = { ...client, agentId: agentId, status: ClientStatus.NEW };
+        const list = await db.saveClient(updatedClient);
+        setClients(list);
+        const agentName = users.find(u => u.id === agentId)?.name;
+        addSystemLog(`分配线索 [${clientId}] 给 [${agentName}]`);
+    }
+};
+
+const handleAddUser = async (u: User) => {
+    const list = await db.saveUser(u);
+    setUsers(list);
+};
+const handleUpdateUser = async (id: string, u: Partial<User>) => {
+    const existing = users.find(user => user.id === id);
+    if (existing) {
+        const updated = { ...existing, ...u };
+        const list = await db.saveUser(updated);
         setUsers(list);
-    };
-    const handleUpdateUser = async (id: string, u: Partial<User>) => {
-        const existing = users.find(user => user.id === id);
-        if (existing) {
-            const updated = { ...existing, ...u };
-            const list = await db.saveUser(updated);
-            setUsers(list);
-        }
-    };
-    const handleDeleteUser = async (id: string) => {
-        const list = await db.deleteUser(id);
-        setUsers(list);
-    };
+    }
+};
+const handleDeleteUser = async (id: string) => {
+    const list = await db.deleteUser(id);
+    setUsers(list);
+};
 
-    const handleSaveKnowledge = async (item: KnowledgeItem) => {
-        const list = await db.saveKnowledge(item);
-        setKnowledgeEntries(list);
-    };
-    const handleDeleteKnowledge = async (id: string) => {
-        const list = await db.deleteKnowledge(id);
-        setKnowledgeEntries(list);
-    };
+const handleSaveKnowledge = async (item: KnowledgeItem) => {
+    const list = await db.saveKnowledge(item);
+    setKnowledgeEntries(list);
+};
+const handleDeleteKnowledge = async (id: string) => {
+    const list = await db.deleteKnowledge(id);
+    setKnowledgeEntries(list);
+};
 
-    // Filter History Data based on user input
-    const filteredHistoryOrders = orders.filter(o => {
-        if (o.status !== OrderStatus.COMPLETED && o.status !== OrderStatus.CANCELLED) return false;
-        if (historyQuery) {
-            const q = historyQuery.toLowerCase();
-            const match = o.propertyTitle.toLowerCase().includes(q) ||
-                o.clientName.toLowerCase().includes(q) ||
-                o.agentName.toLowerCase().includes(q);
-            if (!match) return false;
-        }
-        const dateToCheck = o.contractDate ? o.contractDate.split(' ')[0] : o.createdAt;
-        if (historyStartDate && dateToCheck < historyStartDate) return false;
-        if (historyEndDate && dateToCheck > historyEndDate) return false;
-        return true;
+// Filter History Data based on user input
+const filteredHistoryOrders = orders.filter(o => {
+    if (o.status !== OrderStatus.COMPLETED && o.status !== OrderStatus.CANCELLED) return false;
+    if (historyQuery) {
+        const q = historyQuery.toLowerCase();
+        const match = o.propertyTitle.toLowerCase().includes(q) ||
+            o.clientName.toLowerCase().includes(q) ||
+            o.agentName.toLowerCase().includes(q);
+        if (!match) return false;
+    }
+    const dateToCheck = o.contractDate ? o.contractDate.split(' ')[0] : o.createdAt;
+    if (historyStartDate && dateToCheck < historyStartDate) return false;
+    if (historyEndDate && dateToCheck > historyEndDate) return false;
+    return true;
+});
+
+const exportHistoryToExcel = () => {
+    const BOM = "\uFEFF";
+    const headers = ['订单ID', '房源名称', '房源ID', '成交价格', '签约日期', '客户姓名', '客户电话', '负责销售', '订单状态'];
+    const csvRows = filteredHistoryOrders.map(o => {
+        return [
+            o.id, `"${o.propertyTitle}"`, o.propertyId, o.price, o.contractDate || o.createdAt, o.clientName, o.clientPhone || '', o.agentName,
+            o.status === OrderStatus.COMPLETED ? '已成交' : '已取消'
+        ].join(',');
     });
+    const csvContent = BOM + [headers.join(','), ...csvRows].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `history_export_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+};
 
-    const exportHistoryToExcel = () => {
-        const BOM = "\uFEFF";
-        const headers = ['订单ID', '房源名称', '房源ID', '成交价格', '签约日期', '客户姓名', '客户电话', '负责销售', '订单状态'];
-        const csvRows = filteredHistoryOrders.map(o => {
-            return [
-                o.id, `"${o.propertyTitle}"`, o.propertyId, o.price, o.contractDate || o.createdAt, o.clientName, o.clientPhone || '', o.agentName,
-                o.status === OrderStatus.COMPLETED ? '已成交' : '已取消'
-            ].join(',');
-        });
-        const csvContent = BOM + [headers.join(','), ...csvRows].join('\n');
-        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.setAttribute('download', `history_export_${new Date().toISOString().split('T')[0]}.csv`);
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-    };
+const renderAddPropertyModal = () => (
+    <div className="fixed inset-0 bg-black/60 z-[60] flex items-center justify-center p-4">
+        <div className="bg-white rounded-xl w-[1000px] max-w-full h-[90vh] flex flex-col shadow-2xl overflow-hidden">
+            <div className="px-6 py-4 border-b border-slate-200 flex justify-between items-center bg-white z-20 shadow-sm flex-shrink-0">
+                <h3 className="text-xl font-bold text-slate-800">{editingPropertyId ? '编辑房源' : '发布新房源'}</h3>
+                <button onClick={() => setIsAddModalOpen(false)} className="text-slate-400 hover:text-slate-600 text-2xl leading-none">×</button>
+            </div>
+            <div className="flex bg-slate-50 border-b border-slate-200 px-6 space-x-6 flex-shrink-0 overflow-x-auto">
+                {[{ id: 'BASIC', label: '基础信息 & 商务条款', icon: '📝' }, { id: 'DETAILS', label: '房况配套', icon: '🏗️' }, { id: 'MEDIA', label: '影像资料', icon: '📷' }, { id: 'LANDLORD', label: '房东与房型', icon: '👤' }].map(tab => (
+                    <button key={tab.id} onClick={() => setActiveTab(tab.id as any)} className={`py-3 text-sm font-bold border-b-2 transition-colors flex items-center whitespace-nowrap ${activeTab === tab.id ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-slate-500 hover:text-slate-700'}`}><span className="mr-2">{tab.icon}</span> {tab.label}</button>
+                ))}
+            </div>
+            <div className="flex-1 overflow-y-auto p-4 md:p-8 bg-white scroll-smooth">
+                {activeTab === 'BASIC' && (
+                    <div className="space-y-6">
+                        <div className="bg-gradient-to-r from-indigo-50 to-purple-50 p-5 rounded-xl border border-indigo-100 mb-6">
+                            <h4 className="text-indigo-800 font-bold mb-2 flex items-center text-sm"><span className="mr-2">✨</span> AI 智能识别 (图文一键填单)</h4>
+                            <div className="flex gap-3">
+                                <textarea value={aiInputText} onChange={e => setAiInputText(e.target.value)} onPaste={handlePaste} placeholder="在此粘贴房源描述文本，或直接粘贴聊天截图 (Ctrl+V)..." className="flex-1 h-20 bg-white border border-indigo-200 rounded-lg p-3 text-sm outline-none focus:ring-2 focus:ring-indigo-300 resize-none text-slate-700 placeholder-slate-400" />
+                                <div className="flex flex-col gap-2"><button onClick={handleSmartFill} disabled={isAiParsing} className="h-full px-4 bg-indigo-600 text-white font-bold rounded-lg hover:bg-indigo-700 disabled:opacity-50 text-xs shadow-md whitespace-nowrap">{isAiParsing ? '分析中...' : '一键识别'}</button></div>
+                            </div>
+                        </div>
+                        <div className="grid grid-cols-12 gap-4">
+                            <div className="col-span-12 md:col-span-6"><label className="block text-sm font-bold text-slate-700 mb-1">房源标题</label><input className="w-full p-2.5 bg-slate-50 text-slate-900 border border-slate-300 rounded-lg" value={newProperty.title || ''} onChange={e => setNewProperty({ ...newProperty, title: e.target.value })} /></div>
+                            <div className="col-span-12 md:col-span-6"><label className="block text-sm font-bold text-slate-700 mb-1">物业分类</label>
+                                <select className="w-full p-2.5 bg-slate-50 text-slate-900 border border-slate-300 rounded-lg" value={newProperty.category} onChange={e => setNewProperty({ ...newProperty, category: e.target.value as any })}>
+                                    {['住宅', '城市公寓', '城中村公寓', '别墅', '工厂', '写字楼', '商铺', '其他'].map(c => <option key={c} value={c}>{c}</option>)}
+                                </select>
+                            </div>
+                            <div className="col-span-12 md:col-span-6"><label className="block text-sm font-bold text-slate-700 mb-1">租金 (元/月)</label><input type="number" className="w-full p-2.5 bg-slate-50 text-slate-900 border border-slate-300 rounded-lg" value={newProperty.price || ''} onChange={e => setNewProperty({ ...newProperty, price: Number(e.target.value) })} /></div>
+                            <div className="col-span-12 md:col-span-6"><label className="block text-sm font-bold text-slate-700 mb-1">面积 (㎡)</label><input type="number" className="w-full p-2.5 bg-slate-50 text-slate-900 border border-slate-300 rounded-lg" value={newProperty.area || ''} onChange={e => setNewProperty({ ...newProperty, area: Number(e.target.value) })} /></div>
 
-    const renderAddPropertyModal = () => (
-        <div className="fixed inset-0 bg-black/60 z-[60] flex items-center justify-center p-4">
-            <div className="bg-white rounded-xl w-[1000px] max-w-full h-[90vh] flex flex-col shadow-2xl overflow-hidden">
-                <div className="px-6 py-4 border-b border-slate-200 flex justify-between items-center bg-white z-20 shadow-sm flex-shrink-0">
-                    <h3 className="text-xl font-bold text-slate-800">{editingPropertyId ? '编辑房源' : '发布新房源'}</h3>
-                    <button onClick={() => setIsAddModalOpen(false)} className="text-slate-400 hover:text-slate-600 text-2xl leading-none">×</button>
-                </div>
-                <div className="flex bg-slate-50 border-b border-slate-200 px-6 space-x-6 flex-shrink-0 overflow-x-auto">
-                    {[{ id: 'BASIC', label: '基础信息 & 商务条款', icon: '📝' }, { id: 'DETAILS', label: '房况配套', icon: '🏗️' }, { id: 'MEDIA', label: '影像资料', icon: '📷' }, { id: 'LANDLORD', label: '房东与房型', icon: '👤' }].map(tab => (
-                        <button key={tab.id} onClick={() => setActiveTab(tab.id as any)} className={`py-3 text-sm font-bold border-b-2 transition-colors flex items-center whitespace-nowrap ${activeTab === tab.id ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-slate-500 hover:text-slate-700'}`}><span className="mr-2">{tab.icon}</span> {tab.label}</button>
-                    ))}
-                </div>
-                <div className="flex-1 overflow-y-auto p-4 md:p-8 bg-white scroll-smooth">
-                    {activeTab === 'BASIC' && (
-                        <div className="space-y-6">
-                            <div className="bg-gradient-to-r from-indigo-50 to-purple-50 p-5 rounded-xl border border-indigo-100 mb-6">
-                                <h4 className="text-indigo-800 font-bold mb-2 flex items-center text-sm"><span className="mr-2">✨</span> AI 智能识别 (图文一键填单)</h4>
-                                <div className="flex gap-3">
-                                    <textarea value={aiInputText} onChange={e => setAiInputText(e.target.value)} onPaste={handlePaste} placeholder="在此粘贴房源描述文本，或直接粘贴聊天截图 (Ctrl+V)..." className="flex-1 h-20 bg-white border border-indigo-200 rounded-lg p-3 text-sm outline-none focus:ring-2 focus:ring-indigo-300 resize-none text-slate-700 placeholder-slate-400" />
-                                    <div className="flex flex-col gap-2"><button onClick={handleSmartFill} disabled={isAiParsing} className="h-full px-4 bg-indigo-600 text-white font-bold rounded-lg hover:bg-indigo-700 disabled:opacity-50 text-xs shadow-md whitespace-nowrap">{isAiParsing ? '分析中...' : '一键识别'}</button></div>
+                            <div className="col-span-12 border-t border-slate-200 pt-3 mt-1 pb-3">
+                                <label className="block text-sm font-bold text-slate-700 mb-2">地理位置</label>
+                                <div className="grid grid-cols-3 gap-2 mb-2">
+                                    <select className="p-2 border rounded-lg bg-slate-50 text-slate-800 text-sm" value={newPropertyProvince} onChange={e => setNewPropertyProvince(e.target.value)}>
+                                        {Object.keys(CASCADING_REGIONS).map(p => <option key={p} value={p}>{p}</option>)}
+                                    </select>
+                                    <select className="p-2 border rounded-lg bg-slate-50 text-slate-800 text-sm" value={newPropertyCity} onChange={e => setNewPropertyCity(e.target.value)}>
+                                        {Object.keys(CASCADING_REGIONS[newPropertyProvince] || {}).map(c => <option key={c} value={c}>{c}</option>)}
+                                    </select>
+                                    <select className="p-2 border rounded-lg bg-slate-50 text-slate-800 text-sm" value={newPropertyDistrict} onChange={e => setNewPropertyDistrict(e.target.value)}>
+                                        {(CASCADING_REGIONS[newPropertyProvince]?.[newPropertyCity] || []).map(d => <option key={d} value={d}>{d}</option>)}
+                                    </select>
+                                </div>
+                                <div className="flex gap-2">
+                                    <input className="flex-1 p-2.5 bg-slate-50 text-slate-900 border border-slate-300 rounded-lg" placeholder="详细地址 (小区/街道/门牌号)..." value={newProperty.address || ''} onChange={e => setNewProperty({ ...newProperty, address: e.target.value })} />
+                                    <button onClick={handleAutoLocate} className="px-4 bg-indigo-600 text-white rounded-lg font-bold text-sm hover:bg-indigo-700 flex items-center whitespace-nowrap">📍 自动定位</button>
                                 </div>
                             </div>
-                            <div className="grid grid-cols-12 gap-4">
-                                <div className="col-span-12 md:col-span-6"><label className="block text-sm font-bold text-slate-700 mb-1">房源标题</label><input className="w-full p-2.5 bg-slate-50 text-slate-900 border border-slate-300 rounded-lg" value={newProperty.title || ''} onChange={e => setNewProperty({ ...newProperty, title: e.target.value })} /></div>
-                                <div className="col-span-12 md:col-span-6"><label className="block text-sm font-bold text-slate-700 mb-1">物业分类</label>
-                                    <select className="w-full p-2.5 bg-slate-50 text-slate-900 border border-slate-300 rounded-lg" value={newProperty.category} onChange={e => setNewProperty({ ...newProperty, category: e.target.value as any })}>
+
+                            <div className="col-span-12 md:col-span-4"><label className="block text-sm font-bold text-slate-700 mb-1">楼号</label><input className="w-full p-2.5 bg-slate-50 text-slate-900 border border-slate-300 rounded-lg" value={newPropertyDetails.buildingNum || ''} onChange={e => setNewPropertyDetails({ ...newPropertyDetails, buildingNum: e.target.value })} /></div>
+                            <div className="col-span-12 md:col-span-4"><label className="block text-sm font-bold text-slate-700 mb-1">单元号</label><input className="w-full p-2.5 bg-slate-50 text-slate-900 border border-slate-300 rounded-lg" value={newPropertyDetails.unitNum || ''} onChange={e => setNewPropertyDetails({ ...newPropertyDetails, unitNum: e.target.value })} /></div>
+                            <div className="col-span-12 md:col-span-4"><label className="block text-sm font-bold text-slate-700 mb-1">楼层</label><input className="w-full p-2.5 bg-slate-50 text-slate-900 border border-slate-300 rounded-lg" value={newPropertyDetails.floorNum || ''} onChange={e => setNewPropertyDetails({ ...newPropertyDetails, floorNum: e.target.value })} /></div>
+
+                            <div className="col-span-12 border-t border-slate-200 pt-4 mt-2">
+                                <label className="block text-sm font-bold text-slate-700 mb-2">特色标签 (无限添加)</label>
+                                <div className="flex flex-wrap gap-2 mb-2">
+                                    {newPropertyTags.map(tag => (
+                                        <span key={tag} className="px-3 py-1 bg-indigo-100 text-indigo-700 rounded-full text-xs font-bold flex items-center">
+                                            {tag}
+                                            <button onClick={() => toggleTag(tag)} className="ml-2 hover:text-indigo-900">×</button>
+                                        </span>
+                                    ))}
+                                </div>
+                                <div className="flex gap-2 mb-2">
+                                    <input className="flex-1 p-2 border rounded-lg text-sm bg-white text-slate-900" placeholder="自定义标签..." value={customTagInput} onChange={e => setCustomTagInput(e.target.value)} />
+                                    <button onClick={addCustomTag} className="px-4 py-2 bg-slate-200 text-slate-600 rounded-lg text-xs font-bold hover:bg-slate-300">添加</button>
+                                </div>
+                                <div className="flex flex-wrap gap-2">
+                                    {Object.entries(PRESET_TAGS).map(([cat, tags]) => (
+                                        tags.map(tag => (
+                                            <button key={tag} onClick={() => toggleTag(tag)} className={`px-2 py-1 text-xs rounded border transition-colors ${newPropertyTags.includes(tag) ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-slate-500 border-slate-200 hover:border-indigo-300'}`}>
+                                                {tag}
+                                            </button>
+                                        ))
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Merged Business & Lease Info */}
+                            <div className="col-span-12 border-t border-slate-200 pt-4 mt-2">
+                                <h4 className="font-bold text-slate-800 mb-3 text-sm">租赁周期与商务条款</h4>
+
+                                {/* Lease Terms */}
+                                <div className="bg-orange-50 p-4 rounded-xl border border-orange-100 mb-4">
+                                    <h5 className="font-bold text-orange-800 mb-2 text-xs">租赁方式 (可多选)</h5>
+                                    <div className="flex flex-wrap gap-3 mb-3">
+                                        {LEASE_TERM_OPTIONS.map(term => (
+                                            <button
+                                                key={term}
+                                                onClick={() => toggleLeaseTerm(term)}
+                                                className={`px-4 py-2 rounded-lg text-sm font-bold border transition-colors ${newPropertyLeaseTerms.includes(term) ? 'bg-orange-500 text-white border-orange-600 shadow-md' : 'bg-white text-slate-500 border-slate-200 hover:bg-orange-50'}`}
+                                            >
+                                                {term}
+                                            </button>
+                                        ))}
+                                    </div>
+                                    {newPropertyLeaseTerms.length > 0 && (
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 border-t border-orange-200 pt-3">
+                                            {newPropertyLeaseTerms.map(term => (
+                                                <div key={term} className="flex items-center gap-2">
+                                                    <span className="w-20 text-xs font-bold text-slate-600">{term}佣金</span>
+                                                    <input className="flex-1 p-2 border border-slate-300 rounded text-sm bg-white text-slate-900 h-8" placeholder="如: 1个月" value={newPropertyLeaseCommissions[term] || ''} onChange={e => handleCommissionChange(term, e.target.value)} />
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Payment & Contract Terms */}
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="block text-sm font-bold text-slate-700 mb-1">支付方式</label>
+                                        <select className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-lg text-slate-900" value={newPropertyDetails.paymentMethod || ''} onChange={e => setNewPropertyDetails({ ...newPropertyDetails, paymentMethod: e.target.value })}>
+                                            <option value="">请选择...</option>
+                                            {DETAILED_OPTIONS.paymentMethod.map(o => <option key={o} value={o}>{o}</option>)}
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-bold text-slate-700 mb-1">违约责任</label>
+                                        <select className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-lg text-slate-900" value={newPropertyDetails.breachTerms || ''} onChange={e => setNewPropertyDetails({ ...newPropertyDetails, breachTerms: e.target.value })}>
+                                            <option value="">请选择...</option>
+                                            {DETAILED_OPTIONS.breachTerms.map(o => <option key={o} value={o}>{o}</option>)}
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-bold text-slate-700 mb-1">入住时间</label>
+                                        <select className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-lg text-slate-900" value={newPropertyDetails.moveInDate || ''} onChange={e => setNewPropertyDetails({ ...newPropertyDetails, moveInDate: e.target.value })}>
+                                            <option value="">请选择...</option>
+                                            {DETAILED_OPTIONS.moveInDate.map(o => <option key={o} value={o}>{o}</option>)}
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {activeTab === 'DETAILS' && (
+                    <div className="space-y-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            {['utilities', 'wallCondition', 'soundproofing', 'fireSafety', 'doorLock', 'securityLevel', 'propertyMgmt'].map(key => (
+                                <div key={key}>
+                                    <label className="block text-sm font-bold text-slate-700 mb-1 capitalize">
+                                        {key === 'utilities' ? '水电燃气' :
+                                            key === 'wallCondition' ? '墙面状况' :
+                                                key === 'soundproofing' ? '隔音效果' :
+                                                    key === 'fireSafety' ? '消防设施' :
+                                                        key === 'doorLock' ? '门锁类型' :
+                                                            key === 'securityLevel' ? '安保等级' :
+                                                                key === 'propertyMgmt' ? '物业服务' : key}
+                                    </label>
+                                    <select
+                                        className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-lg text-slate-900"
+                                        // @ts-ignore
+                                        value={newPropertyDetails[key === 'utilities' ? 'utilitiesStatus' : key] || ''}
+                                        onChange={(e) => {
+                                            const fieldName = key === 'utilities' ? 'utilitiesStatus' : key;
+                                            setNewPropertyDetails({ ...newPropertyDetails, [fieldName]: e.target.value });
+                                        }}
+                                    >
+                                        <option value="">请选择...</option>
+                                        {/* @ts-ignore */}
+                                        {DETAILED_OPTIONS[key].map((opt: string) => <option key={opt} value={opt}>{opt}</option>)}
+                                    </select>
+                                </div>
+                            ))}
+                        </div>
+
+                        <div className="border-t border-slate-200 pt-4">
+                            <label className="block text-sm font-bold text-slate-700 mb-2">周边配套 (多选)</label>
+                            <div className="flex flex-wrap gap-2">
+                                {DETAILED_OPTIONS.nearbyFacilities.map((fac: string) => (
+                                    <button
+                                        key={fac}
+                                        onClick={() => toggleDetailArray(newPropertyFacilities, setNewPropertyFacilities, fac)}
+                                        className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-colors ${newPropertyFacilities.includes(fac) ? 'bg-green-100 text-green-700 border-green-200' : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-50'}`}
+                                    >
+                                        {fac}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-bold text-slate-700 mb-2">环境噪音/宜居度 (多选)</label>
+                            <div className="flex flex-wrap gap-2">
+                                {DETAILED_OPTIONS.surroundings.map((sur: string) => (
+                                    <button
+                                        key={sur}
+                                        onClick={() => toggleDetailArray(newPropertySurroundings, setNewPropertySurroundings, sur)}
+                                        className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-colors ${newPropertySurroundings.includes(sur) ? 'bg-blue-100 text-blue-700 border-blue-200' : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-50'}`}
+                                    >
+                                        {sur}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {activeTab === 'MEDIA' && (
+                    <div className="space-y-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label className="block text-sm font-bold text-slate-700 mb-2">主图 (封面)</label>
+                                <div className="w-full h-48 bg-slate-100 border-2 border-dashed border-slate-300 rounded-lg flex items-center justify-center overflow-hidden relative group hover:border-indigo-400 transition-colors">
+                                    {newProperty.imageUrl ? (
+                                        <img src={newProperty.imageUrl} className="w-full h-full object-cover" alt="Main" />
+                                    ) : (
+                                        <div className="text-center text-slate-400">
+                                            <div className="text-2xl mb-1">📷</div>
+                                            <div className="text-xs">点击上传主图</div>
+                                        </div>
+                                    )}
+                                    <input type="file" accept="image/*" onChange={(e) => handleImageUpload(e, 'imageUrl')} className="absolute inset-0 opacity-0 cursor-pointer" />
+                                </div>
+                            </div>
+                            <div>
+                                <label className="block text-sm font-bold text-slate-700 mb-2">户型图</label>
+                                <div className="w-full h-48 bg-slate-100 border-2 border-dashed border-slate-300 rounded-lg flex items-center justify-center overflow-hidden relative group hover:border-indigo-400 transition-colors">
+                                    {newProperty.floorPlanUrl ? (
+                                        <img src={newProperty.floorPlanUrl} className="w-full h-full object-contain" alt="FloorPlan" />
+                                    ) : (
+                                        <div className="text-center text-slate-400">
+                                            <div className="text-2xl mb-1">📐</div>
+                                            <div className="text-xs">点击上传户型图</div>
+                                        </div>
+                                    )}
+                                    <input type="file" accept="image/*" onChange={(e) => handleImageUpload(e, 'floorPlanUrl')} className="absolute inset-0 opacity-0 cursor-pointer" />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-bold text-slate-700 mb-2">VR 看房链接 (URL)</label>
+                            <input
+                                className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-lg text-slate-900"
+                                placeholder="https://vr.example.com/..."
+                                value={newProperty.vrUrl || ''}
+                                onChange={e => setNewProperty({ ...newProperty, vrUrl: e.target.value })}
+                            />
+                        </div>
+
+                        <div className="border-t border-slate-200 pt-4">
+                            <label className="block text-sm font-bold text-slate-700 mb-2">更多实拍图 (支持批量)</label>
+                            <div className="flex flex-wrap gap-3">
+                                {newPropertyAdditionalImages.map((url, idx) => (
+                                    <div key={idx} className="w-24 h-24 bg-slate-100 rounded-lg overflow-hidden relative group">
+                                        <img src={url} className="w-full h-full object-cover" alt="" />
+                                        <button
+                                            onClick={() => setNewPropertyAdditionalImages(prev => prev.filter((_, i) => i !== idx))}
+                                            className="absolute top-1 right-1 bg-black/50 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity"
+                                        >
+                                            ×
+                                        </button>
+                                    </div>
+                                ))}
+                                <div className="w-24 h-24 bg-slate-50 border-2 border-dashed border-slate-300 rounded-lg flex items-center justify-center relative hover:border-indigo-400 hover:bg-indigo-50 transition-colors">
+                                    <span className="text-2xl text-slate-400">+</span>
+                                    <input type="file" multiple accept="image/*" onChange={(e) => handleMultipleFilesUpload(e, 'IMAGES')} className="absolute inset-0 opacity-0 cursor-pointer" />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-bold text-slate-700 mb-2">房源视频 (MP4)</label>
+                            <div className="flex flex-wrap gap-3">
+                                {newPropertyVideos.map((url, idx) => (
+                                    <div key={idx} className="w-40 h-24 bg-black rounded-lg overflow-hidden relative group">
+                                        <video src={url} className="w-full h-full object-cover opacity-80" />
+                                        <div className="absolute inset-0 flex items-center justify-center text-white font-bold text-xs pointer-events-none">VIDEO {idx + 1}</div>
+                                        <button
+                                            onClick={() => setNewPropertyVideos(prev => prev.filter((_, i) => i !== idx))}
+                                            className="absolute top-1 right-1 bg-red-600 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity z-10"
+                                        >
+                                            ×
+                                        </button>
+                                    </div>
+                                ))}
+                                <div className="w-40 h-24 bg-slate-50 border-2 border-dashed border-slate-300 rounded-lg flex items-center justify-center relative hover:border-indigo-400 hover:bg-indigo-50 transition-colors">
+                                    <div className="text-center text-slate-400">
+                                        <div className="text-xl mb-1">🎬</div>
+                                        <div className="text-[10px]">添加视频</div>
+                                    </div>
+                                    <input type="file" multiple accept="video/mp4" onChange={(e) => handleMultipleFilesUpload(e, 'VIDEOS')} className="absolute inset-0 opacity-0 cursor-pointer" />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+
+                {activeTab === 'LANDLORD' && (
+                    <div className="space-y-6">
+                        <div className="flex gap-4 mb-4">
+                            <button
+                                onClick={() => setNewPropertyLandlordType(LandlordType.INDIVIDUAL)}
+                                className={`flex-1 py-3 rounded-lg border-2 font-bold text-sm transition-all ${newPropertyLandlordType === LandlordType.INDIVIDUAL ? 'border-indigo-600 bg-indigo-50 text-indigo-700' : 'border-slate-200 bg-white text-slate-500 hover:bg-slate-50'}`}
+                            >
+                                👤 个人房东 (普通住宅)
+                            </button>
+                            <button
+                                onClick={() => setNewPropertyLandlordType(LandlordType.CORPORATE)}
+                                className={`flex-1 py-3 rounded-lg border-2 font-bold text-sm transition-all ${newPropertyLandlordType === LandlordType.CORPORATE ? 'border-purple-600 bg-purple-50 text-purple-700' : 'border-slate-200 bg-white text-slate-500 hover:bg-slate-50'}`}
+                            >
+                                🏢 企业/公寓运营商 (集中式)
+                            </button>
+                        </div>
+
+                        <div className="bg-slate-50 p-4 rounded-xl border border-slate-200">
+                            <div className="flex justify-between items-center mb-3">
+                                <h4 className="font-bold text-slate-800 text-sm">联系人信息</h4>
+                                <button onClick={addContact} className="text-xs text-indigo-600 font-bold hover:underline">+ 添加联系人</button>
+                            </div>
+                            <div className="space-y-3">
+                                {newPropertyLandlordContacts.map((contact, idx) => (
+                                    <div key={idx} className="flex gap-3 items-start flex-wrap">
+                                        <input className="w-24 p-2 text-sm border border-slate-300 rounded bg-white text-slate-900 focus:ring-2 focus:ring-indigo-500 outline-none" placeholder="姓名" value={contact.name} onChange={e => updateContact(idx, 'name', e.target.value)} />
+                                        <input className="w-32 p-2 text-sm border border-slate-300 rounded bg-white text-slate-900 focus:ring-2 focus:ring-indigo-500 outline-none" placeholder="电话" value={contact.phone} onChange={e => updateContact(idx, 'phone', e.target.value)} />
+                                        <input className="flex-1 p-2 text-sm border border-slate-300 rounded bg-white text-slate-900 focus:ring-2 focus:ring-indigo-500 outline-none min-w-[150px]" placeholder="微信/备注" value={contact.note || ''} onChange={e => updateContact(idx, 'note', e.target.value)} />
+                                        {idx > 0 && <button onClick={() => removeContact(idx)} className="text-red-500 text-sm px-2">×</button>}
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
+                        {newPropertyLandlordType === LandlordType.CORPORATE && (
+                            <div className="border-t border-slate-200 pt-6">
+                                <h4 className="font-bold text-slate-800 mb-4 flex items-center">
+                                    <span className="mr-2">🏘️</span> 子户型管理 (公寓/酒店房型)
+                                </h4>
+
+                                {/* Add Unit Form */}
+                                <div className="bg-purple-50 p-4 rounded-xl border border-purple-100 mb-4">
+                                    <h5 className="text-xs font-bold text-purple-800 uppercase mb-2">添加新户型</h5>
+                                    <div className="grid grid-cols-1 md:grid-cols-4 gap-3 mb-3">
+                                        <input className="p-2 text-sm border border-slate-300 rounded bg-white text-slate-900 focus:ring-2 focus:ring-indigo-500 outline-none" placeholder="户型名称 (如: 豪华大床房)" value={tempUnit.name} onChange={e => setTempUnit({ ...tempUnit, name: e.target.value })} />
+                                        <input type="number" className="p-2 text-sm border border-slate-300 rounded bg-white text-slate-900 focus:ring-2 focus:ring-indigo-500 outline-none" placeholder="价格 (元)" value={tempUnit.price || ''} onChange={e => setTempUnit({ ...tempUnit, price: Number(e.target.value) })} />
+                                        <input type="number" className="p-2 text-sm border border-slate-300 rounded bg-white text-slate-900 focus:ring-2 focus:ring-indigo-500 outline-none" placeholder="面积 (㎡)" value={tempUnit.area || ''} onChange={e => setTempUnit({ ...tempUnit, area: Number(e.target.value) })} />
+                                        <input className="p-2 text-sm border border-slate-300 rounded bg-white text-slate-900 focus:ring-2 focus:ring-indigo-500 outline-none" placeholder="格局 (1室0厅)" value={tempUnit.layout} onChange={e => setTempUnit({ ...tempUnit, layout: e.target.value })} />
+                                    </div>
+                                    <div className="flex gap-3 flex-wrap">
+                                        <div className="flex-1 min-w-[200px] bg-white border border-slate-200 rounded flex items-center px-3 text-sm text-slate-400 relative overflow-hidden h-10">
+                                            {tempUnit.imageUrl ? '已选择图片' : '点击上传户型图'}
+                                            <input type="file" className="absolute inset-0 opacity-0 cursor-pointer" onChange={handleUnitImageUpload} />
+                                        </div>
+                                        <button onClick={handleAddUnit} className="px-6 py-2 bg-purple-600 text-white font-bold rounded hover:bg-purple-700 text-sm">添加户型</button>
+                                    </div>
+                                </div>
+
+                                {/* Unit List */}
+                                <div className="space-y-2">
+                                    {newPropertyUnits.map(unit => (
+                                        <div key={unit.id} className="flex items-center justify-between p-3 bg-white border border-slate-200 rounded-lg shadow-sm">
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-12 h-12 bg-slate-100 rounded overflow-hidden">
+                                                    {unit.imageUrl ? <img src={unit.imageUrl} className="w-full h-full object-cover" alt="" /> : <span className="text-xs text-slate-300 block text-center mt-4">无图</span>}
+                                                </div>
+                                                <div>
+                                                    <div className="font-bold text-slate-800 text-sm">{unit.name}</div>
+                                                    <div className="text-xs text-slate-500">{unit.layout} · {unit.area}㎡</div>
+                                                </div>
+                                            </div>
+                                            <div className="flex items-center gap-4">
+                                                <div className="font-bold text-rose-600">¥{unit.price}</div>
+                                                <button onClick={() => handleRemoveUnit(unit.id)} className="text-xs text-red-500 hover:underline">删除</button>
+                                            </div>
+                                        </div>
+                                    ))}
+                                    {newPropertyUnits.length === 0 && <div className="text-center text-slate-400 text-sm py-4">暂无子户型</div>}
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                )}
+            </div>
+            <div className="p-4 border-t border-slate-200 bg-slate-50 flex justify-between items-center z-20 flex-shrink-0">
+                <div className="text-xs text-slate-400">信息自动保存，点击发布即可生效</div>
+                <div className="flex gap-3"><button onClick={() => setIsAddModalOpen(false)} className="px-6 py-2.5 rounded-lg border border-slate-300 text-slate-600 font-medium hover:bg-white transition-colors">取消</button><button onClick={handleSaveProperty} className="px-8 py-2.5 rounded-lg bg-indigo-600 text-white font-bold hover:bg-indigo-700 shadow-lg shadow-indigo-200 transition-transform active:scale-95">{editingPropertyId ? '保存修改' : '立即发布'}</button></div>
+            </div>
+        </div>
+    </div>
+);
+
+if (dataLoading) {
+    return <div className="h-screen w-screen flex items-center justify-center bg-slate-100 text-slate-500 flex-col gap-2">
+        <div className="w-8 h-8 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
+        <div className="text-sm font-bold">正在连接数据库...</div>
+    </div>;
+}
+
+if (!currentUser) {
+    return <LoginPage onLogin={handleLogin} error={loginError} config={systemConfig} loading={authLoading} />;
+}
+
+if (activePage === 'big-screen') {
+    if (!currentUser.permissions.includes('VIEW_DASHBOARD')) {
+        setActivePage('properties');
+        return null;
+    }
+    return <BigScreenDashboard properties={properties} orders={orders} onExit={() => setActivePage('properties')} />;
+}
+
+return (
+    <Layout user={currentUser} onLogout={handleLogout} activePage={activePage} onNavigate={setActivePage}>
+        {isAddModalOpen && renderAddPropertyModal()}
+        {isOrderModalOpen && renderOrderCreationModal()}
+        <AIChatBot knowledgeBase={knowledgeEntries} />
+
+        {activePage === 'properties' && (
+            <>
+                {selectedProperty ? (
+                    <PropertyDetail
+                        property={selectedProperty}
+                        onBack={() => { setSelectedProperty(null); setSharedViewConfig(undefined); }}
+                        onEdit={() => handleOpenEdit(selectedProperty)}
+                        onDelete={() => handleDeleteProperty(selectedProperty.id)}
+                        onOrderAction={handleCreateOrder}
+                        viewConfig={sharedViewConfig}
+                    />
+                ) : (
+                    <div className="space-y-6">
+                        <div className="flex justify-between items-center">
+                            <div>
+                                <h2 className="text-xl font-bold text-slate-800">房源资产库</h2>
+                                <p className="text-sm text-slate-500 mt-1">共 {displayedProperties.length} 套房源</p>
+                            </div>
+                            <div className="flex gap-3">
+                                {currentUser.permissions.includes('VIEW_DASHBOARD') && (
+                                    <button onClick={() => setActivePage('data-screen')} className="px-4 py-2 bg-indigo-50 text-indigo-600 rounded-lg font-bold text-sm">地图找房</button>
+                                )}
+                                <button onClick={handleOpenAdd} className="px-4 py-2 bg-indigo-600 text-white rounded-lg font-bold text-sm shadow-lg">+ 发布房源</button>
+                            </div>
+                        </div>
+
+                        <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
+                            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+                                <div>
+                                    <label className="block text-xs font-bold text-slate-400 mb-1 ml-1">省份</label>
+                                    <select value={filterProvince} onChange={e => setFilterProvince(e.target.value)} className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-500 transition-all text-slate-700">
+                                        <option value="全部">全部省份</option>
+                                        {Object.keys(CASCADING_REGIONS).map(p => <option key={p} value={p}>{p}</option>)}
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-bold text-slate-400 mb-1 ml-1">城市</label>
+                                    <select value={filterCity} onChange={e => setFilterCity(e.target.value)} className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-500 transition-all text-slate-700">
+                                        <option value="全部">全部城市</option>
+                                        {filterProvince !== '全部' && Object.keys(CASCADING_REGIONS[filterProvince] || {}).map(c => <option key={c} value={c}>{c}</option>)}
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-bold text-slate-400 mb-1 ml-1">区域</label>
+                                    <select value={filterDistrict} onChange={e => setFilterDistrict(e.target.value)} className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-500 transition-all text-slate-700">
+                                        <option value="全部">全部区域</option>
+                                        {filterCity !== '全部' && CASCADING_REGIONS[filterProvince]?.[filterCity]?.map(d => <option key={d} value={d}>{d}</option>)}
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-bold text-slate-400 mb-1 ml-1">物业分类</label>
+                                    <select value={filterCategory} onChange={e => setFilterCategory(e.target.value)} className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-500 transition-all text-slate-700">
+                                        <option value="全部">不限</option>
                                         {['住宅', '城市公寓', '城中村公寓', '别墅', '工厂', '写字楼', '商铺', '其他'].map(c => <option key={c} value={c}>{c}</option>)}
                                     </select>
                                 </div>
-                                <div className="col-span-12 md:col-span-6"><label className="block text-sm font-bold text-slate-700 mb-1">租金 (元/月)</label><input type="number" className="w-full p-2.5 bg-slate-50 text-slate-900 border border-slate-300 rounded-lg" value={newProperty.price || ''} onChange={e => setNewProperty({ ...newProperty, price: Number(e.target.value) })} /></div>
-                                <div className="col-span-12 md:col-span-6"><label className="block text-sm font-bold text-slate-700 mb-1">面积 (㎡)</label><input type="number" className="w-full p-2.5 bg-slate-50 text-slate-900 border border-slate-300 rounded-lg" value={newProperty.area || ''} onChange={e => setNewProperty({ ...newProperty, area: Number(e.target.value) })} /></div>
-
-                                <div className="col-span-12 border-t border-slate-200 pt-3 mt-1 pb-3">
-                                    <label className="block text-sm font-bold text-slate-700 mb-2">地理位置</label>
-                                    <div className="grid grid-cols-3 gap-2 mb-2">
-                                        <select className="p-2 border rounded-lg bg-slate-50 text-slate-800 text-sm" value={newPropertyProvince} onChange={e => setNewPropertyProvince(e.target.value)}>
-                                            {Object.keys(CASCADING_REGIONS).map(p => <option key={p} value={p}>{p}</option>)}
-                                        </select>
-                                        <select className="p-2 border rounded-lg bg-slate-50 text-slate-800 text-sm" value={newPropertyCity} onChange={e => setNewPropertyCity(e.target.value)}>
-                                            {Object.keys(CASCADING_REGIONS[newPropertyProvince] || {}).map(c => <option key={c} value={c}>{c}</option>)}
-                                        </select>
-                                        <select className="p-2 border rounded-lg bg-slate-50 text-slate-800 text-sm" value={newPropertyDistrict} onChange={e => setNewPropertyDistrict(e.target.value)}>
-                                            {(CASCADING_REGIONS[newPropertyProvince]?.[newPropertyCity] || []).map(d => <option key={d} value={d}>{d}</option>)}
-                                        </select>
-                                    </div>
-                                    <div className="flex gap-2">
-                                        <input className="flex-1 p-2.5 bg-slate-50 text-slate-900 border border-slate-300 rounded-lg" placeholder="详细地址 (小区/街道/门牌号)..." value={newProperty.address || ''} onChange={e => setNewProperty({ ...newProperty, address: e.target.value })} />
-                                        <button onClick={handleAutoLocate} className="px-4 bg-indigo-600 text-white rounded-lg font-bold text-sm hover:bg-indigo-700 flex items-center whitespace-nowrap">📍 自动定位</button>
-                                    </div>
+                                <div>
+                                    <label className="block text-xs font-bold text-slate-400 mb-1 ml-1">租金范围</label>
+                                    <select value={filterPrice} onChange={e => setFilterPrice(e.target.value)} className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-500 transition-all text-slate-700">
+                                        <option value="全部">不限</option>
+                                        <option value="5000元以下">5000元以下</option>
+                                        <option value="5000-8000元">5000-8000元</option>
+                                        <option value="8000-15000元">8000-15000元</option>
+                                        <option value="15000元以上">15000元以上</option>
+                                    </select>
                                 </div>
-
-                                <div className="col-span-12 md:col-span-4"><label className="block text-sm font-bold text-slate-700 mb-1">楼号</label><input className="w-full p-2.5 bg-slate-50 text-slate-900 border border-slate-300 rounded-lg" value={newPropertyDetails.buildingNum || ''} onChange={e => setNewPropertyDetails({ ...newPropertyDetails, buildingNum: e.target.value })} /></div>
-                                <div className="col-span-12 md:col-span-4"><label className="block text-sm font-bold text-slate-700 mb-1">单元号</label><input className="w-full p-2.5 bg-slate-50 text-slate-900 border border-slate-300 rounded-lg" value={newPropertyDetails.unitNum || ''} onChange={e => setNewPropertyDetails({ ...newPropertyDetails, unitNum: e.target.value })} /></div>
-                                <div className="col-span-12 md:col-span-4"><label className="block text-sm font-bold text-slate-700 mb-1">楼层</label><input className="w-full p-2.5 bg-slate-50 text-slate-900 border border-slate-300 rounded-lg" value={newPropertyDetails.floorNum || ''} onChange={e => setNewPropertyDetails({ ...newPropertyDetails, floorNum: e.target.value })} /></div>
-
-                                <div className="col-span-12 border-t border-slate-200 pt-4 mt-2">
-                                    <label className="block text-sm font-bold text-slate-700 mb-2">特色标签 (无限添加)</label>
-                                    <div className="flex flex-wrap gap-2 mb-2">
-                                        {newPropertyTags.map(tag => (
-                                            <span key={tag} className="px-3 py-1 bg-indigo-100 text-indigo-700 rounded-full text-xs font-bold flex items-center">
-                                                {tag}
-                                                <button onClick={() => toggleTag(tag)} className="ml-2 hover:text-indigo-900">×</button>
-                                            </span>
-                                        ))}
-                                    </div>
-                                    <div className="flex gap-2 mb-2">
-                                        <input className="flex-1 p-2 border rounded-lg text-sm bg-white text-slate-900" placeholder="自定义标签..." value={customTagInput} onChange={e => setCustomTagInput(e.target.value)} />
-                                        <button onClick={addCustomTag} className="px-4 py-2 bg-slate-200 text-slate-600 rounded-lg text-xs font-bold hover:bg-slate-300">添加</button>
-                                    </div>
-                                    <div className="flex flex-wrap gap-2">
-                                        {Object.entries(PRESET_TAGS).map(([cat, tags]) => (
-                                            tags.map(tag => (
-                                                <button key={tag} onClick={() => toggleTag(tag)} className={`px-2 py-1 text-xs rounded border transition-colors ${newPropertyTags.includes(tag) ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-slate-500 border-slate-200 hover:border-indigo-300'}`}>
-                                                    {tag}
-                                                </button>
-                                            ))
-                                        ))}
-                                    </div>
-                                </div>
-
-                                {/* Merged Business & Lease Info */}
-                                <div className="col-span-12 border-t border-slate-200 pt-4 mt-2">
-                                    <h4 className="font-bold text-slate-800 mb-3 text-sm">租赁周期与商务条款</h4>
-
-                                    {/* Lease Terms */}
-                                    <div className="bg-orange-50 p-4 rounded-xl border border-orange-100 mb-4">
-                                        <h5 className="font-bold text-orange-800 mb-2 text-xs">租赁方式 (可多选)</h5>
-                                        <div className="flex flex-wrap gap-3 mb-3">
-                                            {LEASE_TERM_OPTIONS.map(term => (
-                                                <button
-                                                    key={term}
-                                                    onClick={() => toggleLeaseTerm(term)}
-                                                    className={`px-4 py-2 rounded-lg text-sm font-bold border transition-colors ${newPropertyLeaseTerms.includes(term) ? 'bg-orange-500 text-white border-orange-600 shadow-md' : 'bg-white text-slate-500 border-slate-200 hover:bg-orange-50'}`}
-                                                >
-                                                    {term}
-                                                </button>
-                                            ))}
-                                        </div>
-                                        {newPropertyLeaseTerms.length > 0 && (
-                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 border-t border-orange-200 pt-3">
-                                                {newPropertyLeaseTerms.map(term => (
-                                                    <div key={term} className="flex items-center gap-2">
-                                                        <span className="w-20 text-xs font-bold text-slate-600">{term}佣金</span>
-                                                        <input className="flex-1 p-2 border border-slate-300 rounded text-sm bg-white text-slate-900 h-8" placeholder="如: 1个月" value={newPropertyLeaseCommissions[term] || ''} onChange={e => handleCommissionChange(term, e.target.value)} />
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        )}
-                                    </div>
-
-                                    {/* Payment & Contract Terms */}
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        <div>
-                                            <label className="block text-sm font-bold text-slate-700 mb-1">支付方式</label>
-                                            <select className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-lg text-slate-900" value={newPropertyDetails.paymentMethod || ''} onChange={e => setNewPropertyDetails({ ...newPropertyDetails, paymentMethod: e.target.value })}>
-                                                <option value="">请选择...</option>
-                                                {DETAILED_OPTIONS.paymentMethod.map(o => <option key={o} value={o}>{o}</option>)}
-                                            </select>
-                                        </div>
-                                        <div>
-                                            <label className="block text-sm font-bold text-slate-700 mb-1">违约责任</label>
-                                            <select className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-lg text-slate-900" value={newPropertyDetails.breachTerms || ''} onChange={e => setNewPropertyDetails({ ...newPropertyDetails, breachTerms: e.target.value })}>
-                                                <option value="">请选择...</option>
-                                                {DETAILED_OPTIONS.breachTerms.map(o => <option key={o} value={o}>{o}</option>)}
-                                            </select>
-                                        </div>
-                                        <div>
-                                            <label className="block text-sm font-bold text-slate-700 mb-1">入住时间</label>
-                                            <select className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-lg text-slate-900" value={newPropertyDetails.moveInDate || ''} onChange={e => setNewPropertyDetails({ ...newPropertyDetails, moveInDate: e.target.value })}>
-                                                <option value="">请选择...</option>
-                                                {DETAILED_OPTIONS.moveInDate.map(o => <option key={o} value={o}>{o}</option>)}
-                                            </select>
-                                        </div>
-                                    </div>
-                                </div>
+                            </div>
+                            <div className="mt-4 pt-3 border-t border-slate-100 flex justify-end">
+                                <button onClick={resetFilters} className="px-4 py-2 text-sm font-medium text-slate-500 hover:text-indigo-600 hover:bg-slate-50 rounded-lg transition-colors flex items-center">
+                                    <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+                                    重置筛选条件
+                                </button>
                             </div>
                         </div>
-                    )}
 
-                    {activeTab === 'DETAILS' && (
-                        <div className="space-y-6">
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                {['utilities', 'wallCondition', 'soundproofing', 'fireSafety', 'doorLock', 'securityLevel', 'propertyMgmt'].map(key => (
-                                    <div key={key}>
-                                        <label className="block text-sm font-bold text-slate-700 mb-1 capitalize">
-                                            {key === 'utilities' ? '水电燃气' :
-                                                key === 'wallCondition' ? '墙面状况' :
-                                                    key === 'soundproofing' ? '隔音效果' :
-                                                        key === 'fireSafety' ? '消防设施' :
-                                                            key === 'doorLock' ? '门锁类型' :
-                                                                key === 'securityLevel' ? '安保等级' :
-                                                                    key === 'propertyMgmt' ? '物业服务' : key}
-                                        </label>
-                                        <select
-                                            className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-lg text-slate-900"
-                                            // @ts-ignore
-                                            value={newPropertyDetails[key === 'utilities' ? 'utilitiesStatus' : key] || ''}
-                                            onChange={(e) => {
-                                                const fieldName = key === 'utilities' ? 'utilitiesStatus' : key;
-                                                setNewPropertyDetails({ ...newPropertyDetails, [fieldName]: e.target.value });
-                                            }}
-                                        >
-                                            <option value="">请选择...</option>
-                                            {/* @ts-ignore */}
-                                            {DETAILED_OPTIONS[key].map((opt: string) => <option key={opt} value={opt}>{opt}</option>)}
-                                        </select>
-                                    </div>
-                                ))}
-                            </div>
-
-                            <div className="border-t border-slate-200 pt-4">
-                                <label className="block text-sm font-bold text-slate-700 mb-2">周边配套 (多选)</label>
-                                <div className="flex flex-wrap gap-2">
-                                    {DETAILED_OPTIONS.nearbyFacilities.map((fac: string) => (
-                                        <button
-                                            key={fac}
-                                            onClick={() => toggleDetailArray(newPropertyFacilities, setNewPropertyFacilities, fac)}
-                                            className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-colors ${newPropertyFacilities.includes(fac) ? 'bg-green-100 text-green-700 border-green-200' : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-50'}`}
-                                        >
-                                            {fac}
-                                        </button>
-                                    ))}
-                                </div>
-                            </div>
-
-                            <div>
-                                <label className="block text-sm font-bold text-slate-700 mb-2">环境噪音/宜居度 (多选)</label>
-                                <div className="flex flex-wrap gap-2">
-                                    {DETAILED_OPTIONS.surroundings.map((sur: string) => (
-                                        <button
-                                            key={sur}
-                                            onClick={() => toggleDetailArray(newPropertySurroundings, setNewPropertySurroundings, sur)}
-                                            className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-colors ${newPropertySurroundings.includes(sur) ? 'bg-blue-100 text-blue-700 border-blue-200' : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-50'}`}
-                                        >
-                                            {sur}
-                                        </button>
-                                    ))}
-                                </div>
-                            </div>
-                        </div>
-                    )}
-
-                    {activeTab === 'MEDIA' && (
-                        <div className="space-y-6">
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div>
-                                    <label className="block text-sm font-bold text-slate-700 mb-2">主图 (封面)</label>
-                                    <div className="w-full h-48 bg-slate-100 border-2 border-dashed border-slate-300 rounded-lg flex items-center justify-center overflow-hidden relative group hover:border-indigo-400 transition-colors">
-                                        {newProperty.imageUrl ? (
-                                            <img src={newProperty.imageUrl} className="w-full h-full object-cover" alt="Main" />
-                                        ) : (
-                                            <div className="text-center text-slate-400">
-                                                <div className="text-2xl mb-1">📷</div>
-                                                <div className="text-xs">点击上传主图</div>
-                                            </div>
-                                        )}
-                                        <input type="file" accept="image/*" onChange={(e) => handleImageUpload(e, 'imageUrl')} className="absolute inset-0 opacity-0 cursor-pointer" />
-                                    </div>
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-bold text-slate-700 mb-2">户型图</label>
-                                    <div className="w-full h-48 bg-slate-100 border-2 border-dashed border-slate-300 rounded-lg flex items-center justify-center overflow-hidden relative group hover:border-indigo-400 transition-colors">
-                                        {newProperty.floorPlanUrl ? (
-                                            <img src={newProperty.floorPlanUrl} className="w-full h-full object-contain" alt="FloorPlan" />
-                                        ) : (
-                                            <div className="text-center text-slate-400">
-                                                <div className="text-2xl mb-1">📐</div>
-                                                <div className="text-xs">点击上传户型图</div>
-                                            </div>
-                                        )}
-                                        <input type="file" accept="image/*" onChange={(e) => handleImageUpload(e, 'floorPlanUrl')} className="absolute inset-0 opacity-0 cursor-pointer" />
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div>
-                                <label className="block text-sm font-bold text-slate-700 mb-2">VR 看房链接 (URL)</label>
-                                <input
-                                    className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-lg text-slate-900"
-                                    placeholder="https://vr.example.com/..."
-                                    value={newProperty.vrUrl || ''}
-                                    onChange={e => setNewProperty({ ...newProperty, vrUrl: e.target.value })}
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                            {displayedProperties.map(p => (
+                                <PropertyCard
+                                    key={p.id}
+                                    property={p}
+                                    onClick={() => setSelectedProperty(p)}
+                                    isFavorite={currentUser.favorites?.includes(p.id)}
+                                    onToggleFavorite={(e) => handleToggleFavorite(p.id, e)}
                                 />
-                            </div>
-
-                            <div className="border-t border-slate-200 pt-4">
-                                <label className="block text-sm font-bold text-slate-700 mb-2">更多实拍图 (支持批量)</label>
-                                <div className="flex flex-wrap gap-3">
-                                    {newPropertyAdditionalImages.map((url, idx) => (
-                                        <div key={idx} className="w-24 h-24 bg-slate-100 rounded-lg overflow-hidden relative group">
-                                            <img src={url} className="w-full h-full object-cover" alt="" />
-                                            <button
-                                                onClick={() => setNewPropertyAdditionalImages(prev => prev.filter((_, i) => i !== idx))}
-                                                className="absolute top-1 right-1 bg-black/50 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity"
-                                            >
-                                                ×
-                                            </button>
-                                        </div>
-                                    ))}
-                                    <div className="w-24 h-24 bg-slate-50 border-2 border-dashed border-slate-300 rounded-lg flex items-center justify-center relative hover:border-indigo-400 hover:bg-indigo-50 transition-colors">
-                                        <span className="text-2xl text-slate-400">+</span>
-                                        <input type="file" multiple accept="image/*" onChange={(e) => handleMultipleFilesUpload(e, 'IMAGES')} className="absolute inset-0 opacity-0 cursor-pointer" />
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div>
-                                <label className="block text-sm font-bold text-slate-700 mb-2">房源视频 (MP4)</label>
-                                <div className="flex flex-wrap gap-3">
-                                    {newPropertyVideos.map((url, idx) => (
-                                        <div key={idx} className="w-40 h-24 bg-black rounded-lg overflow-hidden relative group">
-                                            <video src={url} className="w-full h-full object-cover opacity-80" />
-                                            <div className="absolute inset-0 flex items-center justify-center text-white font-bold text-xs pointer-events-none">VIDEO {idx + 1}</div>
-                                            <button
-                                                onClick={() => setNewPropertyVideos(prev => prev.filter((_, i) => i !== idx))}
-                                                className="absolute top-1 right-1 bg-red-600 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity z-10"
-                                            >
-                                                ×
-                                            </button>
-                                        </div>
-                                    ))}
-                                    <div className="w-40 h-24 bg-slate-50 border-2 border-dashed border-slate-300 rounded-lg flex items-center justify-center relative hover:border-indigo-400 hover:bg-indigo-50 transition-colors">
-                                        <div className="text-center text-slate-400">
-                                            <div className="text-xl mb-1">🎬</div>
-                                            <div className="text-[10px]">添加视频</div>
-                                        </div>
-                                        <input type="file" multiple accept="video/mp4" onChange={(e) => handleMultipleFilesUpload(e, 'VIDEOS')} className="absolute inset-0 opacity-0 cursor-pointer" />
-                                    </div>
-                                </div>
-                            </div>
+                            ))}
                         </div>
-                    )}
+                    </div>
+                )}
+            </>
+        )}
 
+        {activePage === 'data-screen' && (
+            <DataScreen properties={properties} onViewProperty={setSelectedProperty} />
+        )}
 
-                    {activeTab === 'LANDLORD' && (
-                        <div className="space-y-6">
-                            <div className="flex gap-4 mb-4">
-                                <button
-                                    onClick={() => setNewPropertyLandlordType(LandlordType.INDIVIDUAL)}
-                                    className={`flex-1 py-3 rounded-lg border-2 font-bold text-sm transition-all ${newPropertyLandlordType === LandlordType.INDIVIDUAL ? 'border-indigo-600 bg-indigo-50 text-indigo-700' : 'border-slate-200 bg-white text-slate-500 hover:bg-slate-50'}`}
-                                >
-                                    👤 个人房东 (普通住宅)
-                                </button>
-                                <button
-                                    onClick={() => setNewPropertyLandlordType(LandlordType.CORPORATE)}
-                                    className={`flex-1 py-3 rounded-lg border-2 font-bold text-sm transition-all ${newPropertyLandlordType === LandlordType.CORPORATE ? 'border-purple-600 bg-purple-50 text-purple-700' : 'border-slate-200 bg-white text-slate-500 hover:bg-slate-50'}`}
-                                >
-                                    🏢 企业/公寓运营商 (集中式)
-                                </button>
-                            </div>
+        {activePage === 'clients' && (
+            <ClientManagement clients={clients} currentUser={currentUser!} onAddClient={handleAddClient} onUpdateClient={handleUpdateClient} />
+        )}
 
-                            <div className="bg-slate-50 p-4 rounded-xl border border-slate-200">
-                                <div className="flex justify-between items-center mb-3">
-                                    <h4 className="font-bold text-slate-800 text-sm">联系人信息</h4>
-                                    <button onClick={addContact} className="text-xs text-indigo-600 font-bold hover:underline">+ 添加联系人</button>
-                                </div>
-                                <div className="space-y-3">
-                                    {newPropertyLandlordContacts.map((contact, idx) => (
-                                        <div key={idx} className="flex gap-3 items-start flex-wrap">
-                                            <input className="w-24 p-2 text-sm border border-slate-300 rounded bg-white text-slate-900 focus:ring-2 focus:ring-indigo-500 outline-none" placeholder="姓名" value={contact.name} onChange={e => updateContact(idx, 'name', e.target.value)} />
-                                            <input className="w-32 p-2 text-sm border border-slate-300 rounded bg-white text-slate-900 focus:ring-2 focus:ring-indigo-500 outline-none" placeholder="电话" value={contact.phone} onChange={e => updateContact(idx, 'phone', e.target.value)} />
-                                            <input className="flex-1 p-2 text-sm border border-slate-300 rounded bg-white text-slate-900 focus:ring-2 focus:ring-indigo-500 outline-none min-w-[150px]" placeholder="微信/备注" value={contact.note || ''} onChange={e => updateContact(idx, 'note', e.target.value)} />
-                                            {idx > 0 && <button onClick={() => removeContact(idx)} className="text-red-500 text-sm px-2">×</button>}
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
+        {activePage === 'orders' && (
+            <OrderManagement orders={orders} onUpdateOrderStatus={handleUpdateOrderStatus} onViewOrderDetails={() => { }} />
+        )}
 
-                            {newPropertyLandlordType === LandlordType.CORPORATE && (
-                                <div className="border-t border-slate-200 pt-6">
-                                    <h4 className="font-bold text-slate-800 mb-4 flex items-center">
-                                        <span className="mr-2">🏘️</span> 子户型管理 (公寓/酒店房型)
-                                    </h4>
+        {activePage === 'users' && (
+            <UserManagement users={users} currentUser={currentUser!} onAddUser={handleAddUser} onUpdateUser={handleUpdateUser} onDeleteUser={handleDeleteUser} />
+        )}
 
-                                    {/* Add Unit Form */}
-                                    <div className="bg-purple-50 p-4 rounded-xl border border-purple-100 mb-4">
-                                        <h5 className="text-xs font-bold text-purple-800 uppercase mb-2">添加新户型</h5>
-                                        <div className="grid grid-cols-1 md:grid-cols-4 gap-3 mb-3">
-                                            <input className="p-2 text-sm border border-slate-300 rounded bg-white text-slate-900 focus:ring-2 focus:ring-indigo-500 outline-none" placeholder="户型名称 (如: 豪华大床房)" value={tempUnit.name} onChange={e => setTempUnit({ ...tempUnit, name: e.target.value })} />
-                                            <input type="number" className="p-2 text-sm border border-slate-300 rounded bg-white text-slate-900 focus:ring-2 focus:ring-indigo-500 outline-none" placeholder="价格 (元)" value={tempUnit.price || ''} onChange={e => setTempUnit({ ...tempUnit, price: Number(e.target.value) })} />
-                                            <input type="number" className="p-2 text-sm border border-slate-300 rounded bg-white text-slate-900 focus:ring-2 focus:ring-indigo-500 outline-none" placeholder="面积 (㎡)" value={tempUnit.area || ''} onChange={e => setTempUnit({ ...tempUnit, area: Number(e.target.value) })} />
-                                            <input className="p-2 text-sm border border-slate-300 rounded bg-white text-slate-900 focus:ring-2 focus:ring-indigo-500 outline-none" placeholder="格局 (1室0厅)" value={tempUnit.layout} onChange={e => setTempUnit({ ...tempUnit, layout: e.target.value })} />
-                                        </div>
-                                        <div className="flex gap-3 flex-wrap">
-                                            <div className="flex-1 min-w-[200px] bg-white border border-slate-200 rounded flex items-center px-3 text-sm text-slate-400 relative overflow-hidden h-10">
-                                                {tempUnit.imageUrl ? '已选择图片' : '点击上传户型图'}
-                                                <input type="file" className="absolute inset-0 opacity-0 cursor-pointer" onChange={handleUnitImageUpload} />
-                                            </div>
-                                            <button onClick={handleAddUnit} className="px-6 py-2 bg-purple-600 text-white font-bold rounded hover:bg-purple-700 text-sm">添加户型</button>
-                                        </div>
-                                    </div>
+        {activePage === 'system-settings' && (
+            <SystemSettings logs={systemLogs} config={systemConfig} onUpdateConfig={handleUpdateSystemConfig} />
+        )}
 
-                                    {/* Unit List */}
-                                    <div className="space-y-2">
-                                        {newPropertyUnits.map(unit => (
-                                            <div key={unit.id} className="flex items-center justify-between p-3 bg-white border border-slate-200 rounded-lg shadow-sm">
-                                                <div className="flex items-center gap-3">
-                                                    <div className="w-12 h-12 bg-slate-100 rounded overflow-hidden">
-                                                        {unit.imageUrl ? <img src={unit.imageUrl} className="w-full h-full object-cover" alt="" /> : <span className="text-xs text-slate-300 block text-center mt-4">无图</span>}
-                                                    </div>
-                                                    <div>
-                                                        <div className="font-bold text-slate-800 text-sm">{unit.name}</div>
-                                                        <div className="text-xs text-slate-500">{unit.layout} · {unit.area}㎡</div>
-                                                    </div>
-                                                </div>
-                                                <div className="flex items-center gap-4">
-                                                    <div className="font-bold text-rose-600">¥{unit.price}</div>
-                                                    <button onClick={() => handleRemoveUnit(unit.id)} className="text-xs text-red-500 hover:underline">删除</button>
-                                                </div>
-                                            </div>
-                                        ))}
-                                        {newPropertyUnits.length === 0 && <div className="text-center text-slate-400 text-sm py-4">暂无子户型</div>}
-                                    </div>
-                                </div>
-                            )}
-                        </div>
+        {activePage === 'knowledge' && (
+            <KnowledgeBase
+                entries={knowledgeEntries}
+                onSaveEntry={handleSaveKnowledge}
+                onDeleteEntry={handleDeleteKnowledge}
+                canEdit={currentUser?.role !== UserRole.SALES}
+            />
+        )}
+
+        {activePage === 'acquisition' && (
+            <AcquisitionChannel clients={clients} users={users} onAddClient={handleAddClient} onAssignClient={handleAssignClient} />
+        )}
+
+        {activePage === 'history' && (
+            <div className="space-y-6">
+                <div className="flex justify-between items-center">
+                    <div>
+                        <h2 className="text-xl font-bold text-slate-800">历史成交档案</h2>
+                        <p className="text-sm text-slate-500 mt-1">共 {filteredHistoryOrders.length} 条成交记录</p>
+                    </div>
+                    {currentUser?.permissions.includes('DATA_EXPORT') && (
+                        <button
+                            onClick={exportHistoryToExcel}
+                            className="px-4 py-2 bg-green-600 text-white rounded-lg font-bold text-sm shadow-md hover:bg-green-700 flex items-center"
+                        >
+                            <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+                            导出 Excel 报表
+                        </button>
                     )}
                 </div>
-                <div className="p-4 border-t border-slate-200 bg-slate-50 flex justify-between items-center z-20 flex-shrink-0">
-                    <div className="text-xs text-slate-400">信息自动保存，点击发布即可生效</div>
-                    <div className="flex gap-3"><button onClick={() => setIsAddModalOpen(false)} className="px-6 py-2.5 rounded-lg border border-slate-300 text-slate-600 font-medium hover:bg-white transition-colors">取消</button><button onClick={handleSaveProperty} className="px-8 py-2.5 rounded-lg bg-indigo-600 text-white font-bold hover:bg-indigo-700 shadow-lg shadow-indigo-200 transition-transform active:scale-95">{editingPropertyId ? '保存修改' : '立即发布'}</button></div>
+
+                <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-wrap gap-4 items-end">
+                    <div className="flex-1 min-w-[200px]">
+                        <label className="block text-xs font-bold text-slate-500 mb-1">关键词搜索</label>
+                        <input
+                            placeholder="房源名 / 客户名 / 销售名..."
+                            className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
+                            value={historyQuery}
+                            onChange={(e) => setHistoryQuery(e.target.value)}
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-xs font-bold text-slate-500 mb-1">签约开始日期</label>
+                        <input
+                            type="date"
+                            className="px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none text-slate-700"
+                            value={historyStartDate}
+                            onChange={(e) => setHistoryStartDate(e.target.value)}
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-xs font-bold text-slate-500 mb-1">签约结束日期</label>
+                        <input
+                            type="date"
+                            className="px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none text-slate-700"
+                            value={historyEndDate}
+                            onChange={(e) => setHistoryEndDate(e.target.value)}
+                        />
+                    </div>
+                    <div className="pb-0.5">
+                        <button
+                            onClick={() => { setHistoryQuery(''); setHistoryStartDate(''); setHistoryEndDate(''); }}
+                            className="text-sm text-slate-500 hover:text-indigo-600 px-2"
+                        >
+                            重置
+                        </button>
+                    </div>
+                </div>
+
+                <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-sm text-left min-w-[1000px]">
+                            <thead className="bg-slate-50 text-slate-500 font-medium border-b border-slate-100">
+                                <tr>
+                                    <th className="px-6 py-4">房源信息</th>
+                                    <th className="px-6 py-4">成交价格</th>
+                                    <th className="px-6 py-4">签约日期</th>
+                                    <th className="px-6 py-4">客户信息</th>
+                                    <th className="px-6 py-4">负责销售</th>
+                                    <th className="px-6 py-4 text-right">状态</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-slate-100">
+                                {filteredHistoryOrders.map(order => (
+                                    <tr key={order.id} className="hover:bg-slate-50 transition-colors">
+                                        <td className="px-6 py-4">
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-16 h-12 bg-slate-200 rounded overflow-hidden flex-shrink-0 border border-slate-200">
+                                                    <img src={order.propertyImage} className="w-full h-full object-cover" alt="" />
+                                                </div>
+                                                <div>
+                                                    <div className="font-bold text-slate-800 line-clamp-1">{order.propertyTitle}</div>
+                                                    <div className="text-xs text-slate-400">ID: {order.propertyId}</div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            <span className="font-bold text-rose-600">¥{order.price}<span className="text-xs text-slate-400 font-normal">/月</span></span>
+                                        </td>
+                                        <td className="px-6 py-4 text-slate-600">
+                                            {order.contractDate || order.createdAt}
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            <div className="font-bold text-slate-700">{order.clientName}</div>
+                                            <div className="text-xs text-slate-500">{order.clientPhone || '-'}</div>
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            <span className="px-2 py-1 rounded-lg bg-indigo-50 text-indigo-700 text-xs font-bold border border-indigo-100">
+                                                {order.agentName}
+                                            </span>
+                                        </td>
+                                        <td className="px-6 py-4 text-right">
+                                            <span className={`px-2 py-1 rounded text-xs font-bold ${order.status === OrderStatus.COMPLETED ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-500'
+                                                }`}>
+                                                {order.status === OrderStatus.COMPLETED ? '已成交' : '已取消'}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                ))}
+                                {filteredHistoryOrders.length === 0 && (
+                                    <tr>
+                                        <td colSpan={6} className="text-center py-20 text-slate-400">
+                                            暂无符合条件的成交记录
+                                        </td>
+                                    </tr>
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
-        </div>
-    );
+        )}
 
-    if (dataLoading) {
-        return <div className="h-screen w-screen flex items-center justify-center bg-slate-100 text-slate-500 flex-col gap-2">
-            <div className="w-8 h-8 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
-            <div className="text-sm font-bold">正在连接数据库...</div>
-        </div>;
-    }
-
-    if (!currentUser) {
-        return <LoginPage onLogin={handleLogin} error={loginError} config={systemConfig} loading={authLoading} />;
-    }
-
-    if (activePage === 'big-screen') {
-        if (!currentUser.permissions.includes('VIEW_DASHBOARD')) {
-            setActivePage('properties');
-            return null;
-        }
-        return <BigScreenDashboard properties={properties} orders={orders} onExit={() => setActivePage('properties')} />;
-    }
-
-    return (
-        <Layout user={currentUser} onLogout={handleLogout} activePage={activePage} onNavigate={setActivePage}>
-            {isAddModalOpen && renderAddPropertyModal()}
-            {isOrderModalOpen && renderOrderCreationModal()}
-            <AIChatBot knowledgeBase={knowledgeEntries} />
-
-            {activePage === 'properties' && (
-                <>
-                    {selectedProperty ? (
-                        <PropertyDetail
-                            property={selectedProperty}
-                            onBack={() => { setSelectedProperty(null); setSharedViewConfig(undefined); }}
-                            onEdit={() => handleOpenEdit(selectedProperty)}
-                            onDelete={() => handleDeleteProperty(selectedProperty.id)}
-                            onOrderAction={handleCreateOrder}
-                            viewConfig={sharedViewConfig}
-                        />
-                    ) : (
-                        <div className="space-y-6">
-                            <div className="flex justify-between items-center">
-                                <div>
-                                    <h2 className="text-xl font-bold text-slate-800">房源资产库</h2>
-                                    <p className="text-sm text-slate-500 mt-1">共 {displayedProperties.length} 套房源</p>
-                                </div>
-                                <div className="flex gap-3">
-                                    {currentUser.permissions.includes('VIEW_DASHBOARD') && (
-                                        <button onClick={() => setActivePage('data-screen')} className="px-4 py-2 bg-indigo-50 text-indigo-600 rounded-lg font-bold text-sm">地图找房</button>
-                                    )}
-                                    <button onClick={handleOpenAdd} className="px-4 py-2 bg-indigo-600 text-white rounded-lg font-bold text-sm shadow-lg">+ 发布房源</button>
-                                </div>
-                            </div>
-
-                            <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
-                                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-                                    <div>
-                                        <label className="block text-xs font-bold text-slate-400 mb-1 ml-1">省份</label>
-                                        <select value={filterProvince} onChange={e => setFilterProvince(e.target.value)} className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-500 transition-all text-slate-700">
-                                            <option value="全部">全部省份</option>
-                                            {Object.keys(CASCADING_REGIONS).map(p => <option key={p} value={p}>{p}</option>)}
-                                        </select>
-                                    </div>
-                                    <div>
-                                        <label className="block text-xs font-bold text-slate-400 mb-1 ml-1">城市</label>
-                                        <select value={filterCity} onChange={e => setFilterCity(e.target.value)} className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-500 transition-all text-slate-700">
-                                            <option value="全部">全部城市</option>
-                                            {filterProvince !== '全部' && Object.keys(CASCADING_REGIONS[filterProvince] || {}).map(c => <option key={c} value={c}>{c}</option>)}
-                                        </select>
-                                    </div>
-                                    <div>
-                                        <label className="block text-xs font-bold text-slate-400 mb-1 ml-1">区域</label>
-                                        <select value={filterDistrict} onChange={e => setFilterDistrict(e.target.value)} className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-500 transition-all text-slate-700">
-                                            <option value="全部">全部区域</option>
-                                            {filterCity !== '全部' && CASCADING_REGIONS[filterProvince]?.[filterCity]?.map(d => <option key={d} value={d}>{d}</option>)}
-                                        </select>
-                                    </div>
-                                    <div>
-                                        <label className="block text-xs font-bold text-slate-400 mb-1 ml-1">物业分类</label>
-                                        <select value={filterCategory} onChange={e => setFilterCategory(e.target.value)} className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-500 transition-all text-slate-700">
-                                            <option value="全部">不限</option>
-                                            {['住宅', '城市公寓', '城中村公寓', '别墅', '工厂', '写字楼', '商铺', '其他'].map(c => <option key={c} value={c}>{c}</option>)}
-                                        </select>
-                                    </div>
-                                    <div>
-                                        <label className="block text-xs font-bold text-slate-400 mb-1 ml-1">租金范围</label>
-                                        <select value={filterPrice} onChange={e => setFilterPrice(e.target.value)} className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-500 transition-all text-slate-700">
-                                            <option value="全部">不限</option>
-                                            <option value="5000元以下">5000元以下</option>
-                                            <option value="5000-8000元">5000-8000元</option>
-                                            <option value="8000-15000元">8000-15000元</option>
-                                            <option value="15000元以上">15000元以上</option>
-                                        </select>
-                                    </div>
-                                </div>
-                                <div className="mt-4 pt-3 border-t border-slate-100 flex justify-end">
-                                    <button onClick={resetFilters} className="px-4 py-2 text-sm font-medium text-slate-500 hover:text-indigo-600 hover:bg-slate-50 rounded-lg transition-colors flex items-center">
-                                        <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
-                                        重置筛选条件
-                                    </button>
-                                </div>
-                            </div>
-
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                                {displayedProperties.map(p => (
-                                    <PropertyCard
-                                        key={p.id}
-                                        property={p}
-                                        onClick={() => setSelectedProperty(p)}
-                                        isFavorite={currentUser.favorites?.includes(p.id)}
-                                        onToggleFavorite={(e) => handleToggleFavorite(p.id, e)}
-                                    />
-                                ))}
-                            </div>
-                        </div>
-                    )}
-                </>
-            )}
-
-            {activePage === 'data-screen' && (
-                <DataScreen properties={properties} onViewProperty={setSelectedProperty} />
-            )}
-
-            {activePage === 'clients' && (
-                <ClientManagement clients={clients} currentUser={currentUser!} onAddClient={handleAddClient} onUpdateClient={handleUpdateClient} />
-            )}
-
-            {activePage === 'orders' && (
-                <OrderManagement orders={orders} onUpdateOrderStatus={handleUpdateOrderStatus} onViewOrderDetails={() => { }} />
-            )}
-
-            {activePage === 'users' && (
-                <UserManagement users={users} currentUser={currentUser!} onAddUser={handleAddUser} onUpdateUser={handleUpdateUser} onDeleteUser={handleDeleteUser} />
-            )}
-
-            {activePage === 'system-settings' && (
-                <SystemSettings logs={systemLogs} config={systemConfig} onUpdateConfig={handleUpdateSystemConfig} />
-            )}
-
-            {activePage === 'knowledge' && (
-                <KnowledgeBase
-                    entries={knowledgeEntries}
-                    onSaveEntry={handleSaveKnowledge}
-                    onDeleteEntry={handleDeleteKnowledge}
-                    canEdit={currentUser?.role !== UserRole.SALES}
-                />
-            )}
-
-            {activePage === 'acquisition' && (
-                <AcquisitionChannel clients={clients} users={users} onAddClient={handleAddClient} onAssignClient={handleAssignClient} />
-            )}
-
-            {activePage === 'history' && (
-                <div className="space-y-6">
-                    <div className="flex justify-between items-center">
-                        <div>
-                            <h2 className="text-xl font-bold text-slate-800">历史成交档案</h2>
-                            <p className="text-sm text-slate-500 mt-1">共 {filteredHistoryOrders.length} 条成交记录</p>
-                        </div>
-                        {currentUser?.permissions.includes('DATA_EXPORT') && (
-                            <button
-                                onClick={exportHistoryToExcel}
-                                className="px-4 py-2 bg-green-600 text-white rounded-lg font-bold text-sm shadow-md hover:bg-green-700 flex items-center"
-                            >
-                                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
-                                导出 Excel 报表
-                            </button>
-                        )}
-                    </div>
-
-                    <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-wrap gap-4 items-end">
-                        <div className="flex-1 min-w-[200px]">
-                            <label className="block text-xs font-bold text-slate-500 mb-1">关键词搜索</label>
-                            <input
-                                placeholder="房源名 / 客户名 / 销售名..."
-                                className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
-                                value={historyQuery}
-                                onChange={(e) => setHistoryQuery(e.target.value)}
-                            />
-                        </div>
-                        <div>
-                            <label className="block text-xs font-bold text-slate-500 mb-1">签约开始日期</label>
-                            <input
-                                type="date"
-                                className="px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none text-slate-700"
-                                value={historyStartDate}
-                                onChange={(e) => setHistoryStartDate(e.target.value)}
-                            />
-                        </div>
-                        <div>
-                            <label className="block text-xs font-bold text-slate-500 mb-1">签约结束日期</label>
-                            <input
-                                type="date"
-                                className="px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none text-slate-700"
-                                value={historyEndDate}
-                                onChange={(e) => setHistoryEndDate(e.target.value)}
-                            />
-                        </div>
-                        <div className="pb-0.5">
-                            <button
-                                onClick={() => { setHistoryQuery(''); setHistoryStartDate(''); setHistoryEndDate(''); }}
-                                className="text-sm text-slate-500 hover:text-indigo-600 px-2"
-                            >
-                                重置
-                            </button>
-                        </div>
-                    </div>
-
-                    <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-                        <div className="overflow-x-auto">
-                            <table className="w-full text-sm text-left min-w-[1000px]">
-                                <thead className="bg-slate-50 text-slate-500 font-medium border-b border-slate-100">
-                                    <tr>
-                                        <th className="px-6 py-4">房源信息</th>
-                                        <th className="px-6 py-4">成交价格</th>
-                                        <th className="px-6 py-4">签约日期</th>
-                                        <th className="px-6 py-4">客户信息</th>
-                                        <th className="px-6 py-4">负责销售</th>
-                                        <th className="px-6 py-4 text-right">状态</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-slate-100">
-                                    {filteredHistoryOrders.map(order => (
-                                        <tr key={order.id} className="hover:bg-slate-50 transition-colors">
-                                            <td className="px-6 py-4">
-                                                <div className="flex items-center gap-3">
-                                                    <div className="w-16 h-12 bg-slate-200 rounded overflow-hidden flex-shrink-0 border border-slate-200">
-                                                        <img src={order.propertyImage} className="w-full h-full object-cover" alt="" />
-                                                    </div>
-                                                    <div>
-                                                        <div className="font-bold text-slate-800 line-clamp-1">{order.propertyTitle}</div>
-                                                        <div className="text-xs text-slate-400">ID: {order.propertyId}</div>
-                                                    </div>
-                                                </div>
-                                            </td>
-                                            <td className="px-6 py-4">
-                                                <span className="font-bold text-rose-600">¥{order.price}<span className="text-xs text-slate-400 font-normal">/月</span></span>
-                                            </td>
-                                            <td className="px-6 py-4 text-slate-600">
-                                                {order.contractDate || order.createdAt}
-                                            </td>
-                                            <td className="px-6 py-4">
-                                                <div className="font-bold text-slate-700">{order.clientName}</div>
-                                                <div className="text-xs text-slate-500">{order.clientPhone || '-'}</div>
-                                            </td>
-                                            <td className="px-6 py-4">
-                                                <span className="px-2 py-1 rounded-lg bg-indigo-50 text-indigo-700 text-xs font-bold border border-indigo-100">
-                                                    {order.agentName}
-                                                </span>
-                                            </td>
-                                            <td className="px-6 py-4 text-right">
-                                                <span className={`px-2 py-1 rounded text-xs font-bold ${order.status === OrderStatus.COMPLETED ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-500'
-                                                    }`}>
-                                                    {order.status === OrderStatus.COMPLETED ? '已成交' : '已取消'}
-                                                </span>
-                                            </td>
-                                        </tr>
-                                    ))}
-                                    {filteredHistoryOrders.length === 0 && (
-                                        <tr>
-                                            <td colSpan={6} className="text-center py-20 text-slate-400">
-                                                暂无符合条件的成交记录
-                                            </td>
-                                        </tr>
-                                    )}
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-        </Layout>
-    );
+    </Layout>
+);
 };
 
 export default App;

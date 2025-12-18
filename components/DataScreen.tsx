@@ -106,14 +106,13 @@ const DataScreen: React.FC<DataScreenProps> = ({ properties, onViewProperty }) =
       // "Humanized" Draw Circle: Click to start, Move to expand, Click to finish
       map.getContainer().style.cursor = 'crosshair';
 
-      // Ensure dragging is enabled initially so user can position map
-      map.dragging.enable();
+      // Disable dragging immediately to prevent panning while trying to draw
+      map.dragging.disable();
 
       map.on('click', (e: any) => {
         // Phase 1: Start Drawing
         if (!dragStartRef.current) {
           dragStartRef.current = e.latlng;
-          map.dragging.disable(); // Lock map while drawing radius
 
           if (circleLayerRef.current) map.removeLayer(circleLayerRef.current);
           circleLayerRef.current = L.circle(e.latlng, { radius: 0, color: '#f59e0b', weight: 2, fillOpacity: 0.2 }).addTo(map);
