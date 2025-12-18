@@ -830,7 +830,7 @@ const App: React.FC = () => {
         };
 
         const updatedList = await db.saveProperty(p);
-        setProperties(updatedList);
+        setProperties([...updatedList]);
 
         if (editingPropertyId) {
             addSystemLog(`修改房源信息 [${p.title}]`);
@@ -1161,7 +1161,7 @@ const App: React.FC = () => {
 
     const handleAddClient = async (client: Client) => {
         const updated = await db.saveClient(client);
-        setClients(updated);
+        setClients([...updated]);
     };
     const handleUpdateClient = async (id: string, updates: Partial<Client>) => {
         const client = clients.find(c => c.id === id);
@@ -1751,7 +1751,7 @@ const App: React.FC = () => {
             )}
 
             {activePage === 'clients' && (
-                <ClientManagement clients={clients} onAddClient={handleAddClient} onUpdateClient={handleUpdateClient} />
+                <ClientManagement clients={clients} currentUser={currentUser!} onAddClient={handleAddClient} onUpdateClient={handleUpdateClient} />
             )}
 
             {activePage === 'orders' && (
@@ -1759,7 +1759,7 @@ const App: React.FC = () => {
             )}
 
             {activePage === 'users' && (
-                <UserManagement users={users} currentUser={currentUser} onAddUser={handleAddUser} onUpdateUser={handleUpdateUser} onDeleteUser={handleDeleteUser} />
+                <UserManagement users={users} currentUser={currentUser!} onAddUser={handleAddUser} onUpdateUser={handleUpdateUser} onDeleteUser={handleDeleteUser} />
             )}
 
             {activePage === 'system-settings' && (
@@ -1771,15 +1771,11 @@ const App: React.FC = () => {
                     entries={knowledgeEntries}
                     onSaveEntry={handleSaveKnowledge}
                     onDeleteEntry={handleDeleteKnowledge}
-                    canEdit={currentUser.role !== UserRole.SALES}
+                    canEdit={currentUser?.role !== UserRole.SALES}
                 />
             )}
 
             {activePage === 'acquisition' && (
-                <ClientManagement clients={clients} currentUser={currentUser!} onAddClient={handleAddClient} onUpdateClient={handleUpdateClient} />
-            )}
-
-            {activePage === 'channels' && (
                 <AcquisitionChannel clients={clients} users={users} onAddClient={handleAddClient} onAssignClient={handleAssignClient} />
             )}
 
