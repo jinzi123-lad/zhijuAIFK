@@ -498,7 +498,7 @@ const BigScreenDashboard: React.FC<BigScreenDashboardProps> = ({ properties, ord
                             <div className="flex-1 overflow-y-auto custom-scrollbar pr-1">
                                 <h4 className="text-xs text-slate-500 uppercase font-bold mb-2 tracking-wider">各类型房源统计</h4>
                                 <div className="grid grid-cols-3 gap-2">
-                                    {sortedCategories.map(([cat, count], i) => (
+                                    {sortedCategories.map(([cat, count]: [string, number], i: number) => (
                                         <div key={cat} className="bg-slate-800/50 p-2 rounded-lg border-l-2 border-cyan-500/50 hover:bg-slate-800 transition-colors flex justify-between items-center group">
                                             <div className="text-slate-400 text-xs group-hover:text-cyan-400 transition-colors">{cat}</div>
                                             <div className="text-lg font-bold text-white font-mono"><Counter value={count} /></div>
@@ -512,7 +512,7 @@ const BigScreenDashboard: React.FC<BigScreenDashboardProps> = ({ properties, ord
                     {/* Hot Regions (Replaces Trend Analysis) */}
                     <GlassCard title="热门区域分布" className="flex-[2] min-h-0">
                         <div className="h-full flex flex-col justify-center gap-2 px-1">
-                            {sortedRegions.map(([region, count], i) => (
+                            {sortedRegions.map(([region, count]: [string, number], i: number) => (
                                 <div key={region} className="flex items-center gap-2 group">
                                     <span className={`w-5 text-xs font-bold ${i < 3 ? 'text-amber-400' : 'text-slate-600'}`}>NO.{i + 1}</span>
                                     <span className="w-12 text-xs text-slate-400 text-right truncate">{region}</span>
@@ -553,7 +553,70 @@ const BigScreenDashboard: React.FC<BigScreenDashboardProps> = ({ properties, ord
 
                 {/* === CENTER COLUMN: DIGITIZED MAP === */}
                 <div className="col-span-6 flex flex-col gap-4 h-full min-h-0 relative">
-                    {/* ... Map Content (unchanged) ... */}
+
+                    {/* Map Container */}
+                    <div className="flex-1 relative rounded-2xl border border-slate-700/50 bg-[#0f172a] overflow-hidden group shadow-2xl min-h-0">
+                        <div ref={mapContainerRef} className="w-full h-full z-0 opacity-80" />
+
+                        {/* Grid Overlay for "Digital" Effect */}
+                        <div className="absolute inset-0 bg-[linear-gradient(to_right,#1e293b_1px,transparent_1px),linear-gradient(to_bottom,#1e293b_1px,transparent_1px)] bg-[size:40px_40px] opacity-20 pointer-events-none"></div>
+                        <div className="absolute inset-0 bg-gradient-to-t from-[#0b1121] via-transparent to-transparent pointer-events-none"></div>
+
+                        {/* Central Data Overlay */}
+                        <div className="absolute top-6 left-6 z-20 pointer-events-none">
+                            <div className="flex items-center gap-2">
+                                <span className="relative flex h-3 w-3">
+                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75"></span>
+                                    <span className="relative inline-flex rounded-full h-3 w-3 bg-cyan-500"></span>
+                                </span>
+                                <span className="text-sm font-bold text-slate-300 tracking-wider">SYSTEM ACTIVITY • TODAY</span>
+                            </div>
+                            <div className="mt-2 text-4xl font-black text-white font-mono tracking-tight">
+                                <Counter value={activeUserCount} /> <span className="text-sm font-normal text-slate-500">人次 (今日活跃)</span>
+                            </div>
+                        </div>
+
+                        {/* Region Selector */}
+                        <div className="absolute top-6 right-6 z-30 pointer-events-auto">
+                            <div className="relative group">
+                                <select
+                                    value={mapRegion}
+                                    onChange={(e) => setMapRegion(e.target.value)}
+                                    className="appearance-none bg-slate-900/80 border border-cyan-500/50 text-cyan-400 text-sm font-bold py-2 pl-4 pr-10 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500 cursor-pointer backdrop-blur-md"
+                                >
+                                    <option value="全国">中国地图 (China)</option>
+                                    {availableProvinces.map((p: string) => (
+                                        <option key={p} value={p}>{p}</option>
+                                    ))}
+                                </select>
+                                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-cyan-500">
+                                    <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z" /></svg>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Bottom Metrics Bar */}
+                    <div className="h-24 grid grid-cols-3 gap-4 shrink-0">
+                        <GlassCard className="justify-center items-center" active>
+                            <div className="text-slate-400 text-xs uppercase mb-1">今日成交总额 (GMV)</div>
+                            <div className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-200 to-yellow-500 font-mono">
+                                ¥<Counter value={todayGMV} />
+                            </div>
+                        </GlassCard>
+                        <GlassCard className="justify-center items-center">
+                            <div className="text-slate-400 text-xs uppercase mb-1">今日新增带看</div>
+                            <div className="text-3xl font-black text-cyan-400 font-mono">
+                                <Counter value={todayViewings} /> <span className="text-sm text-slate-600">组</span>
+                            </div>
+                        </GlassCard>
+                        <GlassCard className="justify-center items-center">
+                            <div className="text-slate-400 text-xs uppercase mb-1">平均成交周期</div>
+                            <div className="text-3xl font-black text-indigo-400 font-mono">
+                                {avgCycle.toFixed(1)} <span className="text-sm text-slate-600">天</span>
+                            </div>
+                        </GlassCard>
+                    </div>
                 </div>
 
                 {/* === RIGHT COLUMN: List & Logs === */}
