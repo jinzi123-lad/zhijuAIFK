@@ -585,7 +585,7 @@ const BigScreenDashboard: React.FC<BigScreenDashboardProps> = ({ properties, ord
                     <GlassCard title="实时交易动态" className="flex-1 min-h-0">
                         <div className="relative h-full overflow-hidden">
                             <div className="absolute inset-0 flex flex-col gap-3 animate-[scroll-up_20s_linear_infinite]">
-                                {[...orders, ...orders].slice(0, 10).map((order, i) => ( // Repeat orders for scrolling effect
+                                {[...orders, ...orders].slice(0, 10).map((order: Order, i: number) => ( // Repeat orders for scrolling effect
                                     <div key={i} className="flex items-start gap-3 p-2 border-b border-slate-800/50">
                                         <div className={`w-2 h-2 mt-1.5 rounded-full ${order.status === OrderStatus.COMPLETED ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]' : 'bg-orange-500'}`}></div>
                                         <div>
