@@ -30,7 +30,9 @@
   "exclude": [
     "node_modules",
     "vite.config.ts",
-    "backup_restore_point"
+    "backup_restore_point",
+    "zhijuAI-backend",
+    "zhijuAI-xiaochengxu"
   ],
   "references": [
     {
