@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { Client, ClientStatus, User } from '../types';
+import { Client, ClientStatus, User, FollowUpRecord } from '../types';
 
 interface ClientManagementProps {
     clients: Client[];
@@ -26,6 +26,11 @@ const ClientManagement: React.FC<ClientManagementProps> = ({ clients, onAddClien
     const [newClientReq, setNewClientReq] = useState('');
     const [newClientBudget, setNewClientBudget] = useState('');
     const [newClientSource, setNewClientSource] = useState('上门');
+
+    // FollowUp Modal State
+    const [isFollowUpModalOpen, setIsFollowUpModalOpen] = useState(false);
+    const [followUpTargetId, setFollowUpTargetId] = useState<string | null>(null);
+    const [followUpContent, setFollowUpContent] = useState('');
 
     const filteredClients = clients.filter(c => {
         // Tab Filter
@@ -107,8 +112,42 @@ const ClientManagement: React.FC<ClientManagementProps> = ({ clients, onAddClien
 
         onAddClient(newClient);
         setIsAddClientModalOpen(false);
-        // Reset form
         setNewClientName(''); setNewClientPhone(''); setNewClientReq(''); setNewClientBudget('');
+    };
+
+    const openFollowUpModal = (id: string) => {
+        setFollowUpTargetId(id);
+        setFollowUpContent('');
+        setIsFollowUpModalOpen(true);
+    };
+
+    const handleSaveFollowUp = () => {
+        if (!followUpTargetId || !followUpContent) {
+            alert("请填写跟进内容");
+            return;
+        }
+
+        const client = clients.find(c => c.id === followUpTargetId);
+        if (client) {
+            const newRecord: FollowUpRecord = {
+                id: `fr_${Date.now()}`,
+                date: new Date().toLocaleString('zh-CN'),
+                content: followUpContent,
+                recorderName: currentUser.name
+            };
+
+            const updatedFollowUps = client.followUps ? [newRecord, ...client.followUps] : [newRecord];
+
+            onUpdateClient(followUpTargetId, {
+                followUps: updatedFollowUps,
+                lastContactDate: new Date().toLocaleString('zh-CN').split(' ')[0],
+                status: client.status === ClientStatus.NEW ? ClientStatus.FOLLOWING : client.status // Auto status bump
+            });
+
+            setIsFollowUpModalOpen(false);
+            setFollowUpTargetId(null);
+            setFollowUpContent('');
+        }
     };
 
     return (
@@ -218,7 +257,7 @@ const ClientManagement: React.FC<ClientManagementProps> = ({ clients, onAddClien
                                     <td className="px-6 py-4 text-right">
                                         {activeTab === 'ACTIVE' ? (
                                             <>
-                                                <button className="text-indigo-600 hover:text-indigo-800 font-medium mr-3">写跟进</button>
+                                                <button onClick={() => openFollowUpModal(client.id)} className="text-indigo-600 hover:text-indigo-800 font-medium mr-3">写跟进</button>
                                                 <button
                                                     onClick={() => openArchiveModal(client.id)}
                                                     className="text-slate-400 hover:text-rose-500 transition-colors"
@@ -307,6 +346,36 @@ const ClientManagement: React.FC<ClientManagementProps> = ({ clients, onAddClien
                             <div className="pt-4 border-t border-slate-100 flex justify-end gap-3 mt-2">
                                 <button onClick={() => setIsAddClientModalOpen(false)} className="px-5 py-2.5 text-slate-500 font-bold hover:bg-slate-100 rounded-lg">取消</button>
                                 <button onClick={handleCreateClient} className="px-5 py-2.5 bg-indigo-600 text-white font-bold rounded-lg hover:bg-indigo-700 shadow-lg shadow-indigo-200">确认录入</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* FollowUp Modal */}
+            {isFollowUpModalOpen && (
+                <div className="fixed inset-0 bg-black/50 z-[90] flex items-center justify-center p-4">
+                    <div className="bg-white rounded-xl w-[500px] max-w-full p-6 animate-fade-in-up shadow-2xl">
+                        <div className="flex justify-between items-center mb-4">
+                            <h3 className="text-lg font-bold text-slate-800">写跟进</h3>
+                            <button onClick={() => setIsFollowUpModalOpen(false)} className="text-slate-400 hover:text-slate-600">×</button>
+                        </div>
+                        <p className="text-sm text-slate-500 mb-4">记录最新的沟通情况，系统将自动更新客户状态为“跟进中”。</p>
+
+                        <div className="space-y-4">
+                            <div>
+                                <label className="block text-sm font-bold text-slate-700 mb-2">跟进内容</label>
+                                <textarea
+                                    className="w-full p-3 border rounded-lg bg-slate-50 focus:bg-white h-32 transition-colors focus:ring-2 focus:ring-indigo-500 outline-none"
+                                    value={followUpContent}
+                                    onChange={e => setFollowUpContent(e.target.value)}
+                                    placeholder="例如: 客户对徐汇区两居室感兴趣，预算提升至9000元，约定周末看房..."
+                                />
+                            </div>
+
+                            <div className="pt-4 border-t border-slate-100 flex justify-end gap-3 mt-2">
+                                <button onClick={() => setIsFollowUpModalOpen(false)} className="px-5 py-2.5 text-slate-500 font-bold hover:bg-slate-100 rounded-lg">取消</button>
+                                <button onClick={handleSaveFollowUp} className="px-5 py-2.5 bg-indigo-600 text-white font-bold rounded-lg hover:bg-indigo-700 shadow-lg shadow-indigo-200">保存记录</button>
                             </div>
                         </div>
                     </div>

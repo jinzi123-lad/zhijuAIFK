@@ -888,9 +888,8 @@ const App: React.FC = () => {
                             setNewPropertyDistrict(dist);
 
                             setNewProperty(prev => ({ ...prev, address: data.display_name || '定位地址' }));
-                            alert("定位成功！已自动更新位置信息。");
                         }
-                    }).catch(() => alert(`定位成功 (Lat:${latitude.toFixed(2)}, Lng:${longitude.toFixed(2)})，未能解析详细地址。`));
+                    }).catch(() => console.log(`定位成功 (Lat:${latitude.toFixed(2)}, Lng:${longitude.toFixed(2)})，未能解析详细地址。`));
             },
             (err) => alert("定位失败，请检查浏览器定位权限。")
         );

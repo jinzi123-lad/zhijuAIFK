@@ -204,6 +204,15 @@ export interface Client {
   contractId?: string;
   leaseStartDate?: string;
   leaseEndDate?: string;
+
+  followUps?: FollowUpRecord[];
+}
+
+export interface FollowUpRecord {
+  id: string;
+  date: string;
+  content: string;
+  recorderName: string;
 }
 
 // -- Order Management Types --
