@@ -1694,6 +1694,7 @@ const App: React.FC = () => {
                 properties={properties}
                 orders={orders}
                 logs={systemLogs}
+                clients={clients}
                 onExit={() => setActivePage('properties')}
             />
         );

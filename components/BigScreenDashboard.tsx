@@ -216,7 +216,7 @@ const BigScreenDashboard: React.FC<BigScreenDashboardProps> = ({ properties, ord
         // 2. Process Clients (Leads & Intention)
         clients.forEach(c => {
             monthlyLeads++;
-            if (c.status !== ClientStatus.ARCHIVED && c.status !== ClientStatus.INACTIVE) {
+            if (c.status !== ClientStatus.ARCHIVED) {
                 monthlyIntention++;
             }
         });
