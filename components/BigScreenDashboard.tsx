@@ -1,16 +1,57 @@
 
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { Property, Order, PropertyStatus, OrderStatus, PropertyType, SystemLog } from '../types';
+import { Property, Order, PropertyStatus, OrderStatus, PropertyType, SystemLog, Client, ClientStatus } from '../types';
 import { CASCADING_REGIONS } from '../constants';
 
 interface BigScreenDashboardProps {
     properties: Property[];
     orders: Order[];
     logs: SystemLog[];
+    clients: Client[];
     onExit: () => void;
 }
 
-// --- 1. UI Components ---
+// --- Constants ---
+const REGION_COORDINATES: Record<string, { lat: number, lng: number, zoom: number }> = {
+    '北京': { lat: 39.9042, lng: 116.4074, zoom: 11 },
+    '上海': { lat: 31.2304, lng: 121.4737, zoom: 11 },
+    '广州': { lat: 23.1291, lng: 113.2644, zoom: 11 },
+    '深圳': { lat: 22.5431, lng: 114.0579, zoom: 11 },
+    '杭州': { lat: 30.2741, lng: 120.1551, zoom: 11 },
+    '成都': { lat: 30.5728, lng: 104.0668, zoom: 11 },
+    '武汉': { lat: 30.5928, lng: 114.3055, zoom: 11 },
+    '南京': { lat: 32.0603, lng: 118.7969, zoom: 11 },
+    '苏州': { lat: 31.2989, lng: 120.5853, zoom: 11 },
+    '天津': { lat: 39.0842, lng: 117.2009, zoom: 11 },
+    '重庆': { lat: 29.5630, lng: 106.5516, zoom: 10 },
+};
+
+// --- Helpers ---
+const isToday = (dateStr: string) => {
+    if (!dateStr) return false;
+    const d = new Date(dateStr);
+    const today = new Date();
+    return d.getDate() === today.getDate() &&
+        d.getMonth() === today.getMonth() &&
+        d.getFullYear() === today.getFullYear();
+};
+
+const isInCurrentMonth = (dateStr: string) => {
+    if (!dateStr) return false;
+    const d = new Date(dateStr);
+    const today = new Date();
+    return d.getMonth() === today.getMonth() && d.getFullYear() === today.getFullYear();
+};
+
+const getDaysDiff = (start: string, end: string) => {
+    if (!start || !end) return 0;
+    const d1 = new Date(start);
+    const d2 = new Date(end);
+    const diffTime = Math.abs(d2.getTime() - d1.getTime());
+    return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+};
+
+// --- Sub Components ---
 
 // Glass Card Container
 const GlassCard = ({ title, children, className = '', active = false }: { title?: React.ReactNode, children?: React.ReactNode, className?: string, active?: boolean }) => (
@@ -50,7 +91,6 @@ const Counter = ({ value, prefix = '', suffix = '', decimal = 0 }: { value: numb
         const animate = (currentTime: number) => {
             const elapsed = currentTime - startTime;
             const progress = Math.min(elapsed / duration, 1);
-            // Ease out quart
             const ease = 1 - Math.pow(1 - progress, 4);
 
             const currentVal = start + (end - start) * ease;
@@ -72,12 +112,11 @@ const Counter = ({ value, prefix = '', suffix = '', decimal = 0 }: { value: numb
 
 // Smooth Line Chart
 const TrendChart = ({ data, color = '#22d3ee' }: { data: number[], color?: string }) => {
-    // Ensure data is valid to avoid division by zero or NaN
     const safeData = data && data.length > 0 ? data : [0, 0];
     const max = Math.max(...safeData, 1);
     const min = Math.min(...safeData) * 0.8;
-    const range = max - min || 1; // Prevent division by zero
-    const count = safeData.length > 1 ? safeData.length - 1 : 1; // Prevent division by zero
+    const range = max - min || 1;
+    const count = safeData.length > 1 ? safeData.length - 1 : 1;
 
     const points = safeData.map((val, i) => {
         const x = (i / count) * 100;
@@ -88,7 +127,6 @@ const TrendChart = ({ data, color = '#22d3ee' }: { data: number[], color?: strin
     return (
         <div className="w-full h-full relative">
             <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="w-full h-full overflow-visible">
-                {/* Gradient Fill */}
                 <defs>
                     <linearGradient id={`grad-${color}`} x1="0" y1="0" x2="0" y2="1">
                         <stop offset="0%" stopColor={color} stopOpacity="0.3" />
@@ -96,9 +134,7 @@ const TrendChart = ({ data, color = '#22d3ee' }: { data: number[], color?: strin
                     </linearGradient>
                 </defs>
                 <path d={`M0,100 L${points} L100,100 Z`} fill={`url(#grad-${color})`} stroke="none" />
-                {/* Line */}
                 <path d={`M${points}`} fill="none" stroke={color} strokeWidth="2" vectorEffect="non-scaling-stroke" strokeLinecap="round" strokeLinejoin="round" />
-                {/* Dots */}
                 {safeData.map((val, i) => (
                     <circle key={i} cx={(i / count) * 100} cy={100 - ((val - min) / range) * 100} r="1.5" fill="#fff" className="opacity-0 hover:opacity-100 transition-opacity" />
                 ))}
@@ -107,25 +143,9 @@ const TrendChart = ({ data, color = '#22d3ee' }: { data: number[], color?: strin
     );
 };
 
-// Helper
-const isToday = (dateStr: string) => {
-    if (!dateStr) return false;
-    const d = new Date(dateStr);
-    const today = new Date();
-    return d.getDate() === today.getDate() &&
-        d.getMonth() === today.getMonth() &&
-        d.getFullYear() === today.getFullYear();
-};
 
-const getDaysDiff = (start: string, end: string) => {
-    if (!start || !end) return 0;
-    const d1 = new Date(start);
-    const d2 = new Date(end);
-    const diffTime = Math.abs(d2.getTime() - d1.getTime());
-    return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-};
-
-const BigScreenDashboard: React.FC<BigScreenDashboardProps> = ({ properties, orders, logs, onExit }) => {
+// --- Main Component ---
+const BigScreenDashboard: React.FC<BigScreenDashboardProps> = ({ properties, orders, logs, clients, onExit }) => {
     const [time, setTime] = useState(new Date());
     const [isFullScreen, setIsFullScreen] = useState(false);
     const currentMonth = new Date().getMonth() + 1;
@@ -147,15 +167,21 @@ const BigScreenDashboard: React.FC<BigScreenDashboardProps> = ({ properties, ord
     const markersRef = useRef<any[]>([]);
 
     // --- Real Data Calculation ---
-    const { todayGMV, todayViewings, avgCycle, agentRanking, activeUserCount } = useMemo(() => {
+    const { todayGMV, todayViewings, avgCycle, agentRanking, activeUserCount, funnelData } = useMemo(() => {
         let gmv = 0;
         let viewingsCount = 0;
         let totalCycleDays = 0;
         let completedCount = 0;
         const agentStats: Record<string, { count: number, areas: Record<string, number> }> = {};
 
+        // Funnel Counters (This Month)
+        let monthlyLeads = 0;
+        let monthlyIntention = 0;
+        let monthlyViewings = 0;
+        let monthlyDeals = 0;
+
+        // 1. Process Orders
         orders.forEach(o => {
-            // GMV (Today, Completed)
             const isCompleted = o.status === OrderStatus.COMPLETED;
             const isViewing = o.status === OrderStatus.VIEWING;
             const dateRef = isCompleted ? o.contractDate : o.createdAt;
@@ -165,35 +191,41 @@ const BigScreenDashboard: React.FC<BigScreenDashboardProps> = ({ properties, ord
                 if (isViewing) viewingsCount++;
             }
 
-            // Cycle Time
             if (isCompleted && o.createdAt && o.contractDate) {
                 totalCycleDays += getDaysDiff(o.createdAt, o.contractDate);
                 completedCount++;
             }
 
-            // Agent Ranking (All Time / This Month - simplified to All for demo unless forced)
             if (isCompleted) {
                 if (!agentStats[o.agentName]) agentStats[o.agentName] = { count: 0, areas: {} };
                 agentStats[o.agentName].count++;
-
-                // Infer Area from Property Title or find property? 
-                // We have propertyTitle inside order, but not location directly.
-                // Assuming title contains region or we match via ID?
-                // Matching via ID is safer.
                 const prop = properties.find(p => p.id === o.propertyId);
-                const area = prop ? prop.location.substring(0, 3) : '未知'; // Grab first 2-3 chars (e.g. 北京朝)
+                const area = prop ? prop.location.substring(0, 3) : '未知';
                 agentStats[o.agentName].areas[area] = (agentStats[o.agentName].areas[area] || 0) + 1;
+            }
+
+            // Funnel: Viewings & Deals
+            if (isInCurrentMonth(o.createdAt)) {
+                monthlyViewings++;
+            }
+            if (isCompleted && isInCurrentMonth(o.contractDate || '')) {
+                monthlyDeals++;
             }
         });
 
-        // Ranking List
+        // 2. Process Clients (Leads & Intention)
+        clients.forEach(c => {
+            monthlyLeads++;
+            if (c.status !== ClientStatus.ARCHIVED && c.status !== ClientStatus.INACTIVE) {
+                monthlyIntention++;
+            }
+        });
+
         const ranking = Object.entries(agentStats).map(([name, stat]) => {
-            // Find most frequent area
             const topArea = Object.entries(stat.areas).sort((a, b) => b[1] - a[1])[0]?.[0] || '未知';
             return { name, count: stat.count, area: topArea };
         }).sort((a, b) => b.count - a.count).slice(0, 10);
 
-        // Active Users (Today)
         const activeUsers = new Set<string>();
         logs.forEach(l => {
             if (isToday(l.time)) activeUsers.add(l.user);
@@ -204,24 +236,28 @@ const BigScreenDashboard: React.FC<BigScreenDashboardProps> = ({ properties, ord
             todayViewings: viewingsCount,
             avgCycle: completedCount > 0 ? (totalCycleDays / completedCount) : 0,
             agentRanking: ranking,
-            activeUserCount: activeUsers.size || 1 // At least 1 (me)
+            activeUserCount: activeUsers.size || 1,
+            funnelData: [
+                { label: '客源总数', count: monthlyLeads, color: 'bg-blue-600' },
+                { label: '意向客户', count: monthlyIntention, color: 'bg-indigo-600' },
+                { label: '本月带看', count: monthlyViewings, color: 'bg-violet-600' },
+                { label: '本月成交', count: monthlyDeals, color: 'bg-fuchsia-600' },
+            ]
         };
-
-    }, [orders, properties, logs]);
+    }, [orders, properties, logs, clients]);
 
     // Stats Logic (Existing)
     const totalProperties = properties.length;
 
-    // Calculate category stats with explicit type for accumulator
+    // Calculate category stats
     const categoryStats = properties.reduce((acc: Record<string, number>, curr: Property) => {
         acc[curr.category] = (acc[curr.category] || 0) + 1;
         return acc;
     }, {} as Record<string, number>);
     const sortedCategories = (Object.entries(categoryStats) as [string, number][]).sort((a, b) => b[1] - a[1]);
 
-    // Calculate Region Stats for "Hot Regions"
+    // Calculate Region Stats
     const regionStats = properties.reduce((acc: Record<string, number>, curr: Property) => {
-        // Extract district from location string (e.g. "北京朝阳" -> "朝阳")
         let region = curr.location;
         ['北京', '上海', '广州', '深圳'].forEach(city => {
             region = region.replace(city, '');
@@ -233,8 +269,7 @@ const BigScreenDashboard: React.FC<BigScreenDashboardProps> = ({ properties, ord
 
     const sortedRegions = (Object.entries(regionStats) as [string, number][])
         .sort((a, b) => b[1] - a[1])
-        .slice(0, 5); // Take top 5
-
+        .slice(0, 5);
     const maxRegionCount = sortedRegions.length > 0 ? sortedRegions[0][1] : 1;
 
     useEffect(() => {
@@ -242,13 +277,12 @@ const BigScreenDashboard: React.FC<BigScreenDashboardProps> = ({ properties, ord
         return () => { clearInterval(timer); };
     }, []);
 
-    // 1. Initialize Map Instance (Only Once)
+    // 1. Initialize Map Instance
     useEffect(() => {
         if (!mapContainerRef.current || !L || mapInstanceRef.current) return;
 
-        // Center on China by default
         const map = L.map(mapContainerRef.current, {
-            center: [36.5, 105], // Rough center of China
+            center: [36.5, 105],
             zoom: 4,
             zoomControl: false,
             attributionControl: false,
@@ -257,19 +291,16 @@ const BigScreenDashboard: React.FC<BigScreenDashboardProps> = ({ properties, ord
             doubleClickZoom: false
         });
 
-        // Use GaoDe Map (AutoNavi) - Proven to work in China
-        // Using "style=6" (which is sometimes satellite or just standard) or "style=7"
-        // We use standard vector and invert it with CSS for Dark Mode
+        // Use GaoDe Map (AutoNavi)
         L.tileLayer('https://webrd02.is.autonavi.com/appmaptile?lang=zh_cn&size=1&scale=1&style=8&x={x}&y={y}&z={z}', {
             minZoom: 3,
             maxZoom: 18,
             attribution: '&copy; <a href="https://ditu.amap.com/">高德地图</a>',
-            className: 'map-tiles-dark' // Custom class for CSS filter
+            className: 'map-tiles-dark'
         }).addTo(map);
 
         mapInstanceRef.current = map;
 
-        // Fix: Invalidate size to ensure map renders correctly in flex container
         setTimeout(() => {
             map.invalidateSize();
         }, 200);
@@ -280,19 +311,16 @@ const BigScreenDashboard: React.FC<BigScreenDashboardProps> = ({ properties, ord
         };
     }, [L]);
 
-    // 2. Update Markers & View based on Selection
+    // 2. Update Markers & View
     useEffect(() => {
         if (!mapInstanceRef.current || !L) return;
         const map = mapInstanceRef.current;
 
-        // Filter props
         const displayProps = mapRegion === '全国' ? properties : properties.filter(p => p.location.includes(mapRegion));
 
-        // Clear existing
         markersRef.current.forEach((m: any) => map.removeLayer(m));
         markersRef.current = [];
 
-        // Add new markers
         displayProps.forEach((p) => {
             const iconHtml = `
             <div class="relative flex items-center justify-center w-4 h-4">
@@ -309,7 +337,6 @@ const BigScreenDashboard: React.FC<BigScreenDashboardProps> = ({ properties, ord
 
             const marker = L.marker([p.coordinates.lat, p.coordinates.lng], { icon }).addTo(map);
 
-            // Popup content
             const popupContent = `
             <div style="font-family: monospace; color: #fff; background: rgba(15, 23, 42, 0.9); border: 1px solid #06b6d4; padding: 8px; border-radius: 4px; font-size: 12px; min-width: 150px;">
                 <div style="font-weight: bold; color: #22d3ee; margin-bottom: 4px;">${p.title}</div>
@@ -333,15 +360,17 @@ const BigScreenDashboard: React.FC<BigScreenDashboardProps> = ({ properties, ord
         });
 
         // Update View Bounds
+        const targetRegionConfig = REGION_COORDINATES[mapRegion];
+
         if (mapRegion === '全国') {
             map.setView([36.5, 105], 4, { animate: true });
+        } else if (targetRegionConfig) {
+            map.setView([targetRegionConfig.lat, targetRegionConfig.lng], targetRegionConfig.zoom, { animate: true });
         } else {
-            // Fit bounds of markers
             if (markersRef.current.length > 0) {
                 const group = L.featureGroup(markersRef.current);
                 map.fitBounds(group.getBounds(), { padding: [50, 50], animate: true, maxZoom: 13 });
             } else {
-                // Fallback to China if empty
                 map.setView([36.5, 105], 4);
             }
         }
@@ -354,12 +383,9 @@ const BigScreenDashboard: React.FC<BigScreenDashboardProps> = ({ properties, ord
         let currentIndex = 0;
         const popupInterval = setInterval(() => {
             if (markersRef.current.length > 0) {
-                // Close previous
                 mapInstanceRef.current.closePopup();
-
                 const marker = markersRef.current[currentIndex];
                 marker.openPopup();
-
                 currentIndex = (currentIndex + 1) % markersRef.current.length;
             }
         }, 4000);
@@ -474,18 +500,13 @@ const BigScreenDashboard: React.FC<BigScreenDashboardProps> = ({ properties, ord
                     </GlassCard>
 
                     {/* Conversion Funnel */}
-                    <GlassCard title="转化漏斗 (本月)" className="flex-[2] min-h-0">
+                    <GlassCard title="转化漏斗 (实时)" className="flex-[2] min-h-0">
                         <div className="flex flex-col gap-2 justify-center h-full sm:py-2">
-                            {[
-                                { label: '线索接入', count: 120, color: 'bg-blue-600' },
-                                { label: '意向跟进', count: 85, color: 'bg-indigo-600' },
-                                { label: '实地带看', count: 42, color: 'bg-violet-600' },
-                                { label: '签约成交', count: 18, color: 'bg-fuchsia-600' },
-                            ].map((step, idx) => (
+                            {funnelData.map((step, idx) => (
                                 <div key={idx} className="flex items-center group">
                                     <span className="w-16 text-right text-xs text-slate-400 mr-3 group-hover:text-white transition-colors">{step.label}</span>
                                     <div className="flex-1 bg-slate-800/50 h-1.5 rounded-full overflow-hidden">
-                                        <div className={`h-full ${step.color} rounded-full relative overflow-hidden`} style={{ width: `${(step.count / 120) * 100}%` }}>
+                                        <div className={`h-full ${step.color} rounded-full relative overflow-hidden`} style={{ width: `${(step.count / (funnelData[0].count || 1)) * 100}%` }}>
                                             <div className="absolute inset-0 bg-white/20 animate-[shimmer_2s_infinite]"></div>
                                         </div>
                                     </div>
