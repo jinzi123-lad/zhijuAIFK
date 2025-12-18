@@ -463,7 +463,7 @@ const BigScreenDashboard: React.FC<BigScreenDashboardProps> = ({ properties, ord
 
                             <div className="flex-1 overflow-y-auto custom-scrollbar pr-1">
                                 <h4 className="text-xs text-slate-500 uppercase font-bold mb-2 tracking-wider">各类型房源统计</h4>
-                                <div className="grid grid-cols-2 gap-2">
+                                <div className="grid grid-cols-3 gap-2">
                                     {sortedCategories.map(([cat, count], i) => (
                                         <div key={cat} className="bg-slate-800/50 p-2 rounded-lg border-l-2 border-cyan-500/50 hover:bg-slate-800 transition-colors flex justify-between items-center group">
                                             <div className="text-slate-400 text-xs group-hover:text-cyan-400 transition-colors">{cat}</div>
