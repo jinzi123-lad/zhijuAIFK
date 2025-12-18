@@ -23,7 +23,7 @@ const getEnv = (key: string) => {
 let currentConfig = {
     apiKey: getEnv('API_KEY') || '',
     provider: (getEnv('AI_PROVIDER') as 'GEMINI' | 'OPENAI_COMPATIBLE') || (getEnv('AI_ENDPOINT') ? 'OPENAI_COMPATIBLE' : 'GEMINI'),
-    endpoint: getEnv('AI_ENDPOINT') || '', 
+    endpoint: getEnv('AI_ENDPOINT') || '',
     modelName: getEnv('AI_MODEL') || "gemini-2.5-flash"
 };
 
@@ -50,21 +50,21 @@ export const configureAI = (apiKey?: string, endpoint?: string, modelName?: stri
         // just clearing Gemini instance to avoid confusion
         aiInstance = null;
     }
-    
+
     console.log(`AI Service Configured: Provider=${provider}, Model=${currentConfig.modelName}, Endpoint=${currentConfig.endpoint || 'Default'}`);
 };
 
 // --- Generic OpenAI-Compatible API Caller ---
 const callOpenAICompatible = async (
-    systemInstruction: string, 
-    userPrompt: string, 
+    systemInstruction: string,
+    userPrompt: string,
     jsonMode: boolean = false,
     base64Image?: string
 ): Promise<string> => {
     try {
         const baseUrl = currentConfig.endpoint.replace(/\/$/, ''); // Remove trailing slash
         const url = baseUrl.endsWith('/chat/completions') ? baseUrl : `${baseUrl}/chat/completions`;
-        
+
         const messages: any[] = [];
         if (systemInstruction) {
             messages.push({ role: "system", content: systemInstruction });
@@ -123,8 +123,8 @@ const callOpenAICompatible = async (
  * Generates a sales pitch for a specific property.
  */
 export const generateSalesPitch = async (property: Property): Promise<string> => {
-  try {
-    const prompt = `
+    try {
+        const prompt = `
       房源信息：
       - 标题: ${property.title}
       - 类型: ${property.type === 'RENT' ? '出租' : '出售'}
@@ -136,8 +136,8 @@ export const generateSalesPitch = async (property: Property): Promise<string> =>
       - 描述: ${property.description}
       - 通勤信息: ${property.commuteInfo || '未知'}
     `;
-    
-    const systemPrompt = `
+
+        const systemPrompt = `
       你是一位资深的房地产金牌销售。请根据用户提供的房源信息，写一段吸引人的销售话术（Pitch）。
       话术要求：
       1. 语气热情、专业、真诚。
@@ -146,34 +146,34 @@ export const generateSalesPitch = async (property: Property): Promise<string> =>
       4. 包含一个强有力的结尾，引导客户预约看房。
     `;
 
-    if (currentConfig.provider === 'GEMINI') {
-        const response = await getGeminiClient().models.generateContent({
-          model: currentConfig.modelName,
-          contents: prompt,
-          config: { systemInstruction: systemPrompt, temperature: 0.7 }
-        });
-        return response.text || "无法生成话术，请稍后再试。";
-    } else {
-        return await callOpenAICompatible(systemPrompt, prompt);
+        if (currentConfig.provider === 'GEMINI') {
+            const response = await getGeminiClient().models.generateContent({
+                model: currentConfig.modelName,
+                contents: prompt,
+                config: { systemInstruction: systemPrompt, temperature: 0.7 }
+            });
+            return response.text || "无法生成话术，请稍后再试。";
+        } else {
+            return await callOpenAICompatible(systemPrompt, prompt);
+        }
+    } catch (error) {
+        console.error("Error generating sales pitch:", error);
+        return "AI 服务暂时不可用，请检查网络连接或 API 配置。";
     }
-  } catch (error) {
-    console.error("Error generating sales pitch:", error);
-    return "AI 服务暂时不可用，请检查网络连接或 API 配置。";
-  }
 };
 
 /**
  * Intelligent Property Search/Matching.
  */
 export const searchPropertiesWithAI = async (query: string, properties: Property[]): Promise<{ matchedIds: string[], destinationLocation?: { lat: number, lng: number }, reasoning: string, commuteEstimates?: Record<string, string> }> => {
-  try {
-    const simplifiedProperties = properties.map(p => ({
-      id: p.id,
-      info: `${p.title}, ${p.type}, ${p.price}, ${p.location}, ${p.address}, ${p.tags.join(' ')}`
-    }));
+    try {
+        const simplifiedProperties = properties.map(p => ({
+            id: p.id,
+            info: `${p.title}, ${p.type}, ${p.price}, ${p.location}, ${p.address}, ${p.tags.join(' ')}`
+        }));
 
-    const systemPrompt = `作为智能房产顾问，请根据用户的需求，从下面的房源列表中筛选出最匹配的房源。`;
-    const userPrompt = `
+        const systemPrompt = `作为智能房产顾问，请根据用户的需求，从下面的房源列表中筛选出最匹配的房源。`;
+        const userPrompt = `
         用户需求: "${query}"
         
         房源列表:
@@ -202,64 +202,64 @@ export const searchPropertiesWithAI = async (query: string, properties: Property
         }
     `;
 
-    let responseText = "";
+        let responseText = "";
 
-    if (currentConfig.provider === 'GEMINI') {
-        const response = await getGeminiClient().models.generateContent({
-          model: currentConfig.modelName,
-          contents: userPrompt,
-          config: {
-            systemInstruction: systemPrompt,
-            responseMimeType: "application/json",
-            responseSchema: {
-              type: Type.OBJECT,
-              properties: {
-                matchedIds: { type: Type.ARRAY, items: { type: Type.STRING } },
-                destinationLocation: {
-                    type: Type.OBJECT,
-                    properties: { lat: { type: Type.NUMBER }, lng: { type: Type.NUMBER } },
-                    nullable: true
-                },
-                reasoning: { type: Type.STRING },
-                commuteEstimates: {
-                    type: Type.ARRAY,
-                    items: {
+        if (currentConfig.provider === 'GEMINI') {
+            const response = await getGeminiClient().models.generateContent({
+                model: currentConfig.modelName,
+                contents: userPrompt,
+                config: {
+                    systemInstruction: systemPrompt,
+                    responseMimeType: "application/json",
+                    responseSchema: {
                         type: Type.OBJECT,
-                        properties: { id: { type: Type.STRING }, description: { type: Type.STRING } }
-                    },
-                    nullable: true
-                }
-              },
-              required: ["matchedIds", "reasoning"]
-            }
-          }
-        });
-        responseText = response.text || "";
-    } else {
-        responseText = await callOpenAICompatible(systemPrompt, userPrompt, true);
-    }
-
-    if (responseText) {
-        // Clean markdown blocks if generic provider returns them despite instructions
-        const cleanJson = responseText.replace(/```json/g, '').replace(/```/g, '').trim();
-        const result = JSON.parse(cleanJson);
-      
-        const estimatesMap: Record<string, string> = {};
-        if (Array.isArray(result.commuteEstimates)) {
-            result.commuteEstimates.forEach((item: any) => {
-                if (item.id && item.description) {
-                    estimatesMap[item.id] = item.description;
+                        properties: {
+                            matchedIds: { type: Type.ARRAY, items: { type: Type.STRING } },
+                            destinationLocation: {
+                                type: Type.OBJECT,
+                                properties: { lat: { type: Type.NUMBER }, lng: { type: Type.NUMBER } },
+                                nullable: true
+                            },
+                            reasoning: { type: Type.STRING },
+                            commuteEstimates: {
+                                type: Type.ARRAY,
+                                items: {
+                                    type: Type.OBJECT,
+                                    properties: { id: { type: Type.STRING }, description: { type: Type.STRING } }
+                                },
+                                nullable: true
+                            }
+                        },
+                        required: ["matchedIds", "reasoning"]
+                    }
                 }
             });
+            responseText = response.text || "";
+        } else {
+            responseText = await callOpenAICompatible(systemPrompt, userPrompt, true);
         }
-        return { ...result, commuteEstimates: estimatesMap };
-    }
-    return { matchedIds: [], reasoning: "无法解析 AI 响应。" };
 
-  } catch (error) {
-    console.error("AI Search Error:", error);
-    return { matchedIds: [], reasoning: "AI 搜索服务出现错误。" };
-  }
+        if (responseText) {
+            // Clean markdown blocks if generic provider returns them despite instructions
+            const cleanJson = responseText.replace(/```json/g, '').replace(/```/g, '').trim();
+            const result = JSON.parse(cleanJson);
+
+            const estimatesMap: Record<string, string> = {};
+            if (Array.isArray(result.commuteEstimates)) {
+                result.commuteEstimates.forEach((item: any) => {
+                    if (item.id && item.description) {
+                        estimatesMap[item.id] = item.description;
+                    }
+                });
+            }
+            return { ...result, commuteEstimates: estimatesMap };
+        }
+        return { matchedIds: [], reasoning: "无法解析 AI 响应。" };
+
+    } catch (error) {
+        console.error("AI Search Error:", error);
+        return { matchedIds: [], reasoning: "AI 搜索服务出现错误。" };
+    }
 };
 
 /**
@@ -309,7 +309,7 @@ export const getLocationSuggestions = async (keyword: string): Promise<Array<{ n
         } else {
             responseText = await callOpenAICompatible("Return valid JSON array.", prompt, true);
         }
-        
+
         if (responseText) {
             const cleanJson = responseText.replace(/```json/g, '').replace(/```/g, '').trim();
             return JSON.parse(cleanJson);
@@ -356,9 +356,28 @@ export const analyzeImageForKnowledgeBase = async (base64Image: string): Promise
 /**
  * General Chat.
  */
+/**
+ * General Chat.
+ */
 export const getAIChatResponse = async (message: string, knowledgeContext?: string): Promise<string> => {
-  try {
-    const systemInstruction = `
+    try {
+        // [MODIFIED] Check if we should use the Backend Proxy (Vercel)
+        // We assume backend proxy is the default UNLESS user explicitly enabled "Custom AI" in settings
+        const useCustomAI = typeof localStorage !== 'undefined' ? localStorage.getItem('zhiJu_useCustomAI') === 'true' : false;
+
+        if (!useCustomAI) {
+            try {
+                // Dynamic import to avoid circular dependency
+                const { backendApi } = await import('./backend');
+                const res = await backendApi.chatProxy(message, knowledgeContext);
+                return res;
+            } catch (backendError) {
+                console.warn('Backend Proxy failed, falling back to local/default logic:', backendError);
+                // Fallback continues below...
+            }
+        }
+
+        const systemInstruction = `
       你是一个专业的房产咨询 AI 助手，名叫“智居小管家”。
       
       【知识库检索规则】
@@ -370,36 +389,36 @@ export const getAIChatResponse = async (message: string, knowledgeContext?: stri
       3. 如果知识库中包含具体的政策、税率或话术，请准确引用。
     `;
 
-    if (currentConfig.provider === 'GEMINI') {
-        const response = await getGeminiClient().models.generateContent({
-          model: currentConfig.modelName,
-          contents: message,
-          config: {
-            systemInstruction: systemInstruction,
-            // Only Google Models support 'tools: googleSearch' natively in this SDK
-            tools: [{googleSearch: {}}], 
-          }
-        });
-        
-        // Grounding handling
-        const groundingChunks = response.candidates?.[0]?.groundingMetadata?.groundingChunks;
-        let finalText = response.text || "我暂时无法回答这个问题。";
-        if (groundingChunks && groundingChunks.length > 0) {
-            const sources = groundingChunks
-                .map((chunk: any) => chunk.web?.uri ? `[${chunk.web.title}](${chunk.web.uri})` : null)
-                .filter(Boolean)
-                .join('\n');
-            if (sources) finalText += `\n\n参考来源:\n${sources}`;
+        if (currentConfig.provider === 'GEMINI') {
+            const response = await getGeminiClient().models.generateContent({
+                model: currentConfig.modelName,
+                contents: message,
+                config: {
+                    systemInstruction: systemInstruction,
+                    // Only Google Models support 'tools: googleSearch' natively in this SDK
+                    tools: [{ googleSearch: {} }],
+                }
+            });
+
+            // Grounding handling
+            const groundingChunks = response.candidates?.[0]?.groundingMetadata?.groundingChunks;
+            let finalText = response.text || "我暂时无法回答这个问题。";
+            if (groundingChunks && groundingChunks.length > 0) {
+                const sources = groundingChunks
+                    .map((chunk: any) => chunk.web?.uri ? `[${chunk.web.title}](${chunk.web.uri})` : null)
+                    .filter(Boolean)
+                    .join('\n');
+                if (sources) finalText += `\n\n参考来源:\n${sources}`;
+            }
+            return finalText;
+        } else {
+            // Generic Provider
+            return await callOpenAICompatible(systemInstruction, message);
         }
-        return finalText;
-    } else {
-        // Generic Provider
-        return await callOpenAICompatible(systemInstruction, message);
+    } catch (error) {
+        console.error("Chat Error:", error);
+        return "服务繁忙，请稍后再试。";
     }
-  } catch (error) {
-    console.error("Chat Error:", error);
-    return "服务繁忙，请稍后再试。";
-  }
 };
 
 /**
@@ -462,9 +481,9 @@ export const parsePropertyInfoWithAI = async (text: string, base64Image?: string
                             tags: { type: Type.ARRAY, items: { type: Type.STRING } },
                             description: { type: Type.STRING },
                             commuteInfo: { type: Type.STRING },
-                            contacts: { 
-                                type: Type.ARRAY, 
-                                items: { 
+                            contacts: {
+                                type: Type.ARRAY,
+                                items: {
                                     type: Type.OBJECT,
                                     properties: { name: { type: Type.STRING }, phone: { type: Type.STRING } }
                                 }
