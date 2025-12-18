@@ -1689,7 +1689,14 @@ const App: React.FC = () => {
             setActivePage('properties');
             return null;
         }
-        return <BigScreenDashboard properties={properties} orders={orders} onExit={() => setActivePage('properties')} />;
+        return (
+            <BigScreenDashboard
+                properties={properties}
+                orders={orders}
+                logs={systemLogs}
+                onExit={() => setActivePage('properties')}
+            />
+        );
     }
 
     return (

@@ -1,11 +1,12 @@
 
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { Property, Order, PropertyStatus, OrderStatus, PropertyType } from '../types';
+import { Property, Order, PropertyStatus, OrderStatus, PropertyType, SystemLog } from '../types';
 import { CASCADING_REGIONS } from '../constants';
 
 interface BigScreenDashboardProps {
     properties: Property[];
     orders: Order[];
+    logs: SystemLog[];
     onExit: () => void;
 }
 
@@ -106,7 +107,25 @@ const TrendChart = ({ data, color = '#22d3ee' }: { data: number[], color?: strin
     );
 };
 
-const BigScreenDashboard: React.FC<BigScreenDashboardProps> = ({ properties, orders, onExit }) => {
+// Helper
+const isToday = (dateStr: string) => {
+    if (!dateStr) return false;
+    const d = new Date(dateStr);
+    const today = new Date();
+    return d.getDate() === today.getDate() &&
+        d.getMonth() === today.getMonth() &&
+        d.getFullYear() === today.getFullYear();
+};
+
+const getDaysDiff = (start: string, end: string) => {
+    if (!start || !end) return 0;
+    const d1 = new Date(start);
+    const d2 = new Date(end);
+    const diffTime = Math.abs(d2.getTime() - d1.getTime());
+    return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+};
+
+const BigScreenDashboard: React.FC<BigScreenDashboardProps> = ({ properties, orders, logs, onExit }) => {
     const [time, setTime] = useState(new Date());
     const [isFullScreen, setIsFullScreen] = useState(false);
     const currentMonth = new Date().getMonth() + 1;
@@ -127,8 +146,72 @@ const BigScreenDashboard: React.FC<BigScreenDashboardProps> = ({ properties, ord
     const mapInstanceRef = useRef<any>(null);
     const markersRef = useRef<any[]>([]);
 
-    // Stats Logic
+    // --- Real Data Calculation ---
+    const { todayGMV, todayViewings, avgCycle, agentRanking, activeUserCount } = useMemo(() => {
+        let gmv = 0;
+        let viewingsCount = 0;
+        let totalCycleDays = 0;
+        let completedCount = 0;
+        const agentStats: Record<string, { count: number, areas: Record<string, number> }> = {};
+
+        orders.forEach(o => {
+            // GMV (Today, Completed)
+            const isCompleted = o.status === OrderStatus.COMPLETED;
+            const isViewing = o.status === OrderStatus.VIEWING;
+            const dateRef = isCompleted ? o.contractDate : o.createdAt;
+
+            if (isToday(dateRef || '')) {
+                if (isCompleted) gmv += (o.price || 0);
+                if (isViewing) viewingsCount++;
+            }
+
+            // Cycle Time
+            if (isCompleted && o.createdAt && o.contractDate) {
+                totalCycleDays += getDaysDiff(o.createdAt, o.contractDate);
+                completedCount++;
+            }
+
+            // Agent Ranking (All Time / This Month - simplified to All for demo unless forced)
+            if (isCompleted) {
+                if (!agentStats[o.agentName]) agentStats[o.agentName] = { count: 0, areas: {} };
+                agentStats[o.agentName].count++;
+
+                // Infer Area from Property Title or find property? 
+                // We have propertyTitle inside order, but not location directly.
+                // Assuming title contains region or we match via ID?
+                // Matching via ID is safer.
+                const prop = properties.find(p => p.id === o.propertyId);
+                const area = prop ? prop.location.substring(0, 3) : '未知'; // Grab first 2-3 chars (e.g. 北京朝)
+                agentStats[o.agentName].areas[area] = (agentStats[o.agentName].areas[area] || 0) + 1;
+            }
+        });
+
+        // Ranking List
+        const ranking = Object.entries(agentStats).map(([name, stat]) => {
+            // Find most frequent area
+            const topArea = Object.entries(stat.areas).sort((a, b) => b[1] - a[1])[0]?.[0] || '未知';
+            return { name, count: stat.count, area: topArea };
+        }).sort((a, b) => b.count - a.count).slice(0, 10);
+
+        // Active Users (Today)
+        const activeUsers = new Set<string>();
+        logs.forEach(l => {
+            if (isToday(l.time)) activeUsers.add(l.user);
+        });
+
+        return {
+            todayGMV: gmv,
+            todayViewings: viewingsCount,
+            avgCycle: completedCount > 0 ? (totalCycleDays / completedCount) : 0,
+            agentRanking: ranking,
+            activeUserCount: activeUsers.size || 1 // At least 1 (me)
+        };
+
+    }, [orders, properties, logs]);
+
+    // Stats Logic (Existing)
     const totalProperties = properties.length;
+
     // Calculate category stats with explicit type for accumulator
     const categoryStats = properties.reduce((acc: Record<string, number>, curr: Property) => {
         acc[curr.category] = (acc[curr.category] || 0) + 1;
@@ -154,15 +237,9 @@ const BigScreenDashboard: React.FC<BigScreenDashboardProps> = ({ properties, ord
 
     const maxRegionCount = sortedRegions.length > 0 ? sortedRegions[0][1] : 1;
 
-    const viewingOrders = orders.filter(o => o.status === OrderStatus.VIEWING);
-
-    // Mock Real-time Data
-    const [visitors, setVisitors] = useState(1240);
-
     useEffect(() => {
         const timer = setInterval(() => setTime(new Date()), 1000);
-        const visitorTimer = setInterval(() => setVisitors(v => v + Math.floor(Math.random() * 5) - 2), 3000);
-        return () => { clearInterval(timer); clearInterval(visitorTimer); };
+        return () => { clearInterval(timer); };
     }, []);
 
     // 1. Initialize Map Instance (Only Once)
@@ -180,10 +257,14 @@ const BigScreenDashboard: React.FC<BigScreenDashboardProps> = ({ properties, ord
             doubleClickZoom: false
         });
 
-        // Use GeoQ PurplishBlue (Domestic Chinese Provider, Fast, Dark Theme)
-        L.tileLayer('https://map.geoq.cn/ArcGIS/rest/services/ChinaOnlineStreetPurplishBlue/MapServer/tile/{z}/{y}/{x}', {
-            maxZoom: 16, // GeoQ generally supports up to 16
-            attribution: 'Map data &copy; <a href="http://www.geoq.cn/">GeoQ</a>'
+        // Use GaoDe Map (AutoNavi) - Proven to work in China
+        // Using "style=6" (which is sometimes satellite or just standard) or "style=7"
+        // We use standard vector and invert it with CSS for Dark Mode
+        L.tileLayer('https://webrd02.is.autonavi.com/appmaptile?lang=zh_cn&size=1&scale=1&style=8&x={x}&y={y}&z={z}', {
+            minZoom: 3,
+            maxZoom: 18,
+            attribution: '&copy; <a href="https://ditu.amap.com/">高德地图</a>',
+            className: 'map-tiles-dark' // Custom class for CSS filter
         }).addTo(map);
 
         mapInstanceRef.current = map;
@@ -296,10 +377,6 @@ const BigScreenDashboard: React.FC<BigScreenDashboardProps> = ({ properties, ord
             }
         }
     };
-
-    // Mock Charts Data (Unused for Regional Heat, but kept for others)
-    // const trendData = [45, 52, 48, 60, 55, 75, 82];
-    // const visitData = [200, 350, 280, 420, 450, 580, 620];
 
     return (
         <div className="fixed inset-0 bg-[#0b1121] text-white z-[9999] overflow-hidden font-sans select-none flex flex-col">
@@ -437,10 +514,10 @@ const BigScreenDashboard: React.FC<BigScreenDashboardProps> = ({ properties, ord
                                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75"></span>
                                     <span className="relative inline-flex rounded-full h-3 w-3 bg-cyan-500"></span>
                                 </span>
-                                <span className="text-sm font-bold text-slate-300 tracking-wider">ASSET MONITORING • CHINA</span>
+                                <span className="text-sm font-bold text-slate-300 tracking-wider">SYSTEM ACTIVITY • TODAY</span>
                             </div>
                             <div className="mt-2 text-4xl font-black text-white font-mono tracking-tight">
-                                <Counter value={visitors} /> <span className="text-sm font-normal text-slate-500">实时数据流</span>
+                                <Counter value={activeUserCount} /> <span className="text-sm font-normal text-slate-500">人次 (今日活跃)</span>
                             </div>
                         </div>
 
@@ -469,19 +546,19 @@ const BigScreenDashboard: React.FC<BigScreenDashboardProps> = ({ properties, ord
                         <GlassCard className="justify-center items-center" active>
                             <div className="text-slate-400 text-xs uppercase mb-1">今日成交总额 (GMV)</div>
                             <div className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-200 to-yellow-500 font-mono">
-                                ¥<Counter value={845200} />
+                                ¥<Counter value={todayGMV} />
                             </div>
                         </GlassCard>
                         <GlassCard className="justify-center items-center">
                             <div className="text-slate-400 text-xs uppercase mb-1">今日新增带看</div>
                             <div className="text-3xl font-black text-cyan-400 font-mono">
-                                <Counter value={viewingOrders.length + 12} /> <span className="text-sm text-slate-600">组</span>
+                                <Counter value={todayViewings} /> <span className="text-sm text-slate-600">组</span>
                             </div>
                         </GlassCard>
                         <GlassCard className="justify-center items-center">
                             <div className="text-slate-400 text-xs uppercase mb-1">平均成交周期</div>
                             <div className="text-3xl font-black text-indigo-400 font-mono">
-                                7.2 <span className="text-sm text-slate-600">天</span>
+                                {avgCycle.toFixed(1)} <span className="text-sm text-slate-600">天</span>
                             </div>
                         </GlassCard>
                     </div>
@@ -493,21 +570,10 @@ const BigScreenDashboard: React.FC<BigScreenDashboardProps> = ({ properties, ord
                     {/* Ranking */}
                     <GlassCard title={`全员业绩排行榜 (${currentMonth}月)`} className="flex-[2] min-h-0" active>
                         <div className="flex flex-col gap-2 overflow-y-auto h-full pr-2 custom-scrollbar">
-                            {[
-                                { name: '王金牌', area: '朝阳区', count: 38, avatar: '👑' },
-                                { name: '李销冠', area: '海淀区', count: 32, avatar: '🥈' },
-                                { name: '张经理', area: '通州区', count: 29, avatar: '🥉' },
-                                { name: '陈顾问', area: '大兴区', count: 25, avatar: '4' },
-                                { name: '赵新人', area: '丰台区', count: 21, avatar: '5' },
-                                { name: '刘精英', area: '朝阳区', count: 18, avatar: '6' },
-                                { name: '孙行者', area: '西城区', count: 15, avatar: '7' },
-                                { name: '周大福', area: '东城区', count: 12, avatar: '8' },
-                                { name: '吴美丽', area: '顺义区', count: 9, avatar: '9' },
-                                { name: '郑奋斗', area: '昌平区', count: 6, avatar: '10' },
-                            ].map((agent, i) => (
+                            {agentRanking.length > 0 ? agentRanking.map((agent, i) => (
                                 <div key={i} className="flex items-center p-2 rounded-lg hover:bg-white/5 transition-colors border border-transparent hover:border-slate-700 shrink-0">
                                     <div className={`w-8 h-8 flex items-center justify-center rounded-lg font-bold text-sm mr-3 ${i < 3 ? 'bg-gradient-to-br from-yellow-500/20 to-amber-700/20 text-amber-400 border border-amber-500/30' : 'bg-slate-800 text-slate-500'}`}>
-                                        {agent.avatar}
+                                        {i + 1}
                                     </div>
                                     <div className="flex-1">
                                         <div className="text-sm font-bold text-slate-200">{agent.name}</div>
@@ -517,7 +583,9 @@ const BigScreenDashboard: React.FC<BigScreenDashboardProps> = ({ properties, ord
                                         <div className="text-sm font-mono font-bold text-cyan-400">{agent.count} <span className="text-[10px] text-slate-500 font-normal">套</span></div>
                                     </div>
                                 </div>
-                            ))}
+                            )) : (
+                                <div className="text-slate-500 text-center text-xs mt-10">暂无成交数据</div>
+                            )}
                         </div>
                     </GlassCard>
 
@@ -578,6 +646,10 @@ const BigScreenDashboard: React.FC<BigScreenDashboardProps> = ({ properties, ord
         .custom-scrollbar::-webkit-scrollbar-thumb {
             background: rgba(255, 255, 255, 0.2);
             border-radius: 2px;
+        }
+        /* Dark Map Filter for GaoDe */
+        .map-tiles-dark {
+            filter: invert(100%) hue-rotate(180deg) brightness(0.6) contrast(1.5) grayscale(20%);
         }
       `}</style>
         </div>
