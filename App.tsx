@@ -14,6 +14,7 @@ import ClientManagement from './components/ClientManagement';
 import AcquisitionChannel from './components/AcquisitionChannel';
 import BigScreenDashboard from './components/BigScreenDashboard';
 import { searchPropertiesWithAI, parsePropertyInfoWithAI, configureAI } from './services/geminiService';
+import { seedAllProperties, syncKnowledgeBase } from './services/seeder';
 import { db } from './services/db';
 
 const LoginPage = ({ onLogin, error, config, loading }: { onLogin: (u: string, p: string) => void; error: string; config: SystemConfig; loading: boolean }) => {
@@ -490,7 +491,15 @@ const App: React.FC = () => {
             setClients(loadedClients);
             setOrders(loadedOrders);
             setSystemLogs(loadedLogs);
-            setKnowledgeEntries(loadedKnowledge);
+
+            // Check for stale/empty knowledge base and force sync
+            let validatedKnowledge = loadedKnowledge;
+            if (loadedKnowledge.length < 5) {
+                console.log('Detected sparse knowledge base, syncing fresh content...');
+                await syncKnowledgeBase();
+                validatedKnowledge = await db.getKnowledge();
+            }
+            setKnowledgeEntries(validatedKnowledge);
             setViewingAgents(loadedAgents);
 
             // Config AI

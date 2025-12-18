@@ -187,6 +187,11 @@ const BigScreenDashboard: React.FC<BigScreenDashboardProps> = ({ properties, ord
 
         mapInstanceRef.current = map;
 
+        // Fix: Invalidate size to ensure map renders correctly in flex container
+        setTimeout(() => {
+            map.invalidateSize();
+        }, 200);
+
         return () => {
             map.remove();
             mapInstanceRef.current = null;

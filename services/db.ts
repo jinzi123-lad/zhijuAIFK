@@ -303,8 +303,26 @@ export const db = {
         try {
             const { data, error } = await supabase.from('knowledge').select('*').order('created_at', { ascending: false });
             if (error) throw error;
+
+            // Auto-seed if empty
+            if (data.length === 0) {
+                console.log('Knowledge Base empty, auto-seeding default content...');
+                // We map and insert. Using upsert to be safe, though insert is fine for empty.
+                const { error: seedError } = await supabase.from('knowledge').insert(INITIAL_KNOWLEDGE_BASE.map(mapKnowledgeToDB));
+
+                if (!seedError) {
+                    return INITIAL_KNOWLEDGE_BASE;
+                }
+                // If seed fails (e.g. permissions), just return defaults without saving
+                return INITIAL_KNOWLEDGE_BASE;
+            }
+
             return data.map(mapKnowledgeFromDB);
         } catch (e) {
+            // Fallback to local mock
+            if (_mockKnowledge.length === 0) {
+                _mockKnowledge = [...INITIAL_KNOWLEDGE_BASE];
+            }
             return _mockKnowledge;
         }
     },

@@ -35,3 +35,11 @@ export const seedBaseData = async () => {
     }
     console.log('Base data seeded.');
 };
+// Force Sync Knowledge Base (Upsert all constants)
+export const syncKnowledgeBase = async () => {
+    const { INITIAL_KNOWLEDGE_BASE } = await import('../constants');
+    for (const item of INITIAL_KNOWLEDGE_BASE) {
+        await db.saveKnowledge(item);
+    }
+    console.log(`Synced ${INITIAL_KNOWLEDGE_BASE.length} knowledge items.`);
+};
