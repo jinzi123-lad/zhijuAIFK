@@ -166,8 +166,42 @@ const BigScreenDashboard: React.FC<BigScreenDashboardProps> = ({ properties, ord
     const mapInstanceRef = useRef<any>(null);
     const markersRef = useRef<any[]>([]);
 
-    // --- Real Data Calculation ---
+    // --- Backend API Integration ---
+    const [apiStats, setApiStats] = useState<any>(null);
+
+    useEffect(() => {
+        const fetchStats = async () => {
+            try {
+                // Dynamic import to avoid circular dependencies if any
+                const { backendApi } = await import('../services/backend');
+                const data = await backendApi.getDashboardStats();
+                if (data) {
+                    console.log('✅ Real-time stats loaded from Backend:', data);
+                    setApiStats(data);
+                }
+            } catch (e) {
+                console.warn('Backend fetch failed, using local calc:', e);
+            }
+        };
+        fetchStats();
+    }, []);
+
+    // --- Real Data Calculation (Merged with API) ---
     const { todayGMV, todayViewings, avgCycle, agentRanking, activeUserCount, funnelData } = useMemo(() => {
+
+        // If API data is available, prioritize it for core metrics
+        if (apiStats && !apiStats.error) {
+            return {
+                todayGMV: apiStats.totalGMV,
+                todayViewings: apiStats.todayViewings,
+                avgCycle: 0, // API doesn't calc cycle yet
+                agentRanking: apiStats.topAgents,
+                activeUserCount: apiStats.activeUsers,
+                funnelData: apiStats.conversionFunnel,
+            };
+        }
+
+        // Fallback: Client-side Calculation
         let gmv = 0;
         let viewingsCount = 0;
         let totalCycleDays = 0;
@@ -244,7 +278,7 @@ const BigScreenDashboard: React.FC<BigScreenDashboardProps> = ({ properties, ord
                 { label: '本月成交', count: monthlyDeals, color: 'bg-fuchsia-600' },
             ]
         };
-    }, [orders, properties, logs, clients]);
+    }, [orders, properties, logs, clients, apiStats]);
 
     // Stats Logic (Existing)
     const totalProperties = properties.length;
