@@ -180,9 +180,10 @@ const BigScreenDashboard: React.FC<BigScreenDashboardProps> = ({ properties, ord
             doubleClickZoom: false
         });
 
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-            subdomains: 'abcd',
-            maxZoom: 19
+        // Use GeoQ PurplishBlue (Domestic Chinese Provider, Fast, Dark Theme)
+        L.tileLayer('https://map.geoq.cn/ArcGIS/rest/services/ChinaOnlineStreetPurplishBlue/MapServer/tile/{z}/{y}/{x}', {
+            maxZoom: 16, // GeoQ generally supports up to 16
+            attribution: 'Map data &copy; <a href="http://www.geoq.cn/">GeoQ</a>'
         }).addTo(map);
 
         mapInstanceRef.current = map;
@@ -345,12 +346,12 @@ const BigScreenDashboard: React.FC<BigScreenDashboardProps> = ({ properties, ord
             <main className="flex-1 p-6 grid grid-cols-12 gap-6 relative z-10 overflow-hidden">
 
                 {/* === LEFT COLUMN: Market Overview === */}
-                <div className="col-span-3 flex flex-col gap-6">
+                <div className="col-span-3 flex flex-col gap-4 h-full min-h-0">
 
                     {/* Key Asset Stats */}
-                    <GlassCard title="核心资产监控" className="flex-1">
+                    <GlassCard title="核心资产监控" className="flex-[3] min-h-0">
                         <div className="flex flex-col h-full">
-                            <div className="flex items-center justify-between mb-4 border-b border-slate-700/50 pb-4">
+                            <div className="flex items-center justify-between mb-2 border-b border-slate-700/50 pb-2">
                                 <div>
                                     <div className="text-slate-400 text-xs mb-1">管理房源总数</div>
                                     <div className="text-4xl font-black text-white"><Counter value={totalProperties} /> <span className="text-sm font-normal text-slate-500">套</span></div>
@@ -358,10 +359,10 @@ const BigScreenDashboard: React.FC<BigScreenDashboardProps> = ({ properties, ord
                             </div>
 
                             <div className="flex-1 overflow-y-auto custom-scrollbar pr-1">
-                                <h4 className="text-xs text-slate-500 uppercase font-bold mb-3 tracking-wider">各类型房源统计</h4>
-                                <div className="grid grid-cols-2 gap-3">
+                                <h4 className="text-xs text-slate-500 uppercase font-bold mb-2 tracking-wider">各类型房源统计</h4>
+                                <div className="grid grid-cols-2 gap-2">
                                     {sortedCategories.map(([cat, count], i) => (
-                                        <div key={cat} className="bg-slate-800/50 p-3 rounded-lg border-l-2 border-cyan-500/50 hover:bg-slate-800 transition-colors flex justify-between items-center group">
+                                        <div key={cat} className="bg-slate-800/50 p-2 rounded-lg border-l-2 border-cyan-500/50 hover:bg-slate-800 transition-colors flex justify-between items-center group">
                                             <div className="text-slate-400 text-xs group-hover:text-cyan-400 transition-colors">{cat}</div>
                                             <div className="text-lg font-bold text-white font-mono"><Counter value={count} /></div>
                                         </div>
@@ -372,13 +373,13 @@ const BigScreenDashboard: React.FC<BigScreenDashboardProps> = ({ properties, ord
                     </GlassCard>
 
                     {/* Hot Regions (Replaces Trend Analysis) */}
-                    <GlassCard title="热门区域分布" className="h-64">
-                        <div className="h-full flex flex-col justify-center gap-3 px-2">
+                    <GlassCard title="热门区域分布" className="flex-[2] min-h-0">
+                        <div className="h-full flex flex-col justify-center gap-2 px-1">
                             {sortedRegions.map(([region, count], i) => (
                                 <div key={region} className="flex items-center gap-2 group">
                                     <span className={`w-5 text-xs font-bold ${i < 3 ? 'text-amber-400' : 'text-slate-600'}`}>NO.{i + 1}</span>
                                     <span className="w-12 text-xs text-slate-400 text-right truncate">{region}</span>
-                                    <div className="flex-1 h-2 bg-slate-700/50 rounded-full overflow-hidden">
+                                    <div className="flex-1 h-1.5 bg-slate-700/50 rounded-full overflow-hidden">
                                         <div
                                             className={`h-full rounded-full relative overflow-hidden ${i === 0 ? 'bg-gradient-to-r from-red-500 to-amber-500' : i === 1 ? 'bg-gradient-to-r from-amber-500 to-orange-500' : 'bg-slate-600'}`}
                                             style={{ width: `${(count / maxRegionCount) * 100}%` }}
@@ -396,8 +397,8 @@ const BigScreenDashboard: React.FC<BigScreenDashboardProps> = ({ properties, ord
                     </GlassCard>
 
                     {/* Conversion Funnel */}
-                    <GlassCard title="转化漏斗 (本月)" className="h-56">
-                        <div className="flex flex-col gap-3 justify-center h-full">
+                    <GlassCard title="转化漏斗 (本月)" className="flex-[2] min-h-0">
+                        <div className="flex flex-col gap-2 justify-center h-full sm:py-2">
                             {[
                                 { label: '线索接入', count: 120, color: 'bg-blue-600' },
                                 { label: '意向跟进', count: 85, color: 'bg-indigo-600' },
@@ -406,7 +407,7 @@ const BigScreenDashboard: React.FC<BigScreenDashboardProps> = ({ properties, ord
                             ].map((step, idx) => (
                                 <div key={idx} className="flex items-center group">
                                     <span className="w-16 text-right text-xs text-slate-400 mr-3 group-hover:text-white transition-colors">{step.label}</span>
-                                    <div className="flex-1 bg-slate-800/50 h-2 rounded-full overflow-hidden">
+                                    <div className="flex-1 bg-slate-800/50 h-1.5 rounded-full overflow-hidden">
                                         <div className={`h-full ${step.color} rounded-full relative overflow-hidden`} style={{ width: `${(step.count / 120) * 100}%` }}>
                                             <div className="absolute inset-0 bg-white/20 animate-[shimmer_2s_infinite]"></div>
                                         </div>
@@ -419,10 +420,10 @@ const BigScreenDashboard: React.FC<BigScreenDashboardProps> = ({ properties, ord
                 </div>
 
                 {/* === CENTER COLUMN: DIGITIZED MAP === */}
-                <div className="col-span-6 flex flex-col gap-6 relative">
+                <div className="col-span-6 flex flex-col gap-4 h-full min-h-0 relative">
 
                     {/* Map Container */}
-                    <div className="flex-1 relative rounded-2xl border border-slate-700/50 bg-[#0f172a] overflow-hidden group shadow-2xl">
+                    <div className="flex-1 relative rounded-2xl border border-slate-700/50 bg-[#0f172a] overflow-hidden group shadow-2xl min-h-0">
                         <div ref={mapContainerRef} className="w-full h-full z-0 opacity-80" />
 
                         {/* Grid Overlay for "Digital" Effect */}
@@ -464,7 +465,7 @@ const BigScreenDashboard: React.FC<BigScreenDashboardProps> = ({ properties, ord
                     </div>
 
                     {/* Bottom Metrics Bar */}
-                    <div className="h-28 grid grid-cols-3 gap-6">
+                    <div className="h-24 grid grid-cols-3 gap-4 shrink-0">
                         <GlassCard className="justify-center items-center" active>
                             <div className="text-slate-400 text-xs uppercase mb-1">今日成交总额 (GMV)</div>
                             <div className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-200 to-yellow-500 font-mono">
@@ -487,10 +488,10 @@ const BigScreenDashboard: React.FC<BigScreenDashboardProps> = ({ properties, ord
                 </div>
 
                 {/* === RIGHT COLUMN: List & Logs === */}
-                <div className="col-span-3 flex flex-col gap-6">
+                <div className="col-span-3 flex flex-col gap-4 h-full min-h-0">
 
                     {/* Ranking */}
-                    <GlassCard title={`全员业绩排行榜 (${currentMonth}月)`} className="flex-1" active>
+                    <GlassCard title={`全员业绩排行榜 (${currentMonth}月)`} className="flex-[2] min-h-0" active>
                         <div className="flex flex-col gap-2 overflow-y-auto h-full pr-2 custom-scrollbar">
                             {[
                                 { name: '王金牌', area: '朝阳区', count: 38, avatar: '👑' },
@@ -521,7 +522,7 @@ const BigScreenDashboard: React.FC<BigScreenDashboardProps> = ({ properties, ord
                     </GlassCard>
 
                     {/* Real-time Order Feed */}
-                    <GlassCard title="实时交易动态" className="h-1/3">
+                    <GlassCard title="实时交易动态" className="flex-1 min-h-0">
                         <div className="relative h-full overflow-hidden">
                             <div className="absolute inset-0 flex flex-col gap-3 animate-[scroll-up_20s_linear_infinite]">
                                 {[...orders, ...orders].slice(0, 10).map((order, i) => ( // Repeat orders for scrolling effect
