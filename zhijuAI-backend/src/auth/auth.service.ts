@@ -1,22 +1,35 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+
+import { Injectable } from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
+import { SupabaseService } from '../common/supabase/supabase.service';
 
 @Injectable()
 export class AuthService {
-    async wechatLogin(code: string) {
-        console.log('Received WeChat Code:', code);
+    constructor(
+        private readonly jwtService: JwtService,
+        private readonly supabase: SupabaseService,
+    ) { }
 
-        // In real env, call: https://api.weixin.qq.com/sns/jscode2session
-        // For now, Mock response
-        if (!code) throw new UnauthorizedException('Code is required');
+    async wechatLogin(code: string, role: string = 'tenant') {
+        // 1. In a real scenario, we exchange 'code' for 'openid' with WeChat API
+        // const { openid } = await this.wechatService.jscode2session(code);
+
+        // For now, we simulate a user ID based on role
+        const mockOpenId = role === 'landlord' ? 'mock_landlord_123' : 'mock_tenant_456';
+
+        // 2. Ideally, check if user exists in Supabase
+        // const { data: user } = await this.supabase.getClient().from('users').select('*').eq('wechat_openid', mockOpenId).single();
+
+        // 3. Generate JWT payload
+        const payload = {
+            sub: mockOpenId,
+            username: role === 'landlord' ? 'Landlord User' : 'Tenant User',
+            role: role
+        };
 
         return {
-            status: 'success',
-            token: 'mock-jwt-token-for-' + code,
-            userInfo: {
-                id: 'user_123',
-                role: 'tenant',
-                name: 'WeChat User'
-            }
+            accessToken: this.jwtService.sign(payload),
+            user: payload
         };
     }
 }
