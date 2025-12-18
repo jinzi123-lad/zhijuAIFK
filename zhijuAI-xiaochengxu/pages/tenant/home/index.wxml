@@ -1,0 +1,39 @@
+<view class="container">
+  <!-- Search Header -->
+  <view class="search-header">
+    <view class="search-bar">
+      <icon type="search" size="14"></icon>
+      <input placeholder="搜索小区/商圈/地铁" placeholder-class="placeholder"></input>
+    </view>
+  </view>
+
+  <!-- Filter Tags -->
+  <scroll-view class="filter-scroll" scroll-x enable-flex>
+    <view class="filter-tag active">全部</view>
+    <view class="filter-tag">整租</view>
+    <view class="filter-tag">合租</view>
+    <view class="filter-tag">近地铁</view>
+    <view class="filter-tag">精装修</view>
+  </scroll-view>
+
+  <!-- Property List -->
+  <scroll-view class="property-list" scroll-y>
+    <block wx:for="{{properties}}" wx:key="id">
+      <view class="property-card">
+        <image class="cover-img" src="{{item.imageUrl}}" mode="aspectFill"></image>
+        <view class="info">
+          <text class="title">{{item.title}}</text>
+          <text class="desc">{{item.area}}㎡ | {{item.layout}} | {{item.location}}</text>
+          
+          <view class="tags">
+            <text class="tag" wx:for="{{item.tags}}" wx:for-item="tag" wx:key="*this">{{tag}}</text>
+          </view>
+          
+          <view class="price-row">
+            <text class="price">¥{{item.price}}<text class="unit">/月</text></text>
+          </view>
+        </view>
+      </view>
+    </block>
+  </scroll-view>
+</view>

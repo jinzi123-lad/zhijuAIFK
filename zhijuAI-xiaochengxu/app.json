@@ -1,0 +1,15 @@
+{
+  "pages": [
+    "pages/index/index",
+    "pages/login/index",
+    "pages/tenant/home/index",
+    "pages/landlord/home/index"
+  ],
+  "window": {
+    "navigationBarTitleText": "智居AI",
+    "navigationBarTextStyle": "black",
+    "navigationBarBackgroundColor": "#ffffff"
+  },
+  "style": "v2",
+  "sitemapLocation": "sitemap.json"
+}

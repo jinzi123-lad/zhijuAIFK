@@ -1,0 +1,30 @@
+<view class="container">
+  <!-- Design Point: Background Blobs -->
+  <view class="bg-blob blob-1"></view>
+  <view class="bg-blob blob-2"></view>
+
+  <view class="header">
+    <text class="title">智居AI</text>
+    <text class="subtitle">Next-Gen Property OS</text>
+  </view>
+
+  <view class="role-selection">
+    <view class="role-card tenant" bindtap="selectTenant">
+      <view class="icon-box">🏠</view>
+      <view class="card-text">
+        <text class="role-title">我是租客</text>
+        <text class="role-desc">智能找房 · 拎包入住</text>
+      </view>
+      <view class="arrow">➜</view>
+    </view>
+    
+    <view class="role-card landlord" bindtap="selectLandlord">
+      <view class="icon-box">🔑</view>
+       <view class="card-text">
+        <text class="role-title">我是房东</text>
+        <text class="role-desc">资产托管 · 收益可视化</text>
+      </view>
+      <view class="arrow">➜</view>
+    </view>
+  </view>
+</view>

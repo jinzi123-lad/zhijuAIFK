@@ -1,0 +1,16 @@
+<view class="container">
+  <view class="logo-area">
+    <image class="logo" src="https://via.placeholder.com/100" mode="aspectFit"></image> 
+    <!-- Placeholder, can handle image later -->
+    <text class="app-name">智居AI</text>
+  </view>
+
+  <view class="login-content">
+    <text class="welcome-text">欢迎归来，{{roleName}}</text>
+    <text class="instruction-text">请授权微信登录以访问您的账户</text>
+    
+    <button class="login-btn" bindtap="handleLogin">
+      微信一键登录
+    </button>
+  </view>
+</view>

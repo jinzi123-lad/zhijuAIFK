@@ -1,0 +1,43 @@
+<view class="container">
+  <!-- Dashboard Header -->
+  <view class="dashboard-header">
+    <view class="stat-item">
+      <text class="stat-num">12</text>
+      <text class="stat-label">管理房源</text>
+    </view>
+    <view class="stat-divider"></view>
+    <view class="stat-item">
+      <text class="stat-num">8</text>
+      <text class="stat-label">在租中</text>
+    </view>
+    <view class="stat-divider"></view>
+    <view class="stat-item">
+      <text class="stat-num">95%</text>
+      <text class="stat-label">出租率</text>
+    </view>
+  </view>
+
+  <!-- Management List -->
+  <view class="section-title">我的房源管理</view>
+  <scroll-view class="property-list" scroll-y>
+    <block wx:for="{{properties}}" wx:key="id">
+      <view class="manage-card">
+        <view class="card-header">
+          <text class="card-title">{{item.title}}</text>
+          <text class="status-badge {{item.status === 'RENTED' ? 'rented' : 'vacant'}}">{{item.status === 'RENTED' ? '已租' : '待租'}}</text>
+        </view>
+        <view class="card-body">
+          <text>租金: ¥{{item.price}}/月</text>
+          <text>访客: {{item.views}} 人</text>
+        </view>
+        <view class="card-actions">
+          <button size="mini" plain>编辑</button>
+          <button size="mini" plain>下架</button>
+          <button size="mini" type="primary" plain>推广</button>
+        </view>
+      </view>
+    </block>
+  </scroll-view>
+
+  <view class="fab-add">+</view>
+</view>
