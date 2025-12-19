@@ -595,7 +595,7 @@ const DataScreen: React.FC<DataScreenProps> = ({ properties, onViewProperty }) =
 
           {/* AI Analysis */}
           {aiAnalysis && (
-            <div className="bg-indigo-900/30 border border-indigo-500/30 rounded-xl p-3 overflow-y-auto max-h-32">
+            <div className="bg-indigo-900/30 border border-indigo-500/30 rounded-xl p-3 overflow-y-auto flex-1 min-h-[150px]">
               <h3 className="text-indigo-400 font-bold text-xs flex items-center mb-1">
                 <span className="mr-1">💡</span> AI 分析
               </h3>
