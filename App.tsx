@@ -1624,6 +1624,12 @@ const App: React.FC = () => {
                                             </div>
                                         )}
                                         <input type="file" accept="image/*" onChange={(e) => handleImageUpload(e, 'imageUrl')} className="absolute inset-0 opacity-0 cursor-pointer" />
+                                        {isUploading && (
+                                            <div className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center text-white z-10 animate-fade-in">
+                                                <div className="w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin mb-2"></div>
+                                                <span className="text-xs font-bold">上传中...</span>
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
                                 <div>
@@ -1638,6 +1644,12 @@ const App: React.FC = () => {
                                             </div>
                                         )}
                                         <input type="file" accept="image/*" onChange={(e) => handleImageUpload(e, 'floorPlanUrl')} className="absolute inset-0 opacity-0 cursor-pointer" />
+                                        {isUploading && (
+                                            <div className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center text-white z-10 animate-fade-in">
+                                                <div className="w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin mb-2"></div>
+                                                <span className="text-xs font-bold">上传中...</span>
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
                             </div>
@@ -1669,6 +1681,11 @@ const App: React.FC = () => {
                                     <div className="w-24 h-24 bg-slate-50 border-2 border-dashed border-slate-300 rounded-lg flex items-center justify-center relative hover:border-indigo-400 hover:bg-indigo-50 transition-colors">
                                         <span className="text-2xl text-slate-400">+</span>
                                         <input type="file" multiple accept="image/*" onChange={(e) => handleMultipleFilesUpload(e, 'IMAGES')} className="absolute inset-0 opacity-0 cursor-pointer" />
+                                        {isUploading && (
+                                            <div className="absolute inset-0 bg-black/60 flex items-center justify-center rounded-lg z-10">
+                                                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
                             </div>

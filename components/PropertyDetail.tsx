@@ -25,6 +25,14 @@ const PropertyDetail: React.FC<PropertyDetailProps> = ({ property, onBack, onEdi
     });
     const [linkCopied, setLinkCopied] = useState(false);
 
+    // Lightbox State
+    const [isLightboxOpen, setIsLightboxOpen] = useState(false);
+    const [lightboxIndex, setLightboxIndex] = useState(0);
+    const [lightboxScale, setLightboxScale] = useState(1);
+    const [lightboxPos, setLightboxPos] = useState({ x: 0, y: 0 });
+    const [isDragging, setIsDragging] = useState(false);
+    const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+
     const config = viewConfig || {
         showPrice: true,
         showAddress: true,
@@ -55,6 +63,65 @@ const PropertyDetail: React.FC<PropertyDetailProps> = ({ property, onBack, onEdi
     const toggleShareConfig = (key: keyof PropertyViewConfig) => {
         setShareConfig(prev => ({ ...prev, [key]: !prev[key] }));
         setLinkCopied(false);
+    };
+
+    // Lightbox Handlers
+    const openLightbox = () => {
+        const index = allImages.indexOf(activeImage);
+        setLightboxIndex(index >= 0 ? index : 0);
+        setLightboxScale(1);
+        setLightboxPos({ x: 0, y: 0 });
+        setIsLightboxOpen(true);
+    };
+    const closeLightbox = () => setIsLightboxOpen(false);
+    const nextImage = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        setLightboxIndex((prev) => (prev + 1) % allImages.length);
+        setLightboxScale(1);
+        setLightboxPos({ x: 0, y: 0 });
+    };
+    const prevImage = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        setLightboxIndex((prev) => (prev - 1 + allImages.length) % allImages.length);
+        setLightboxScale(1);
+        setLightboxPos({ x: 0, y: 0 });
+    };
+    const zoomIn = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        setLightboxScale(prev => Math.min(prev + 0.5, 5));
+    };
+    const zoomOut = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        setLightboxScale(prev => Math.max(prev - 0.5, 0.5));
+    };
+
+    // Wheel Zoom
+    const handleWheel = (e: React.WheelEvent) => {
+        e.stopPropagation();
+        const delta = e.deltaY * -0.001;
+        const newScale = Math.min(Math.max(0.5, lightboxScale + delta), 5);
+        setLightboxScale(newScale);
+    };
+
+    // Drag Logic
+    const handleMouseDown = (e: React.MouseEvent) => {
+        if (lightboxScale > 1) {
+            e.preventDefault();
+            setIsDragging(true);
+            setDragStart({ x: e.clientX - lightboxPos.x, y: e.clientY - lightboxPos.y });
+        }
+    };
+    const handleMouseMove = (e: React.MouseEvent) => {
+        if (isDragging) {
+            e.preventDefault();
+            setLightboxPos({
+                x: e.clientX - dragStart.x,
+                y: e.clientY - dragStart.y
+            });
+        }
+    };
+    const handleMouseUp = () => {
+        setIsDragging(false);
     };
 
     const isAvailable = !property.status || property.status === PropertyStatus.AVAILABLE;
@@ -169,8 +236,11 @@ const PropertyDetail: React.FC<PropertyDetailProps> = ({ property, onBack, onEdi
                 {/* ... (Existing Media Logic, no changes) ... */}
                 {config.showMedia ? (
                     <div className="lg:col-span-2 space-y-4">
-                        <div className="relative h-[400px] bg-slate-100 rounded-2xl overflow-hidden group shadow-inner">
-                            <img src={activeImage} alt="Main" className="w-full h-full object-cover" loading="lazy" decoding="async" />
+                        <div className="relative h-[400px] bg-slate-100 rounded-2xl overflow-hidden group shadow-inner cursor-pointer" onClick={openLightbox}>
+                            <img src={activeImage} alt="Main" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy" decoding="async" />
+                            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
+                                <span className="bg-black/60 text-white px-4 py-2 rounded-full text-sm font-bold backdrop-blur-sm">🔍 查看大图</span>
+                            </div>
                             <div className="absolute top-4 left-4 flex gap-2">
                                 <span className={`px-3 py-1 text-sm font-bold text-white rounded shadow-sm ${property.type === PropertyType.RENT ? 'bg-indigo-600' : 'bg-rose-600'}`}>
                                     {property.type === PropertyType.RENT ? '出租' : '出售'}
@@ -514,6 +584,60 @@ const PropertyDetail: React.FC<PropertyDetailProps> = ({ property, onBack, onEdi
                                 </button>
                             </div>
                         </div>
+                    </div>
+                </div>
+            )}
+            {/* Image Lightbox */}
+            {isLightboxOpen && (
+                <div className="fixed inset-0 bg-black/95 z-[100] flex items-center justify-center animate-fade-in" onClick={closeLightbox}>
+                    {/* Controls */}
+                    <div className="absolute top-4 right-4 flex space-x-4 z-[110]">
+                        <button onClick={zoomOut} className="bg-white/10 hover:bg-white/20 text-white p-3 rounded-full backdrop-blur-md transition-colors">
+                            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" /></svg>
+                        </button>
+                        <button onClick={zoomIn} className="bg-white/10 hover:bg-white/20 text-white p-3 rounded-full backdrop-blur-md transition-colors">
+                            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
+                        </button>
+                        <button onClick={closeLightbox} className="bg-white/10 hover:bg-white/20 text-white p-3 rounded-full backdrop-blur-md transition-colors">
+                            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                        </button>
+                    </div>
+
+                    {/* Navigation */}
+                    {allImages.length > 1 && (
+                        <>
+                            <button onClick={prevImage} className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/10 hover:bg-white/20 text-white p-4 rounded-full backdrop-blur-md transition-colors z-[110]">
+                                <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
+                            </button>
+                            <button onClick={nextImage} className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/10 hover:bg-white/20 text-white p-4 rounded-full backdrop-blur-md transition-colors z-[110]">
+                                <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+                            </button>
+                        </>
+                    )}
+
+                    {/* Image Container */}
+                    <div
+                        className="overflow-hidden w-full h-full flex items-center justify-center"
+                        onWheel={handleWheel}
+                        onMouseUp={handleMouseUp}
+                        onMouseLeave={handleMouseUp}
+                        onClick={closeLightbox} // Allow closing if clicking outside image area
+                    >
+                        <img
+                            src={allImages[lightboxIndex]}
+                            alt={`Full View ${lightboxIndex}`}
+                            className={`max-w-full max-h-full transition-transform duration-75 ease-out select-none ${isDragging ? 'cursor-grabbing' : lightboxScale > 1 ? 'cursor-grab' : 'cursor-default'}`}
+                            style={{
+                                transform: `translate(${lightboxPos.x}px, ${lightboxPos.y}px) scale(${lightboxScale})`
+                            }}
+                            onMouseDown={handleMouseDown}
+                            onMouseMove={handleMouseMove}
+                            onClick={(e) => e.stopPropagation()}
+                            draggable={false}
+                        />
+                    </div>
+                    <div className="absolute bottom-6 left-1/2 -translate-x-1/2 text-white/80 text-sm font-medium bg-black/40 px-4 py-2 rounded-full backdrop-blur-md">
+                        {lightboxIndex + 1} / {allImages.length}
                     </div>
                 </div>
             )}
