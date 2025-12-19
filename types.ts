@@ -288,12 +288,7 @@ export interface SystemConfig {
   maintenanceMode: boolean;
   allowRegistration: boolean;
 
-  // Custom AI Config
-  useCustomAI?: boolean;
-  aiProvider: 'GEMINI' | 'OPENAI_COMPATIBLE'; // New: Choose between Gemini SDK or Generic OpenAI format
-  aiApiKey?: string;
-  aiApiEndpoint?: string; // Important for generic providers (Base URL)
-  aiModelName?: string;
+
 }
 
 // -- MediaPipe Hands Types --

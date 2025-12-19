@@ -444,12 +444,7 @@ const App: React.FC = () => {
         announcement: '',
         supportPhone: '',
         maintenanceMode: false,
-        allowRegistration: false,
-        useCustomAI: false,
-        aiProvider: 'GEMINI',
-        aiApiKey: '',
-        aiApiEndpoint: 'https://generativelanguage.googleapis.com',
-        aiModelName: 'gemini-2.5-flash'
+        allowRegistration: false
     });
 
     const [properties, setProperties] = useState<Property[]>([]);
@@ -502,12 +497,7 @@ const App: React.FC = () => {
             setKnowledgeEntries(validatedKnowledge);
             setViewingAgents(loadedAgents);
 
-            // Config AI
-            if (loadedConfig.useCustomAI && loadedConfig.aiApiKey) {
-                configureAI(loadedConfig.aiApiKey, loadedConfig.aiApiEndpoint, loadedConfig.aiModelName, loadedConfig.aiProvider);
-            } else {
-                configureAI(getEnv('API_KEY'), undefined, loadedConfig.aiModelName, 'GEMINI');
-            }
+            // Note: AI Configuration is now handled entirely in the backend/env.
 
             setDataLoading(false);
         };
@@ -632,11 +622,6 @@ const App: React.FC = () => {
         await db.saveConfig(newConfig);
         setSystemConfig(newConfig);
         addSystemLog('更新系统设置');
-        if (newConfig.useCustomAI && newConfig.aiApiKey) {
-            configureAI(newConfig.aiApiKey, newConfig.aiApiEndpoint, newConfig.aiModelName, newConfig.aiProvider);
-        } else {
-            configureAI(getEnv('API_KEY'), undefined, newConfig.aiModelName, 'GEMINI');
-        }
     };
 
     const handleLogin = async (u: string, p: string) => {

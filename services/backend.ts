@@ -1,5 +1,10 @@
 /// <reference types="vite/client" />
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'https://zhiju-backend.vercel.app';
+export const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'https://zhiju-backend.vercel.app';
+if (!import.meta.env.VITE_BACKEND_URL) {
+    console.warn('⚠️ VITE_BACKEND_URL not found, using default:', BACKEND_URL);
+} else {
+    console.log('✅ Connected to Backend:', BACKEND_URL);
+}
 
 export interface DashboardStats {
     totalGMV: number;

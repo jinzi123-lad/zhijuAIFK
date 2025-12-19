@@ -55,12 +55,7 @@ const SystemSettings: React.FC<SystemSettingsProps> = ({ logs, config, onUpdateC
                     >
                         ⚙️ 常规设置
                     </button>
-                    <button
-                        onClick={() => setActiveTab('AI')}
-                        className={`text-left px-4 py-3 rounded-lg text-sm font-medium transition-colors ${activeTab === 'AI' ? 'bg-indigo-600 text-white shadow' : 'text-slate-600 hover:bg-slate-200'}`}
-                    >
-                        🤖 AI 智能配置
-                    </button>
+// [REMOVED] AI Settings Tab - Now configured in backend only
                     <button
                         onClick={() => setActiveTab('SECURITY')}
                         className={`text-left px-4 py-3 rounded-lg text-sm font-medium transition-colors ${activeTab === 'SECURITY' ? 'bg-indigo-600 text-white shadow' : 'text-slate-600 hover:bg-slate-200'}`}
@@ -119,106 +114,7 @@ const SystemSettings: React.FC<SystemSettingsProps> = ({ logs, config, onUpdateC
                         </div>
                     )}
 
-                    {activeTab === 'AI' && (
-                        <div className="max-w-2xl space-y-6">
-                            <h3 className="text-lg font-bold text-slate-800 border-b border-slate-100 pb-2">AI 模型服务配置</h3>
 
-                            <div className="bg-blue-50 p-4 rounded-lg border border-blue-100 text-sm text-blue-800 mb-4">
-                                <p className="font-bold mb-1">📢 支持多品牌大模型接入</p>
-                                系统默认使用 Google Gemini。如需使用 <b>硅基流动 (DeepSeek/Qwen)</b>、OpenAI、月之暗面 (Kimi) 等，请开启“启用自定义配置”并选择“通用 OpenAI 格式”，填入 Base URL 和 Key 即可。
-                            </div>
-
-                            <div className="flex items-center justify-between bg-slate-50 p-4 rounded-xl border border-slate-200">
-                                <div>
-                                    <div className="font-bold text-slate-800">启用自定义配置</div>
-                                    <div className="text-xs text-slate-500">开启后将覆盖系统默认 AI 参数</div>
-                                </div>
-                                <button
-                                    onClick={() => setLocalSettings({ ...localSettings, useCustomAI: !localSettings.useCustomAI })}
-                                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${localSettings.useCustomAI ? 'bg-indigo-600' : 'bg-slate-300'}`}
-                                >
-                                    <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${localSettings.useCustomAI ? 'translate-x-6' : 'translate-x-1'}`} />
-                                </button>
-                            </div>
-
-                            <div className={localSettings.useCustomAI ? 'space-y-4 animate-fade-in' : 'opacity-50 pointer-events-none'}>
-
-                                <div>
-                                    <label className="block text-sm font-bold text-slate-700 mb-2">接口类型 (Provider Type)</label>
-                                    <div className="grid grid-cols-2 gap-3">
-                                        <button
-                                            onClick={() => setLocalSettings({ ...localSettings, aiProvider: 'GEMINI' })}
-                                            className={`p-3 rounded-lg border text-sm font-bold transition-all flex flex-col items-center justify-center gap-1
-                                      ${localSettings.aiProvider === 'GEMINI' ? 'border-indigo-600 bg-indigo-50 text-indigo-700 ring-1 ring-indigo-600' : 'border-slate-200 hover:bg-slate-50 text-slate-600'}
-                                    `}
-                                        >
-                                            <span>Google Gemini SDK</span>
-                                            <span className="text-[10px] font-normal text-slate-400">官方 SDK (稳定)</span>
-                                        </button>
-                                        <button
-                                            onClick={() => setLocalSettings({ ...localSettings, aiProvider: 'OPENAI_COMPATIBLE' })}
-                                            className={`p-3 rounded-lg border text-sm font-bold transition-all flex flex-col items-center justify-center gap-1
-                                      ${localSettings.aiProvider === 'OPENAI_COMPATIBLE' ? 'border-indigo-600 bg-indigo-50 text-indigo-700 ring-1 ring-indigo-600' : 'border-slate-200 hover:bg-slate-50 text-slate-600'}
-                                    `}
-                                        >
-                                            <span>通用 OpenAI 格式</span>
-                                            <span className="text-[10px] font-normal text-slate-400">硅基流动 / DeepSeek / Kimi</span>
-                                        </button>
-                                    </div>
-                                </div>
-
-                                <div>
-                                    <label className="block text-sm font-bold text-slate-700 mb-2">API Key</label>
-                                    <input
-                                        type="password"
-                                        className="w-full p-3 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 focus:ring-2 focus:ring-indigo-500 outline-none transition-colors font-mono text-sm"
-                                        placeholder="sk-..."
-                                        value={localSettings.aiApiKey || ''}
-                                        onChange={(e) => setLocalSettings({ ...localSettings, aiApiKey: e.target.value })}
-                                    />
-                                </div>
-
-                                <div>
-                                    <label className="block text-sm font-bold text-slate-700 mb-2">模型名称 (Model Name)</label>
-                                    <input
-                                        className="w-full p-3 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 focus:ring-2 focus:ring-indigo-500 outline-none transition-colors"
-                                        placeholder={localSettings.aiProvider === 'GEMINI' ? "gemini-2.5-flash" : "deepseek-ai/DeepSeek-V3"}
-                                        value={localSettings.aiModelName || ''}
-                                        onChange={(e) => setLocalSettings({ ...localSettings, aiModelName: e.target.value })}
-                                    />
-                                    <p className="text-xs text-slate-400 mt-1">硅基流动常用模型: <code>deepseek-ai/DeepSeek-V3</code>, <code>Qwen/Qwen2.5-72B-Instruct</code></p>
-                                </div>
-
-                                {localSettings.aiProvider === 'OPENAI_COMPATIBLE' && (
-                                    <div>
-                                        <label className="block text-sm font-bold text-slate-700 mb-2">API Base URL (Endpoint)</label>
-                                        <input
-                                            className="w-full p-3 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 focus:ring-2 focus:ring-indigo-500 outline-none transition-colors"
-                                            placeholder="https://api.siliconflow.cn/v1"
-                                            value={localSettings.aiApiEndpoint || ''}
-                                            onChange={(e) => setLocalSettings({ ...localSettings, aiApiEndpoint: e.target.value })}
-                                        />
-                                        <p className="text-xs text-slate-400 mt-2 flex gap-2 flex-wrap items-center">
-                                            一键填入:
-                                            <button onClick={() => setLocalSettings({ ...localSettings, aiApiEndpoint: 'https://api.siliconflow.cn/v1' })} className="underline hover:text-indigo-600 font-bold bg-indigo-50 px-2 rounded text-indigo-700">硅基流动 (SiliconFlow)</button>
-                                            <span className="text-slate-300">|</span>
-                                            <button onClick={() => setLocalSettings({ ...localSettings, aiApiEndpoint: 'https://api.deepseek.com' })} className="underline hover:text-indigo-600">DeepSeek</button>
-                                            <button onClick={() => setLocalSettings({ ...localSettings, aiApiEndpoint: 'https://api.moonshot.cn/v1' })} className="underline hover:text-indigo-600">月之暗面</button>
-                                        </p>
-                                    </div>
-                                )}
-                            </div>
-
-                            <div className="pt-4">
-                                <button
-                                    onClick={handleSaveGeneral}
-                                    className="px-6 py-2 bg-indigo-600 text-white font-bold rounded-lg hover:bg-indigo-700 shadow-sm transition-colors"
-                                >
-                                    应用并保存 AI 配置
-                                </button>
-                            </div>
-                        </div>
-                    )}
 
                     {activeTab === 'SECURITY' && (
                         <div className="max-w-2xl space-y-8">

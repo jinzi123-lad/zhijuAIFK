@@ -1,79 +1,24 @@
-
-import { GoogleGenAI, Type } from "@google/genai";
 import { Property } from "../types";
+import { BACKEND_URL } from "./backend";
 
-// Dynamic AI Client Management
-let aiInstance: GoogleGenAI | null = null;
-
-// Helper to safely access env vars in both Vite (import.meta.env) and standard Node environments
-const getEnv = (key: string) => {
-    // @ts-ignore
-    if (typeof import.meta !== 'undefined' && import.meta.env) {
-        // @ts-ignore
-        return import.meta.env[`VITE_${key}`] || import.meta.env[key];
-    }
-    // @ts-ignore
-    if (typeof process !== 'undefined' && process.env) {
-        // @ts-ignore
-        return process.env[key];
-    }
-    return '';
-};
-
-let currentConfig = {
-    apiKey: getEnv('API_KEY') || '',
-    provider: (getEnv('AI_PROVIDER') as 'GEMINI' | 'OPENAI_COMPATIBLE') || (getEnv('AI_ENDPOINT') ? 'OPENAI_COMPATIBLE' : 'GEMINI'),
-    endpoint: getEnv('AI_ENDPOINT') || '',
-    modelName: getEnv('AI_MODEL') || "gemini-2.5-flash"
-};
-
-// Helper to get or initialize the Gemini client (only used if provider is GEMINI)
-const getGeminiClient = () => {
-    if (!aiInstance) {
-        aiInstance = new GoogleGenAI({ apiKey: currentConfig.apiKey });
-    }
-    return aiInstance;
-};
-
-// Exported function to re-configure AI at runtime
-export const configureAI = (apiKey?: string, endpoint?: string, modelName?: string, provider: 'GEMINI' | 'OPENAI_COMPATIBLE' = 'GEMINI') => {
-    currentConfig.apiKey = apiKey || getEnv('API_KEY') || '';
-    currentConfig.endpoint = endpoint || '';
-    currentConfig.modelName = modelName || "gemini-2.5-flash";
-    currentConfig.provider = provider;
-
-    if (provider === 'GEMINI') {
-        // Reset Gemini instance
-        aiInstance = new GoogleGenAI({ apiKey: currentConfig.apiKey });
-    } else {
-        // For generic provider, we rely on fetch, so no persistent client needed really, 
-        // just clearing Gemini instance to avoid confusion
-        aiInstance = null;
-    }
-
-    console.log(`AI Service Configured: Provider=${provider}, Model=${currentConfig.modelName}, Endpoint=${currentConfig.endpoint || 'Default'}`);
-};
-
-// --- Generic OpenAI-Compatible API Caller ---
-const callOpenAICompatible = async (
+// Unified Backend Proxy Caller
+// This function forwards standard OpenAI-compatible messages to the backend.
+const callBackendProxy = async (
     systemInstruction: string,
     userPrompt: string,
+    modelName: string = "deepseek-ai/DeepSeek-V3", // Default model, acts as a hint to backend or unused if backend overrides
     jsonMode: boolean = false,
     base64Image?: string
 ): Promise<string> => {
     try {
-        const baseUrl = currentConfig.endpoint.replace(/\/$/, ''); // Remove trailing slash
-        const url = baseUrl.endsWith('/chat/completions') ? baseUrl : `${baseUrl}/chat/completions`;
-
         const messages: any[] = [];
         if (systemInstruction) {
             messages.push({ role: "system", content: systemInstruction });
         }
 
         const userContent: any[] = [];
-        // Text Content
         userContent.push({ type: "text", text: userPrompt });
-        // Image Content (if any)
+
         if (base64Image) {
             const imageData = base64Image.startsWith('data:') ? base64Image : `data:image/jpeg;base64,${base64Image}`;
             userContent.push({
@@ -84,47 +29,49 @@ const callOpenAICompatible = async (
 
         messages.push({ role: "user", content: userContent });
 
-        const body: any = {
-            model: currentConfig.modelName,
-            messages: messages,
-            temperature: 0.7,
-            stream: false
-        };
-
-        // Note: We removed the explicit `response_format: { type: "json_object" }` here.
-        // Reason: Not all Open-Source models (like older DeepSeek or Qwen hosted on SiliconFlow) 
-        // support this parameter strictly, and might throw 400 Bad Request.
-        // We rely on the system prompt instruction "Return JSON" and the cleaner function below.
-
-        const response = await fetch(url, {
+        // Forward to Backend Proxy
+        // Note: The backend 'ai/chat' endpoint processes { messages: [...] } body.
+        const response = await fetch(`${BACKEND_URL}/ai/chat`, {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${currentConfig.apiKey}`
+                'Content-Type': 'application/json'
             },
-            body: JSON.stringify(body)
+            body: JSON.stringify({
+                messages: messages,
+                model: modelName, // Optional, backend might ignore if fixed
+                stream: false
+            })
         });
 
         if (!response.ok) {
             const errText = await response.text();
-            console.error("AI API Error:", response.status, errText);
-            throw new Error(`API Error: ${response.status}`);
+            console.error("Backend AI Proxy Error:", response.status, errText);
+            throw new Error(`AI Service Error: ${response.status}`);
         }
 
         const data = await response.json();
-        return data.choices?.[0]?.message?.content || "";
+        // Compatible with standard OpenAI response format
+        return data.choices?.[0]?.message?.content || data.response || "AI 无响应";
+
     } catch (e) {
-        console.error("Call OpenAI Compatible Failed:", e);
-        throw e;
+        console.error("AI Service Call Failed:", e);
+        return "智能服务暂时繁忙，请稍后再试。";
     }
+};
+
+/**
+ * Configure AI - No-op now as configuration is handled in backend.
+ * Kept for type compatibility if needed, but logs a warning.
+ */
+export const configureAI = (apiKey?: string, endpoint?: string, modelName?: string, provider?: any) => {
+    console.log("Frontend AI Configuration is deprecated. Please configure environment variables in your Backend (Vercel).");
 };
 
 /**
  * Generates a sales pitch for a specific property.
  */
 export const generateSalesPitch = async (property: Property): Promise<string> => {
-    try {
-        const prompt = `
+    const prompt = `
       房源信息：
       - 标题: ${property.title}
       - 类型: ${property.type === 'RENT' ? '出租' : '出售'}
@@ -137,7 +84,7 @@ export const generateSalesPitch = async (property: Property): Promise<string> =>
       - 通勤信息: ${property.commuteInfo || '未知'}
     `;
 
-        const systemPrompt = `
+    const systemPrompt = `
       你是一位资深的房地产金牌销售。请根据用户提供的房源信息，写一段吸引人的销售话术（Pitch）。
       话术要求：
       1. 语气热情、专业、真诚。
@@ -146,34 +93,20 @@ export const generateSalesPitch = async (property: Property): Promise<string> =>
       4. 包含一个强有力的结尾，引导客户预约看房。
     `;
 
-        if (currentConfig.provider === 'GEMINI') {
-            const response = await getGeminiClient().models.generateContent({
-                model: currentConfig.modelName,
-                contents: prompt,
-                config: { systemInstruction: systemPrompt, temperature: 0.7 }
-            });
-            return response.text || "无法生成话术，请稍后再试。";
-        } else {
-            return await callOpenAICompatible(systemPrompt, prompt);
-        }
-    } catch (error) {
-        console.error("Error generating sales pitch:", error);
-        return "AI 服务暂时不可用，请检查网络连接或 API 配置。";
-    }
+    return await callBackendProxy(systemPrompt, prompt);
 };
 
 /**
  * Intelligent Property Search/Matching.
  */
 export const searchPropertiesWithAI = async (query: string, properties: Property[]): Promise<{ matchedIds: string[], destinationLocation?: { lat: number, lng: number }, reasoning: string, commuteEstimates?: Record<string, string> }> => {
-    try {
-        const simplifiedProperties = properties.map(p => ({
-            id: p.id,
-            info: `${p.title}, ${p.type}, ${p.price}, ${p.location}, ${p.address}, ${p.tags.join(' ')}`
-        }));
+    const simplifiedProperties = properties.map(p => ({
+        id: p.id,
+        info: `${p.title}, ${p.type}, ${p.price}, ${p.location}, ${p.address}, ${p.tags.join(' ')}`
+    }));
 
-        const systemPrompt = `作为智能房产顾问，请根据用户的需求，从下面的房源列表中筛选出最匹配的房源。`;
-        const userPrompt = `
+    const systemPrompt = `作为智能房产顾问，请根据用户的需求，从下面的房源列表中筛选出最匹配的房源。`;
+    const userPrompt = `
         用户需求: "${query}"
         
         房源列表:
@@ -202,45 +135,10 @@ export const searchPropertiesWithAI = async (query: string, properties: Property
         }
     `;
 
-        let responseText = "";
+    const responseText = await callBackendProxy(systemPrompt, userPrompt, "deepseek-ai/DeepSeek-V3", true);
 
-        if (currentConfig.provider === 'GEMINI') {
-            const response = await getGeminiClient().models.generateContent({
-                model: currentConfig.modelName,
-                contents: userPrompt,
-                config: {
-                    systemInstruction: systemPrompt,
-                    responseMimeType: "application/json",
-                    responseSchema: {
-                        type: Type.OBJECT,
-                        properties: {
-                            matchedIds: { type: Type.ARRAY, items: { type: Type.STRING } },
-                            destinationLocation: {
-                                type: Type.OBJECT,
-                                properties: { lat: { type: Type.NUMBER }, lng: { type: Type.NUMBER } },
-                                nullable: true
-                            },
-                            reasoning: { type: Type.STRING },
-                            commuteEstimates: {
-                                type: Type.ARRAY,
-                                items: {
-                                    type: Type.OBJECT,
-                                    properties: { id: { type: Type.STRING }, description: { type: Type.STRING } }
-                                },
-                                nullable: true
-                            }
-                        },
-                        required: ["matchedIds", "reasoning"]
-                    }
-                }
-            });
-            responseText = response.text || "";
-        } else {
-            responseText = await callOpenAICompatible(systemPrompt, userPrompt, true);
-        }
-
-        if (responseText) {
-            // Clean markdown blocks if generic provider returns them despite instructions
+    if (responseText && responseText !== "智能服务暂时繁忙，请稍后再试。") {
+        try {
             const cleanJson = responseText.replace(/```json/g, '').replace(/```/g, '').trim();
             const result = JSON.parse(cleanJson);
 
@@ -253,13 +151,11 @@ export const searchPropertiesWithAI = async (query: string, properties: Property
                 });
             }
             return { ...result, commuteEstimates: estimatesMap };
+        } catch (e) {
+            console.error("AI Parse Error", e);
         }
-        return { matchedIds: [], reasoning: "无法解析 AI 响应。" };
-
-    } catch (error) {
-        console.error("AI Search Error:", error);
-        return { matchedIds: [], reasoning: "AI 搜索服务出现错误。" };
     }
+    return { matchedIds: [], reasoning: "无法解析 AI 响应。" };
 };
 
 /**
@@ -276,108 +172,45 @@ export const getLocationSuggestions = async (keyword: string): Promise<Array<{ n
         { name: '天安门', address: '北京市东城区', lat: 39.9042, lng: 116.4074 },
         { name: '亦庄', address: '北京市大兴区', lat: 39.8000, lng: 116.5000 },
         { name: '通州副中心', address: '北京市通州区', lat: 39.9100, lng: 116.6500 },
+        { name: '北京南站', address: '北京市丰台区', lat: 39.8651, lng: 116.3785 },
+        { name: '奥林匹克公园', address: '北京市朝阳区', lat: 40.0169, lng: 116.3965 },
     ];
     const filtered = mockData.filter(item => item.name.includes(keyword));
     if (filtered.length > 0) return filtered;
 
-    // 2. Fallback to AI
+    // 2. Fallback to AI (Backend)
     try {
         const prompt = `请提供 3-5 个与 "${keyword}" 相关的中国具体地点建议。返回 JSON 数组，包含 name, address, lat, lng。`;
-        let responseText = "";
+        const responseText = await callBackendProxy("Return valid JSON array.", prompt, "deepseek-ai/DeepSeek-V3", true);
 
-        if (currentConfig.provider === 'GEMINI') {
-            const response = await getGeminiClient().models.generateContent({
-                model: currentConfig.modelName,
-                contents: prompt,
-                config: {
-                    responseMimeType: "application/json",
-                    responseSchema: {
-                        type: Type.ARRAY,
-                        items: {
-                            type: Type.OBJECT,
-                            properties: {
-                                name: { type: Type.STRING },
-                                address: { type: Type.STRING },
-                                lat: { type: Type.NUMBER },
-                                lng: { type: Type.NUMBER }
-                            }
-                        }
-                    }
-                }
-            });
-            responseText = response.text || "";
-        } else {
-            responseText = await callOpenAICompatible("Return valid JSON array.", prompt, true);
-        }
-
-        if (responseText) {
+        if (responseText && responseText !== "智能服务暂时繁忙，请稍后再试。") {
             const cleanJson = responseText.replace(/```json/g, '').replace(/```/g, '').trim();
+            // Try to extract array part if extra text exists
+            const arrayMatch = cleanJson.match(/\[.*\]/s);
+            if (arrayMatch) {
+                return JSON.parse(arrayMatch[0]);
+            }
             return JSON.parse(cleanJson);
         }
-        return [];
     } catch (e) {
         console.error("Suggestion Error", e);
-        return [];
     }
+    return [];
 };
 
 /**
  * Knowledge Base Image Analysis.
  */
 export const analyzeImageForKnowledgeBase = async (base64Image: string): Promise<string> => {
-    try {
-        const base64Data = base64Image.split(',')[1] || base64Image;
-        const prompt = "请详细分析这张图片的内容。如果图片包含文字（如政策文档、房产海报、数据图表），请提取所有文字内容。如果图片是房屋照片，请描述其装修风格、家具配置和特色。你的回答将被存入知识库，用于后续回答用户问题。";
-
-        if (currentConfig.provider === 'GEMINI') {
-            const response = await getGeminiClient().models.generateContent({
-                model: currentConfig.modelName,
-                contents: {
-                    parts: [
-                        { inlineData: { mimeType: "image/jpeg", data: base64Data } },
-                        { text: prompt }
-                    ]
-                }
-            });
-            return response.text || "AI 无法识别图片内容。";
-        } else {
-            try {
-                return await callOpenAICompatible("你是一个图片分析助手。", prompt, false, base64Image);
-            } catch (e) {
-                return "该 AI 模型不支持图片识别或配置错误。";
-            }
-        }
-    } catch (error) {
-        console.error("Image Analysis Error:", error);
-        return "图片解析服务暂时不可用。";
-    }
+    const prompt = "请详细分析这张图片的内容。如果图片包含文字（如政策文档、房产海报、数据图表），请提取所有文字内容。如果图片是房屋照片，请描述其装修风格、家具配置和特色。你的回答将被存入知识库，用于后续回答用户问题。";
+    return await callBackendProxy("你是一个图片分析助手。", prompt, "deepseek-ai/DeepSeek-V3", false, base64Image);
 };
 
 /**
  * General Chat.
  */
-/**
- * General Chat.
- */
 export const getAIChatResponse = async (message: string, knowledgeContext?: string): Promise<string> => {
-    try {
-        // [MODIFIED] Check if we should use the Backend Proxy (Vercel)
-        // We assume backend proxy is the default UNLESS user explicitly enabled "Custom AI" in settings
-        const useCustomAI = typeof localStorage !== 'undefined' ? localStorage.getItem('zhiJu_useCustomAI') === 'true' : false;
-
-        if (!useCustomAI) {
-            try {
-                // Dynamic import to avoid circular dependency
-                const { backendApi } = await import('./backend');
-                const res = await backendApi.chatProxy(message, knowledgeContext);
-                return res;
-            } catch (backendError) {
-                console.warn('Backend Proxy failed, falling back to local/default logic:', backendError);
-                // Fallback continues below...
-            }
-        }
-
-        const systemInstruction = `
+    const systemInstruction = `
       你是一个专业的房产咨询 AI 助手，名叫“智居小管家”。
       
       【知识库检索规则】
@@ -389,121 +222,50 @@ export const getAIChatResponse = async (message: string, knowledgeContext?: stri
       3. 如果知识库中包含具体的政策、税率或话术，请准确引用。
     `;
 
-        if (currentConfig.provider === 'GEMINI') {
-            const response = await getGeminiClient().models.generateContent({
-                model: currentConfig.modelName,
-                contents: message,
-                config: {
-                    systemInstruction: systemInstruction,
-                    // Only Google Models support 'tools: googleSearch' natively in this SDK
-                    tools: [{ googleSearch: {} }],
-                }
-            });
-
-            // Grounding handling
-            const groundingChunks = response.candidates?.[0]?.groundingMetadata?.groundingChunks;
-            let finalText = response.text || "我暂时无法回答这个问题。";
-            if (groundingChunks && groundingChunks.length > 0) {
-                const sources = groundingChunks
-                    .map((chunk: any) => chunk.web?.uri ? `[${chunk.web.title}](${chunk.web.uri})` : null)
-                    .filter(Boolean)
-                    .join('\n');
-                if (sources) finalText += `\n\n参考来源:\n${sources}`;
-            }
-            return finalText;
-        } else {
-            // Generic Provider
-            return await callOpenAICompatible(systemInstruction, message);
-        }
-    } catch (error) {
-        console.error("Chat Error:", error);
-        return "服务繁忙，请稍后再试。";
-    }
+    return await callBackendProxy(systemInstruction, message);
 };
 
 /**
  * Smart Fill (Parsing).
  */
 export const parsePropertyInfoWithAI = async (text: string, base64Image?: string): Promise<any> => {
-    try {
-        const prompt = `
-            你是一个智能房产信息提取助手。请根据提供的文本内容（和图片内容），提取房源的关键信息，并以 JSON 格式返回。
-            
-            输入文本:
-            ${text}
-            
-            请尽可能提取以下字段。如果信息不存在，请留空或使用默认值。
-            
-            Schema Definition:
-            - title: 简短的房源标题 (string)
-            - type: "RENT" (出租) 或 "SALE" (出售)
-            - category: "住宅" | "别墅" | "写字楼" | "商铺" | "公寓" (根据描述推断)
-            - price: 价格数字 (number)
-            - area: 面积数字 (number)
-            - layout: 户型，如"2室1厅" (string)
-            - province: 省份，如"北京" (string)
-            - city: 城市，如"北京" (string)
-            - district: 区县，如"朝阳" (string)
-            - address: 详细地址 (string)
-            - tags: 房源特色标签列表 (array of strings)
-            - description: 详细描述 (string)
-            - commuteInfo: 交通情况 (string)
-            - contacts: 房东联系人列表 [{name, phone}]
-            
-            注意：价格租房为元/月，售房为元。
-            请务必返回纯 JSON。
-        `;
+    const prompt = `
+        你是一个智能房产信息提取助手。请根据提供的文本内容（和图片内容），提取房源的关键信息，并以 JSON 格式返回。
+        
+        输入文本:
+        ${text}
+        
+        请尽可能提取以下字段。如果信息不存在，请留空或使用默认值。
+        
+        Schema Definition:
+        - title: 简短的房源标题 (string)
+        - type: "RENT" (出租) 或 "SALE" (出售)
+        - category: "住宅" | "别墅" | "写字楼" | "商铺" | "公寓" (根据描述推断)
+        - price: 价格数字 (number)
+        - area: 面积数字 (number)
+        - layout: 户型，如"2室1厅" (string)
+        - province: 省份，如"北京" (string)
+        - city: 城市，如"北京" (string)
+        - district: 区县，如"朝阳" (string)
+        - address: 详细地址 (string)
+        - tags: 房源特色标签列表 (array of strings)
+        - description: 详细描述 (string)
+        - commuteInfo: 交通情况 (string)
+        - contacts: 房东联系人列表 [{name, phone}]
+        
+        注意：价格租房为元/月，售房为元。
+        请务必返回纯 JSON。
+    `;
 
-        if (currentConfig.provider === 'GEMINI') {
-            const parts: any[] = [{ text: prompt }];
-            if (base64Image) {
-                parts.unshift({ inlineData: { mimeType: "image/jpeg", data: base64Image.split(',')[1] } });
-            }
+    const responseText = await callBackendProxy("Return valid JSON.", prompt, "deepseek-ai/DeepSeek-V3", true, base64Image);
 
-            const response = await getGeminiClient().models.generateContent({
-                model: currentConfig.modelName,
-                contents: { parts },
-                config: {
-                    responseMimeType: "application/json",
-                    responseSchema: {
-                        type: Type.OBJECT,
-                        properties: {
-                            title: { type: Type.STRING },
-                            type: { type: Type.STRING, enum: ["RENT", "SALE"] },
-                            category: { type: Type.STRING },
-                            price: { type: Type.NUMBER },
-                            area: { type: Type.NUMBER },
-                            layout: { type: Type.STRING },
-                            province: { type: Type.STRING },
-                            city: { type: Type.STRING },
-                            district: { type: Type.STRING },
-                            address: { type: Type.STRING },
-                            tags: { type: Type.ARRAY, items: { type: Type.STRING } },
-                            description: { type: Type.STRING },
-                            commuteInfo: { type: Type.STRING },
-                            contacts: {
-                                type: Type.ARRAY,
-                                items: {
-                                    type: Type.OBJECT,
-                                    properties: { name: { type: Type.STRING }, phone: { type: Type.STRING } }
-                                }
-                            }
-                        }
-                    }
-                }
-            });
-            if (response.text) return JSON.parse(response.text);
-        } else {
-            // Generic Provider
-            const result = await callOpenAICompatible("Return valid JSON.", prompt, true, base64Image);
-            if (result) {
-                const cleanJson = result.replace(/```json/g, '').replace(/```/g, '').trim();
-                return JSON.parse(cleanJson);
-            }
+    if (responseText && responseText !== "智能服务暂时繁忙，请稍后再试。") {
+        try {
+            const cleanJson = responseText.replace(/```json/g, '').replace(/```/g, '').trim();
+            return JSON.parse(cleanJson);
+        } catch (e) {
+            console.error("Smart Fill Parse Error", e);
         }
-        return null;
-    } catch (error) {
-        console.error("Smart Fill Error:", error);
-        return null;
     }
+    return null;
 };
