@@ -59,6 +59,46 @@ const PropertyDetail: React.FC<PropertyDetailProps> = ({ property, onBack, onEdi
 
     const isAvailable = !property.status || property.status === PropertyStatus.AVAILABLE;
 
+    // Map Implementation
+    const mapContainerRef = React.useRef<HTMLDivElement>(null);
+    const mapInstanceRef = React.useRef<any>(null);
+
+    React.useEffect(() => {
+        const L = (window as any).L;
+        if (!L || !mapContainerRef.current || !property.coordinates) return;
+
+        // Cleanup previous instance
+        if (mapInstanceRef.current) {
+            mapInstanceRef.current.remove();
+            mapInstanceRef.current = null;
+        }
+
+        const { lat, lng } = property.coordinates;
+        const map = L.map(mapContainerRef.current, {
+            center: [lat, lng],
+            zoom: 15,
+            zoomControl: false, // Mini map style
+            attributionControl: false
+        });
+
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+            maxZoom: 19
+        }).addTo(map);
+
+        L.marker([lat, lng]).addTo(map)
+            .bindPopup(property.title)
+            .openPopup();
+
+        mapInstanceRef.current = map;
+
+        return () => {
+            if (mapInstanceRef.current) {
+                mapInstanceRef.current.remove();
+                mapInstanceRef.current = null;
+            }
+        };
+    }, [property]);
+
     return (
         <div className="bg-white min-h-full p-4 md:p-8 animate-fade-in relative">
             {/* Header / Navigation */}
@@ -362,20 +402,19 @@ const PropertyDetail: React.FC<PropertyDetailProps> = ({ property, onBack, onEdi
                     )}
 
                     {config.showAddress && (
-                        <div className="bg-slate-100 rounded-xl h-48 flex items-center justify-center relative overflow-hidden group border border-slate-200">
-                            <div className="absolute inset-0 bg-slate-200" />
-                            <div className="z-10 text-slate-500 text-sm flex flex-col items-center">
-                                <span className="text-2xl mb-2">📍</span>
-                                <span>地图位置预览</span>
-                                <span className="text-xs mt-1 text-slate-400">{property.address}</span>
-                            </div>
+                        <div className="relative h-64 rounded-xl overflow-hidden border border-slate-200 shadow-inner group">
+                            {/* Map Container */}
+                            <div ref={mapContainerRef} className="w-full h-full z-0" style={{ minHeight: '100%' }} />
+
+                            {/* Overlay Button for External Map */}
                             <a
                                 href={`https://map.baidu.com/search/${encodeURIComponent(property.address)}`}
                                 target="_blank"
                                 rel="noreferrer"
-                                className="absolute inset-0 z-20 hover:bg-black/5 transition-colors"
-                                title="点击查看地图"
-                            />
+                                className="absolute bottom-3 right-3 z-[400] bg-white/90 hover:bg-white text-indigo-600 text-xs font-bold px-3 py-2 rounded-lg shadow-md flex items-center transition-all backdrop-blur-sm"
+                            >
+                                <span className="mr-1">🗺️</span> 打开百度地图
+                            </a>
                         </div>
                     )}
                 </div>
