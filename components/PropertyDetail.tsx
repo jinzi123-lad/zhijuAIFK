@@ -280,7 +280,7 @@ const PropertyDetail: React.FC<PropertyDetailProps> = ({ property, onBack, onEdi
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     {property.videoUrls.map((video, idx) => (
                                         <div key={idx} className="aspect-video bg-black rounded-xl overflow-hidden shadow-sm">
-                                            <video controls className="w-full h-full" preload="none">
+                                            <video controls playsInline crossOrigin="anonymous" className="w-full h-full" preload="metadata">
                                                 <source src={video} type="video/mp4" />
                                                 您的浏览器不支持视频播放。
                                             </video>
