@@ -78,7 +78,10 @@ const PropertyDetail: React.FC<PropertyDetailProps> = ({ property, onBack, onEdi
             center: [lat, lng],
             zoom: 15,
             zoomControl: false, // Mini map style
-            attributionControl: false
+            attributionControl: false,
+            scrollWheelZoom: false, // Prevent scroll hijacking
+            dragging: !L.Browser.mobile, // Disable dragging on mobile to prevent scroll locking
+            tap: false // iOS fix
         });
 
         L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
@@ -167,7 +170,7 @@ const PropertyDetail: React.FC<PropertyDetailProps> = ({ property, onBack, onEdi
                 {config.showMedia ? (
                     <div className="lg:col-span-2 space-y-4">
                         <div className="relative h-[400px] bg-slate-100 rounded-2xl overflow-hidden group shadow-inner">
-                            <img src={activeImage} alt="Main" className="w-full h-full object-cover" />
+                            <img src={activeImage} alt="Main" className="w-full h-full object-cover" loading="lazy" decoding="async" />
                             <div className="absolute top-4 left-4 flex gap-2">
                                 <span className={`px-3 py-1 text-sm font-bold text-white rounded shadow-sm ${property.type === PropertyType.RENT ? 'bg-indigo-600' : 'bg-rose-600'}`}>
                                     {property.type === PropertyType.RENT ? '出租' : '出售'}
@@ -194,7 +197,7 @@ const PropertyDetail: React.FC<PropertyDetailProps> = ({ property, onBack, onEdi
                                         onClick={() => setActiveImage(img)}
                                         className={`relative w-24 h-24 flex-shrink-0 rounded-lg overflow-hidden border-2 transition-all ${activeImage === img ? 'border-indigo-600 ring-2 ring-indigo-200' : 'border-transparent opacity-70 hover:opacity-100'}`}
                                     >
-                                        <img src={img} alt={`Thumbnail ${idx}`} className="w-full h-full object-cover" />
+                                        <img src={img} alt={`Thumbnail ${idx}`} className="w-full h-full object-cover" loading="lazy" />
                                     </button>
                                 ))}
                             </div>
@@ -207,7 +210,7 @@ const PropertyDetail: React.FC<PropertyDetailProps> = ({ property, onBack, onEdi
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     {property.videoUrls.map((video, idx) => (
                                         <div key={idx} className="aspect-video bg-black rounded-xl overflow-hidden shadow-sm">
-                                            <video controls className="w-full h-full">
+                                            <video controls className="w-full h-full" preload="none">
                                                 <source src={video} type="video/mp4" />
                                                 您的浏览器不支持视频播放。
                                             </video>
@@ -222,7 +225,7 @@ const PropertyDetail: React.FC<PropertyDetailProps> = ({ property, onBack, onEdi
                                     <span className="mr-2">📐</span> 户型图
                                 </h3>
                                 <div className="h-64 bg-slate-50 border border-slate-200 rounded-xl overflow-hidden p-4 hover:shadow-md transition-shadow">
-                                    <img src={property.floorPlanUrl} alt="Floor Plan" className="w-full h-full object-contain" />
+                                    <img src={property.floorPlanUrl} alt="Floor Plan" className="w-full h-full object-contain" loading="lazy" />
                                 </div>
                             </div>
                         )}
@@ -331,7 +334,7 @@ const PropertyDetail: React.FC<PropertyDetailProps> = ({ property, onBack, onEdi
                                     <div key={unit.id} className="p-3 flex items-center hover:bg-slate-50 transition-colors">
                                         <div className="w-16 h-12 bg-slate-200 rounded overflow-hidden mr-3 flex-shrink-0">
                                             {unit.imageUrl ? (
-                                                <img src={unit.imageUrl} className="w-full h-full object-cover" alt="" />
+                                                <img src={unit.imageUrl} className="w-full h-full object-cover" alt="" loading="lazy" />
                                             ) : (
                                                 <div className="w-full h-full flex items-center justify-center text-xs text-slate-400">无图</div>
                                             )}
@@ -415,7 +418,7 @@ const PropertyDetail: React.FC<PropertyDetailProps> = ({ property, onBack, onEdi
                                 href={`https://www.amap.com/search?query=${encodeURIComponent(property.address)}`}
                                 target="_blank"
                                 rel="noreferrer"
-                                className="absolute bottom-3 right-3 z-[400] bg-white/90 hover:bg-white text-indigo-600 text-xs font-bold px-3 py-2 rounded-lg shadow-md flex items-center transition-all backdrop-blur-sm"
+                                className="absolute bottom-3 right-3 z-[400] bg-white/90 hover:bg-white text-indigo-600 text-xs font-bold px-3 py-2 rounded-lg shadow-md flex items-center transition-all"
                             >
                                 <span className="mr-1">🗺️</span> 打开高德地图
                             </a>
