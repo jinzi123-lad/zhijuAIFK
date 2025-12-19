@@ -91,6 +91,11 @@ const PropertyDetail: React.FC<PropertyDetailProps> = ({ property, onBack, onEdi
 
         mapInstanceRef.current = map;
 
+        // Fix: Force map to recalculate size after render to avoid "grey tiles" or partial display
+        setTimeout(() => {
+            map.invalidateSize();
+        }, 200);
+
         return () => {
             if (mapInstanceRef.current) {
                 mapInstanceRef.current.remove();

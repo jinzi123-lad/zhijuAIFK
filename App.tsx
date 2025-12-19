@@ -13,7 +13,7 @@ import SystemSettings from './components/SystemSettings';
 import ClientManagement from './components/ClientManagement';
 import AcquisitionChannel from './components/AcquisitionChannel';
 import BigScreenDashboard from './components/BigScreenDashboard';
-import { searchPropertiesWithAI, parsePropertyInfoWithAI, configureAI } from './services/geminiService';
+import { searchPropertiesWithAI, parsePropertyInfoWithAI, configureAI, generatePropertyDescription } from './services/geminiService';
 import { seedAllProperties, syncKnowledgeBase } from './services/seeder';
 import { db } from './services/db';
 
@@ -893,7 +893,66 @@ const App: React.FC = () => {
     const removeContact = (index: number) => { const updated = [...newPropertyLandlordContacts]; updated.splice(index, 1); setNewPropertyLandlordContacts(updated); };
     const updateContact = (index: number, field: keyof LandlordContact, value: string) => { const updated = [...newPropertyLandlordContacts]; updated[index] = { ...updated[index], [field]: value }; setNewPropertyLandlordContacts(updated); };
     const handlePaste = (e: React.ClipboardEvent) => { const items = e.clipboardData.items; for (let i = 0; i < items.length; i++) { if (items[i].type.indexOf('image') !== -1) { const blob = items[i].getAsFile(); if (blob) { const reader = new FileReader(); reader.onload = (event) => { setAiInputImage(event.target?.result as string); }; reader.readAsDataURL(blob); e.preventDefault(); } } } };
-    const handleSmartFill = async () => { if (!aiInputText && !aiInputImage) { alert("请先输入文本或粘贴图片！"); return; } setIsAiParsing(true); const data = await parsePropertyInfoWithAI(aiInputText, aiInputImage || undefined); if (data) { setNewProperty(prev => ({ ...prev, title: data.title || prev.title, type: PropertyType.RENT, category: (data.category as any) || prev.category, price: data.price || prev.price, area: data.area || prev.area, layout: data.layout || prev.layout, address: data.address || prev.address, description: data.description || prev.description, commuteInfo: data.commuteInfo || prev.commuteInfo })); if (data.province) setNewPropertyProvince(data.province); if (data.city) setNewPropertyCity(data.city); if (data.district) setNewPropertyDistrict(data.district); if (data.tags && Array.isArray(data.tags)) { setNewPropertyTags(prev => Array.from(new Set([...prev, ...data.tags]))); } if (data.contacts && Array.isArray(data.contacts)) { setNewPropertyLandlordContacts(data.contacts); } alert("AI 识别完成！请检查已填入的信息。"); } else { alert("识别失败，请重试。"); } setIsAiParsing(false); };
+    const handleSmartFill = async () => {
+        if (!aiInputText && !aiInputImage) {
+            alert("请先输入文本或粘贴图片！");
+            return;
+        }
+        setIsAiParsing(true);
+        try {
+            const data = await parsePropertyInfoWithAI(aiInputText, aiInputImage || undefined);
+            if (data) {
+                setNewProperty(prev => ({
+                    ...prev,
+                    title: data.title || prev.title,
+                    type: PropertyType.RENT,
+                    category: (data.category as any) || prev.category,
+                    price: data.price || prev.price,
+                    area: data.area || prev.area,
+                    layout: data.layout || prev.layout,
+                    address: data.address || prev.address,
+                    description: data.description || prev.description,
+                    commuteInfo: data.commuteInfo || prev.commuteInfo
+                }));
+                if (data.province) setNewPropertyProvince(data.province);
+                if (data.city) setNewPropertyCity(data.city);
+                if (data.district) setNewPropertyDistrict(data.district);
+                if (data.tags && Array.isArray(data.tags)) {
+                    setNewPropertyTags(prev => Array.from(new Set([...prev, ...data.tags])));
+                }
+                if (data.contacts && Array.isArray(data.contacts)) {
+                    setNewPropertyLandlordContacts(data.contacts);
+                }
+                alert("AI 识别完成！请检查已填入的信息。");
+            } else {
+                alert("识别失败，请重试。");
+            }
+        } catch (e) {
+            console.error(e);
+            alert("识别过程出错");
+        }
+        setIsAiParsing(false);
+    };
+
+    // [NEW] AI Description Generator
+    const [isGeneratingDesc, setIsGeneratingDesc] = useState(false);
+    const handleGenerateDescription = async () => {
+        if (!newProperty.title) {
+            alert('请先填写房源标题和基本信息！');
+            return;
+        }
+        setIsGeneratingDesc(true);
+        try {
+            const desc = await generatePropertyDescription(newProperty, newPropertyDetails);
+            if (desc) {
+                setNewProperty(prev => ({ ...prev, description: desc }));
+            }
+        } catch (e) {
+            console.error(e);
+            alert('生成失败，请稍后重试');
+        }
+        setIsGeneratingDesc(false);
+    };
 
     const handleAutoLocate = () => {
         if (!navigator.geolocation) { alert("浏览器不支持地理定位"); return; }
@@ -1351,6 +1410,30 @@ const App: React.FC = () => {
                                             ))
                                         ))}
                                     </div>
+                                </div>
+
+                                {/* Property Description with AI */}
+                                <div className="col-span-12 border-t border-slate-200 pt-4 mt-2">
+                                    <div className="flex justify-between items-center mb-2">
+                                        <label className="block text-sm font-bold text-slate-700">房源详细介绍</label>
+                                        <button
+                                            onClick={handleGenerateDescription}
+                                            disabled={isGeneratingDesc}
+                                            className="px-3 py-1 bg-gradient-to-r from-purple-500 to-indigo-600 text-white text-xs font-bold rounded-lg hover:from-purple-600 hover:to-indigo-700 transition-all shadow-md flex items-center"
+                                        >
+                                            {isGeneratingDesc ? (
+                                                <><svg className="animate-spin h-3 w-3 mr-1" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>生成中...</>
+                                            ) : (
+                                                <><span className="mr-1">✨</span> AI 自动生成介绍</>
+                                            )}
+                                        </button>
+                                    </div>
+                                    <textarea
+                                        className="w-full p-3 bg-slate-50 border border-slate-300 rounded-lg text-sm text-slate-800 h-32 outline-none focus:ring-2 focus:ring-indigo-500 resize-none leading-relaxed"
+                                        placeholder="详细描述房源的亮点、周边配套、交通状况等..."
+                                        value={newProperty.description || ''}
+                                        onChange={e => setNewProperty({ ...newProperty, description: e.target.value })}
+                                    />
                                 </div>
 
                                 {/* Merged Business & Lease Info */}

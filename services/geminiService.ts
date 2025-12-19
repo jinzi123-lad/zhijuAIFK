@@ -297,3 +297,28 @@ export const parsePropertyInfoWithAI = async (text: string, base64Image?: string
     }
     return null;
 };
+
+// Generate Property Description
+export const generatePropertyDescription = async (property: any, details: any): Promise<string> => {
+    const prompt = `
+    房源信息:
+    标题: ${property.title}
+    类型: ${property.category}
+    租金: ${property.price}
+    面积: ${property.area}平米
+    位置: ${property.location} ${property.address}
+    标签: ${property.tags?.join(', ')}
+    详细配置: ${JSON.stringify(details)}
+    
+    请根据以上信息，写一段吸引人的房源介绍（Description）。
+    要求：
+    1. 突出核心卖点（如交通、商圈、装修等）。
+    2. 语言通俗易懂，但这不失专业感。
+    3. 适当使用emoji增加亲和力。
+    4. 篇幅适中（100-200字）。
+    `;
+
+    const systemPrompt = `你是一位专业的房产文案策划。请根据提供的房源参数，撰写一段高质量的房源介绍。`;
+
+    return await callBackendProxy(systemPrompt, prompt);
+};
