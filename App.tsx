@@ -1783,7 +1783,13 @@ const App: React.FC = () => {
             )}
 
             {activePage === 'data-screen' && (
-                <DataScreen properties={properties} onViewProperty={setSelectedProperty} />
+                <DataScreen
+                    properties={properties}
+                    onViewProperty={(p) => {
+                        setSelectedProperty(p);
+                        setActivePage('properties');
+                    }}
+                />
             )}
 
             {activePage === 'clients' && (
