@@ -53,6 +53,7 @@ const DataScreen: React.FC<DataScreenProps> = ({ properties, onViewProperty }) =
   // AI State
   const [isSearching, setIsSearching] = useState(false);
   const [aiAnalysis, setAiAnalysis] = useState('');
+  const [aiCommuteInfo, setAiCommuteInfo] = useState<Record<string, string>>({});
 
   // Map refs
   const mapContainerRef = useRef<HTMLDivElement>(null);
@@ -230,9 +231,21 @@ const DataScreen: React.FC<DataScreenProps> = ({ properties, onViewProperty }) =
           setSelectedProperty(p);
           map.setView([p.coordinates.lat, p.coordinates.lng], 14);
         });
+
+      // Show AI Commute Info as Comic Bubble on Hover
+      if (aiCommuteInfo[p.id]) {
+        marker.bindTooltip(aiCommuteInfo[p.id], {
+          permanent: false, // Show on hover only
+          direction: 'top',
+          className: 'comic-bubble',
+          offset: [0, -35], // Position above the icon
+          opacity: 1
+        });
+      }
+
       markersRef.current.push(marker);
     });
-  }, [filteredProperties, L]);
+  }, [filteredProperties, aiCommuteInfo, L]);
 
   const clearRoutes = () => {
     const map = mapInstanceRef.current;
@@ -320,6 +333,7 @@ const DataScreen: React.FC<DataScreenProps> = ({ properties, onViewProperty }) =
 
     setBaseProperties(matched);
     setAiAnalysis(reasoning);
+    setAiCommuteInfo(commuteEstimates || {});
     setIsSearching(false);
 
     if (!mapInstanceRef.current || !L) return;
@@ -368,6 +382,7 @@ const DataScreen: React.FC<DataScreenProps> = ({ properties, onViewProperty }) =
     setFilterPrice('全部');
     setFilterCommute('不限');
     setFilterLease('不限');
+    setAiCommuteInfo({});
     clearRoutes();
     setInteractionMode('VIEW');
     if (mapInstanceRef.current) mapInstanceRef.current.setView([39.9042, 116.4074], 12);
@@ -616,7 +631,6 @@ const DataScreen: React.FC<DataScreenProps> = ({ properties, onViewProperty }) =
         </div>
       </div>
 
-      {/* Map Area */}
       <div className="flex-1 relative">
         <div ref={mapContainerRef} className="w-full h-full z-0" />
 
@@ -668,6 +682,35 @@ const DataScreen: React.FC<DataScreenProps> = ({ properties, onViewProperty }) =
           </div>
         )}
       </div>
+
+      <style>{`
+        .comic-bubble {
+          background: transparent;
+          border: none;
+          box-shadow: none;
+        }
+        .comic-bubble .leaflet-tooltip-content {
+          background: #fff;
+          border: 2px solid #000;
+          border-radius: 8px;
+          padding: 6px 10px;
+          font-family: 'Comic Sans MS', 'Chalkboard SE', sans-serif;
+          font-weight: bold;
+          font-size: 13px;
+          color: #000;
+          box-shadow: 3px 3px 0px rgba(0,0,0,1);
+          white-space: nowrap;
+          margin: 0;
+          position: relative;
+        }
+        /* Triangle pointer logic handled by Leaflet usually, but for comic style we might want custom */
+        .comic-bubble.leaflet-tooltip-top:before {
+            border-top-color: #000;
+        }
+        .comic-bubble.leaflet-tooltip-bottom:before {
+            border-bottom-color: #000;
+        }
+      `}</style>
     </div>
   );
 };

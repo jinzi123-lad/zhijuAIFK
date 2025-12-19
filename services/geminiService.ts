@@ -100,41 +100,35 @@ export const generateSalesPitch = async (property: Property): Promise<string> =>
  * Intelligent Property Search/Matching.
  */
 export const searchPropertiesWithAI = async (query: string, properties: Property[]): Promise<{ matchedIds: string[], destinationLocation?: { lat: number, lng: number }, reasoning: string, commuteEstimates?: Record<string, string> }> => {
-    const simplifiedProperties = properties.map(p => ({
-        id: p.id,
-        info: `${p.title}, ${p.type}, ${p.price}, ${p.location}, ${p.address}, ${p.tags.join(' ')}`
-    }));
+    // [OPTIMIZATION] - drastically reduce payload size for faster AI response
+    // Instead of full JSON objects, use a compact pipe-delimited string format
+    const simplifiedProperties = properties.map(p =>
+        `ID:${p.id}|${p.location}|${p.type === 'RENT' ? p.price + '/月' : p.price + '万'}|${p.layout}|${p.tags.slice(0, 3).join(',')}`
+    ).slice(0, 50); // Hard limit to top 50 properties to prevent timeout/token overflow
 
-    const systemPrompt = `作为智能房产顾问，请根据用户的需求，从下面的房源列表中筛选出最匹配的房源。`;
+    const systemPrompt = `你是一个快速房产检索引擎。请从下方列表中筛选出符合用户口语化需求的房源 ID。列表格式为: "ID:xxx|位置|价格|户型|特色"。`;
     const userPrompt = `
         用户需求: "${query}"
         
-        房源列表:
-        ${JSON.stringify(simplifiedProperties)}
+        房源简表 (Top 50 Candidates):
+        ${simplifiedProperties.join('\n')}
         
         任务：
-        1. 筛选匹配 ID。
-        2. 如果用户提到了“目的地”：
-           - **如果用户提供了具体的经纬度坐标，请直接使用该坐标作为目的地 (destinationLocation)。**
-           - 如果没有坐标但有地名（如“国贸”、“中关村”），请根据你的地理知识估算该地点的经纬度坐标 (lat, lng)。
-           - 如果没有提到目的地，此字段留空。
-        3. 【重要】如果识别到了目的地，请利用你的地理知识，估算每个匹配房源到目的地的**实际路程距离**（非直线）和**驾车/公交耗时**。格式如："🚗 5.2公里 约18分钟" 或 "🚇 3站地铁 25分钟"。
-           请生成一个 List，每项包含 id (房源ID) 和 description (路程描述)。
-        4. 给出推荐理由。
+        1. 筛选匹配 ID (matchedIds)。
+        2. 识别用户提到的“目的地” (destinationLocation)，如无则留空。
+        3. 如果有目的地，估算通勤 (commuteEstimates)。
+        4. 简要理由 (reasoning)。
         
-        请务必返回纯 JSON 格式结果 (不要包含 Markdown 代码块标记)。
-        
-        Response Schema (JSON):
+        Response JSON:
         {
           "matchedIds": ["id1", "id2"],
-          "destinationLocation": { "lat": 39.90, "lng": 116.40 }, // Optional
-          "reasoning": "简短的中文解释",
-          "commuteEstimates": [
-             { "id": "id1", "description": "🚗 5.2公里 15分钟" }
-          ]
+          "destinationLocation": { "lat": 39.9, "lng": 116.4 },
+          "reasoning": "...",
+          "commuteEstimates": [{ "id": "id1", "description": "🚗 5km 15min" }]
         }
     `;
 
+    // Use jsonMode=true for structured output if supported, or rely on prompt instruction
     const responseText = await callBackendProxy(systemPrompt, userPrompt, "deepseek-ai/DeepSeek-V3", true);
 
     if (responseText && responseText !== "智能服务暂时繁忙，请稍后再试。") {
