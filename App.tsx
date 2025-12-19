@@ -14,6 +14,7 @@ import ClientManagement from './components/ClientManagement';
 import AcquisitionChannel from './components/AcquisitionChannel';
 import BigScreenDashboard from './components/BigScreenDashboard';
 import { searchPropertiesWithAI, parsePropertyInfoWithAI, configureAI, generatePropertyDescription } from './services/geminiService';
+import { uploadFile } from './services/storageService';
 import { seedAllProperties, syncKnowledgeBase } from './services/seeder';
 import { db } from './services/db';
 
@@ -420,6 +421,7 @@ const App: React.FC = () => {
     const [loginError, setLoginError] = useState('');
     const [dataLoading, setDataLoading] = useState(true);
     const [authLoading, setAuthLoading] = useState(false);
+    const [isUploading, setIsUploading] = useState(false);
 
     // History Filter State
     const [historyQuery, setHistoryQuery] = useState('');
@@ -879,9 +881,58 @@ const App: React.FC = () => {
         if (selectedProperty && selectedProperty.id === id) setSelectedProperty(null);
     };
 
-    const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>, field: 'imageUrl' | 'floorPlanUrl') => { if (e.target.files && e.target.files[0]) { const file = e.target.files[0]; const url = URL.createObjectURL(file as any); setNewProperty(prev => ({ ...prev, [field]: url })); } };
-    const handleUnitImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => { if (e.target.files && e.target.files[0]) { const file = e.target.files[0]; const url = URL.createObjectURL(file as any); setTempUnit(prev => ({ ...prev, imageUrl: url })); } };
-    const handleMultipleFilesUpload = (e: React.ChangeEvent<HTMLInputElement>, type: 'IMAGES' | 'VIDEOS' | 'DOCS') => { if (e.target.files && e.target.files.length > 0) { const newUrls: string[] = []; Array.from(e.target.files).forEach(file => { newUrls.push(URL.createObjectURL(file as any)); }); if (type === 'IMAGES') { setNewPropertyAdditionalImages(prev => [...prev, ...newUrls]); } else if (type === 'VIDEOS') { setNewPropertyVideos(prev => [...prev, ...newUrls]); } else if (type === 'DOCS') { setNewPropertyDocuments(prev => [...prev, ...newUrls]); } } };
+    const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, field: 'imageUrl' | 'floorPlanUrl') => {
+        if (e.target.files && e.target.files[0]) {
+            const file = e.target.files[0];
+            setIsUploading(true);
+            try {
+                const url = await uploadFile(file);
+                setNewProperty(prev => ({ ...prev, [field]: url }));
+            } catch (e) {
+                // error alert handled in service
+            } finally {
+                setIsUploading(false);
+            }
+        }
+    };
+
+    const handleMultipleFilesUpload = async (e: React.ChangeEvent<HTMLInputElement>, type: 'IMAGES' | 'VIDEOS' | 'DOCS') => {
+        if (e.target.files && e.target.files.length > 0) {
+            setIsUploading(true);
+            const files = Array.from(e.target.files);
+            try {
+                const uploadPromises = files.map(file => uploadFile(file));
+                const newUrls = await Promise.all(uploadPromises);
+
+                if (type === 'IMAGES') {
+                    setNewPropertyAdditionalImages(prev => [...prev, ...newUrls]);
+                } else if (type === 'VIDEOS') {
+                    setNewPropertyVideos(prev => [...prev, ...newUrls]);
+                } else if (type === 'DOCS') {
+                    setNewPropertyDocuments(prev => [...prev, ...newUrls]);
+                }
+            } catch (e) {
+                console.error("Batch upload failed", e);
+            } finally {
+                setIsUploading(false);
+            }
+        }
+    };
+
+    const handleUnitImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files && e.target.files[0]) {
+            const file = e.target.files[0];
+            setIsUploading(true);
+            try {
+                const url = await uploadFile(file);
+                setTempUnit(prev => ({ ...prev, imageUrl: url }));
+            } catch (e) {
+                // error handled in service
+            } finally {
+                setIsUploading(false);
+            }
+        }
+    };
     const toggleLeaseTerm = (term: string) => { if (newPropertyLeaseTerms.includes(term)) { setNewPropertyLeaseTerms(prev => prev.filter(t => t !== term)); const newComms = { ...newPropertyLeaseCommissions }; delete newComms[term]; setNewPropertyLeaseCommissions(newComms); } else { setNewPropertyLeaseTerms(prev => [...prev, term]); } };
     const handleCommissionChange = (term: string, value: string) => { setNewPropertyLeaseCommissions(prev => ({ ...prev, [term]: value })); };
     const handleAddUnit = () => { if (!tempUnit.name || !tempUnit.price) return; const unit: PropertyUnit = { id: `u_${Date.now()}`, name: tempUnit.name, price: tempUnit.price, area: tempUnit.area || 0, layout: tempUnit.layout || '1室1厅', imageUrl: tempUnit.imageUrl, description: tempUnit.description }; setNewPropertyUnits([...newPropertyUnits, unit]); setTempUnit({ name: '', price: 0, area: 0, layout: '1室1厅' }); };
