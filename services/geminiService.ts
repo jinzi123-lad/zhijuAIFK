@@ -100,17 +100,45 @@ export const generateSalesPitch = async (property: Property): Promise<string> =>
  * Intelligent Property Search/Matching.
  */
 export const searchPropertiesWithAI = async (query: string, properties: Property[]): Promise<{ matchedIds: string[], destinationLocation?: { lat: number, lng: number }, reasoning: string, commuteEstimates?: Record<string, string> }> => {
-    // [OPTIMIZATION] - drastically reduce payload size for faster AI response
-    // Instead of full JSON objects, use a compact pipe-delimited string format
-    const simplifiedProperties = properties.map(p =>
-        `ID:${p.id}|${p.location}|${p.type === 'RENT' ? p.price + '/月' : p.price + '万'}|${p.layout}|${p.tags.slice(0, 3).join(',')}`
-    ).slice(0, 50); // Hard limit to top 50 properties to prevent timeout/token overflow
 
-    const systemPrompt = `你是一个快速房产检索引擎。请从下方列表中筛选出符合用户口语化需求的房源 ID。列表格式为: "ID:xxx|位置|价格|户型|特色"。`;
+    // [Smart Pre-Ranking] 
+    // Extract keywords from query to prioritize relevant properties for the context window
+    const keywords = query.replace(/[^\u4e00-\u9fa5a-zA-Z0-9]/g, ' ').split(/\s+/).filter(k => k.length >= 2); // Only matches 2+ chars
+
+    // Create a scored list
+    const scoredProperties = properties.map(p => {
+        let score = 0;
+        const text = `${p.title} ${p.location} ${p.address} ${p.tags.join(' ')} ${p.description || ''}`.toLowerCase();
+
+        keywords.forEach(k => {
+            if (text.includes(k.toLowerCase())) score += 10; // High weight for direct matching
+        });
+
+        // Slight randomization to avoid static order for identical scores, keeping it fresh
+        return { property: p, score: score + Math.random() };
+    });
+
+    // Sort descending by score
+    scoredProperties.sort((a, b) => b.score - a.score);
+
+    // [OPTIMIZATION] - Select Top 60 candidates based on relevance
+    const topCandidates = scoredProperties.slice(0, 60).map(item => item.property);
+
+    // Instead of full JSON objects, use a compact pipe-delimited string format
+    const simplifiedProperties = topCandidates.map(p =>
+        `ID:${p.id}|${p.location}|${p.type === 'RENT' ? p.price + '/月' : p.price + '万'}|${p.layout}|${p.tags.slice(0, 3).join(',')}`
+    );
+
+    const systemPrompt = `你是一个智能房产搜索引擎，**支持跨城/跨区域找房**。请从下方列表中筛选出符合用户需求的房源 ID。
+    注意：
+    1. **允许跨城匹配**：如果用户工作在北京但要在燕郊/由北京周边找房，请务必匹配相关房源。
+    2. **通勤时间优先**：如果用户指定了通勤时间（如“1小时内”），请基于地理常识筛选出**在该时间范围内可达**的房源（包含跨城房源），不要受限于城市标签。
+    3. 列表格式为: "ID:xxx|位置|价格|户型|特色"。`;
+
     const userPrompt = `
         用户需求: "${query}"
         
-        房源简表 (Top 50 Candidates):
+        房源简表 (Top ${simplifiedProperties.length} Candidates):
         ${simplifiedProperties.join('\n')}
         
         任务：
@@ -151,7 +179,7 @@ export const searchPropertiesWithAI = async (query: string, properties: Property
             console.error("AI Parse Error", e);
         }
     }
-    return { matchedIds: [], reasoning: "无法解析 AI 响应。" };
+    return { matchedIds: [], reasoning: "无法解析 AI 响应或服务繁忙。" };
 };
 
 /**
