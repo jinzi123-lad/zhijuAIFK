@@ -322,6 +322,16 @@ const DataScreen: React.FC<DataScreenProps> = ({ properties, onViewProperty }) =
     const { matchedIds, destinationLocation, reasoning, commuteEstimates } = await searchPropertiesWithAI(query, properties);
     const matched = properties.filter(p => matchedIds.includes(p.id));
 
+    // Fix: Reset all manual filters so the AI results are actually visible!
+    setFilterProvince('全部');
+    setFilterCity('全部');
+    setFilterDistrict('全部');
+    setFilterCategory('全部');
+    setFilterPrice('全部');
+    setFilterCommute('不限');
+    setFilterLease('不限');
+    setRequirements(''); // Optional: clear custom req input or keep it? Keeping it is fine as it was input.
+
     setBaseProperties(matched);
     setAiAnalysis(reasoning);
     setAiCommuteInfo(commuteEstimates || {});
@@ -346,7 +356,15 @@ const DataScreen: React.FC<DataScreenProps> = ({ properties, onViewProperty }) =
       boundsPoints.push([finalDest.lat, finalDest.lng]);
 
       matched.forEach(p => {
-        const routeLine = L.polyline([[p.coordinates.lat, p.coordinates.lng], [finalDest.lat, finalDest.lng]], { color: '#3b82f6', weight: 4, opacity: 0.7, dashArray: '10, 10', lineCap: 'round' }).addTo(map);
+        // Visual Enhancement: Use a gradient-like dashed line or distinct style
+        const routeLine = L.polyline([[p.coordinates.lat, p.coordinates.lng], [finalDest.lat, finalDest.lng]], {
+          color: '#8b5cf6', // Violet color matching the theme
+          weight: 3,
+          opacity: 0.8,
+          dashArray: '5, 10',
+          lineCap: 'round',
+          className: 'animate-pulse' // Add a pulse animation class if tailwind supports, or just static
+        }).addTo(map);
         // Removed persistent tooltip (moved to hover bubble on marker)
         routeLayersRef.current.push(routeLine);
       });
