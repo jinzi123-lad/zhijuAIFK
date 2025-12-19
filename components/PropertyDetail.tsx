@@ -406,14 +406,13 @@ const PropertyDetail: React.FC<PropertyDetailProps> = ({ property, onBack, onEdi
                             {/* Map Container */}
                             <div ref={mapContainerRef} className="w-full h-full z-0" style={{ minHeight: '100%' }} />
 
-                            {/* Overlay Button for External Map */}
                             <a
-                                href={`https://map.baidu.com/search/${encodeURIComponent(property.address)}`}
+                                href={`https://www.amap.com/search?query=${encodeURIComponent(property.address)}`}
                                 target="_blank"
                                 rel="noreferrer"
                                 className="absolute bottom-3 right-3 z-[400] bg-white/90 hover:bg-white text-indigo-600 text-xs font-bold px-3 py-2 rounded-lg shadow-md flex items-center transition-all backdrop-blur-sm"
                             >
-                                <span className="mr-1">🗺️</span> 打开百度地图
+                                <span className="mr-1">🗺️</span> 打开高德地图
                             </a>
                         </div>
                     )}
