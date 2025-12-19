@@ -55,7 +55,7 @@ const SystemSettings: React.FC<SystemSettingsProps> = ({ logs, config, onUpdateC
                     >
                         ⚙️ 常规设置
                     </button>
-// [REMOVED] AI Settings Tab - Now configured in backend only
+
                     <button
                         onClick={() => setActiveTab('SECURITY')}
                         className={`text-left px-4 py-3 rounded-lg text-sm font-medium transition-colors ${activeTab === 'SECURITY' ? 'bg-indigo-600 text-white shadow' : 'text-slate-600 hover:bg-slate-200'}`}
