@@ -2,7 +2,8 @@ import { supabase } from './supabaseClient';
 import { Property, User, Client, Order, SystemLog, KnowledgeItem, SystemConfig, ViewingAgent } from '../types';
 import { INITIAL_USERS, MOCK_PROPERTIES, MOCK_CLIENTS, MOCK_ORDERS, INITIAL_SYSTEM_LOGS, INITIAL_KNOWLEDGE_BASE, MOCK_VIEWING_AGENTS } from '../constants';
 
-// --- Local In-Memory Store (Fallback for Mock Mode) ---
+// --- Local In-Memory Store (Fallback / Cache) ---
+// These are only used for initial seeding or temporary read-fallback, NOT for persistence.
 let _mockProperties = [...MOCK_PROPERTIES];
 let _mockUsers = [...INITIAL_USERS];
 let _mockClients = [...MOCK_CLIENTS];
@@ -182,6 +183,14 @@ export const db = {
         try {
             const { data, error } = await supabase.from('properties').select('*').order('created_at', { ascending: false });
             if (error) throw error;
+
+            // Auto-seed if empty (Fresh DB)
+            if (data.length === 0) {
+                console.log('fresh DB detected, seeding properties...');
+                await supabase.from('properties').insert(MOCK_PROPERTIES.map(mapPropertyToDB));
+                return MOCK_PROPERTIES;
+            }
+
             return data.map(mapPropertyFromDB);
         } catch (e) {
             return _mockProperties;
@@ -193,11 +202,9 @@ export const db = {
             if (error) throw error;
             return db.getProperties();
         } catch (e) {
-            // Fallback: update local mock
-            const index = _mockProperties.findIndex(p => p.id === item.id);
-            if (index >= 0) _mockProperties[index] = item;
-            else _mockProperties.unshift(item);
-            return _mockProperties;
+            console.error('Save Property Error:', e);
+            alert('保存失败：无法连接云端数据库');
+            throw e;
         }
     },
     deleteProperty: async (id: string): Promise<Property[]> => {
@@ -206,8 +213,9 @@ export const db = {
             if (error) throw error;
             return db.getProperties();
         } catch (e) {
-            _mockProperties = _mockProperties.filter(p => p.id !== id);
-            return _mockProperties;
+            console.error('Delete Property Error:', e);
+            alert('删除失败：无法连接云端数据库');
+            throw e;
         }
     },
 
@@ -216,7 +224,14 @@ export const db = {
         try {
             const { data, error } = await supabase.from('erp_users').select('*');
             if (error) throw error;
-            if (data.length === 0) return _mockUsers;
+
+            // Auto-seed if empty
+            if (data.length === 0) {
+                console.log('fresh DB detected, seeding users...');
+                await supabase.from('erp_users').insert(INITIAL_USERS.map(mapUserToDB));
+                return INITIAL_USERS;
+            }
+
             return data.map(mapUserFromDB);
         } catch (e) {
             return _mockUsers;
@@ -228,10 +243,8 @@ export const db = {
             if (error) throw error;
             return db.getUsers();
         } catch (e) {
-            const index = _mockUsers.findIndex(u => u.id === item.id);
-            if (index >= 0) _mockUsers[index] = item;
-            else _mockUsers.push(item);
-            return _mockUsers;
+            console.error('Save User Error:', e);
+            throw e;
         }
     },
     deleteUser: async (id: string): Promise<User[]> => {
@@ -240,8 +253,8 @@ export const db = {
             if (error) throw error;
             return db.getUsers();
         } catch (e) {
-            _mockUsers = _mockUsers.filter(u => u.id !== id);
-            return _mockUsers;
+            console.error('Delete User Error:', e);
+            throw e;
         }
     },
 
@@ -261,10 +274,8 @@ export const db = {
             if (error) throw error;
             return db.getClients();
         } catch (e) {
-            const index = _mockClients.findIndex(c => c.id === item.id);
-            if (index >= 0) _mockClients[index] = item;
-            else _mockClients.unshift(item);
-            return _mockClients;
+            console.error('Save Client Error:', e);
+            throw e;
         }
     },
 
@@ -284,10 +295,8 @@ export const db = {
             if (error) throw error;
             return db.getOrders();
         } catch (e) {
-            const index = _mockOrders.findIndex(o => o.id === item.id);
-            if (index >= 0) _mockOrders[index] = item;
-            else _mockOrders.unshift(item);
-            return _mockOrders;
+            console.error('Save Order Error:', e);
+            throw e;
         }
     },
 
@@ -322,6 +331,9 @@ export const db = {
             // Fallback to local mock
             if (_mockKnowledge.length === 0) {
                 _mockKnowledge = [...INITIAL_KNOWLEDGE_BASE];
+                // Do not save auto-seeded default to local to allow future updates from constants if desired, 
+                // OR save it to persist the "initialized" state.
+                // Let's NOT save here to avoid locking in old constants.
             }
             return _mockKnowledge;
         }
@@ -332,10 +344,8 @@ export const db = {
             if (error) throw error;
             return db.getKnowledge();
         } catch (e) {
-            const index = _mockKnowledge.findIndex(k => k.id === item.id);
-            if (index >= 0) _mockKnowledge[index] = item;
-            else _mockKnowledge.unshift(item);
-            return _mockKnowledge;
+            console.error('Save Knowledge Error:', e);
+            throw e;
         }
     },
     deleteKnowledge: async (id: string): Promise<KnowledgeItem[]> => {
@@ -344,8 +354,8 @@ export const db = {
             if (error) throw error;
             return db.getKnowledge();
         } catch (e) {
-            _mockKnowledge = _mockKnowledge.filter(k => k.id !== id);
-            return _mockKnowledge;
+            console.error('Delete Knowledge Error:', e);
+            throw e;
         }
     },
 
@@ -365,8 +375,8 @@ export const db = {
             if (error) throw error;
             return db.getLogs();
         } catch (e) {
-            // Fallback: Add to local mock array
-            _mockLogs = [item, ..._mockLogs].slice(0, 50);
+            // Logs are less critical, just console error
+            console.error('Add Log Error:', e);
             return _mockLogs;
         }
     },
@@ -387,8 +397,8 @@ export const db = {
             if (error) throw error;
             return config;
         } catch (e) {
-            _mockConfig = config;
-            return config;
+            console.error('Save Config Error:', e);
+            throw e;
         }
     },
 
@@ -417,17 +427,8 @@ export const db = {
                 alert('✅ 云端数据库已成功初始化！页面将刷新。');
                 window.location.reload();
             } catch (e) {
-                // Reset Local Mock Data
-                _mockProperties = [...MOCK_PROPERTIES];
-                _mockUsers = [...INITIAL_USERS];
-                _mockClients = [...MOCK_CLIENTS];
-                _mockOrders = [...MOCK_ORDERS];
-                _mockKnowledge = [...INITIAL_KNOWLEDGE_BASE];
-                _mockLogs = [...INITIAL_SYSTEM_LOGS];
-
-                console.warn('Supabase Reset Failed (Offline Mode), reset local data.');
-                alert('⚠️ 无法连接云端数据库，已重置本地演示数据。');
-                window.location.reload();
+                console.error('Reset Failed:', e);
+                alert('重置失败：无法连接云端数据库');
             }
         }
     }
