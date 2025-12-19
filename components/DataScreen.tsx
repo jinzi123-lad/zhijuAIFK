@@ -227,9 +227,9 @@ const DataScreen: React.FC<DataScreenProps> = ({ properties, onViewProperty }) =
 
       const marker = L.marker([p.coordinates.lat, p.coordinates.lng], { icon: customIcon })
         .addTo(map)
-        .on('mouseover', () => { // Changed to Hover
+        .on('click', () => { // Reverted to Click
           setSelectedProperty(p);
-          // Removed map.setView to prevent jumping
+          map.setView([p.coordinates.lat, p.coordinates.lng], 14); // Restore view jump
         });
 
       // Removed comic-bubble tooltip logic

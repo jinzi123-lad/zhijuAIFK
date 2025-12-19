@@ -140,7 +140,9 @@ export const searchPropertiesWithAI = async (query: string, properties: Property
             if (Array.isArray(result.commuteEstimates)) {
                 result.commuteEstimates.forEach((item: any) => {
                     if (item.id && item.description) {
-                        estimatesMap[item.id] = item.description;
+                        // Robust ID matching: strip "ID:" prefix if AI included it
+                        const cleanId = String(item.id).replace(/^ID:/i, '').trim();
+                        estimatesMap[cleanId] = item.description;
                     }
                 });
             }
