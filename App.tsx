@@ -416,6 +416,7 @@ const App: React.FC = () => {
     const [currentUser, setCurrentUser] = useState<User | null>(null);
     const [users, setUsers] = useState<User[]>([]);
     const [activePage, setActivePage] = useState('properties');
+    const [returnPage, setReturnPage] = useState<string | null>(null); // To remember where to go back to
     const [loginError, setLoginError] = useState('');
     const [dataLoading, setDataLoading] = useState(true);
     const [authLoading, setAuthLoading] = useState(false);
@@ -1696,7 +1697,14 @@ const App: React.FC = () => {
                     {selectedProperty ? (
                         <PropertyDetail
                             property={selectedProperty}
-                            onBack={() => { setSelectedProperty(null); setSharedViewConfig(undefined); }}
+                            onBack={() => {
+                                setSelectedProperty(null);
+                                setSharedViewConfig(undefined);
+                                if (returnPage) {
+                                    setActivePage(returnPage);
+                                    setReturnPage(null);
+                                }
+                            }}
                             onEdit={() => handleOpenEdit(selectedProperty)}
                             onDelete={() => handleDeleteProperty(selectedProperty.id)}
                             onOrderAction={handleCreateOrder}
@@ -1787,6 +1795,7 @@ const App: React.FC = () => {
                     properties={properties}
                     onViewProperty={(p) => {
                         setSelectedProperty(p);
+                        setReturnPage('data-screen'); // Remember we came from map
                         setActivePage('properties');
                     }}
                 />
