@@ -227,21 +227,12 @@ const DataScreen: React.FC<DataScreenProps> = ({ properties, onViewProperty }) =
 
       const marker = L.marker([p.coordinates.lat, p.coordinates.lng], { icon: customIcon })
         .addTo(map)
-        .on('click', () => {
+        .on('mouseover', () => { // Changed to Hover
           setSelectedProperty(p);
-          map.setView([p.coordinates.lat, p.coordinates.lng], 14);
+          // Removed map.setView to prevent jumping
         });
 
-      // Show AI Commute Info as Comic Bubble on Hover
-      if (aiCommuteInfo[p.id]) {
-        marker.bindTooltip(aiCommuteInfo[p.id], {
-          permanent: false, // Show on hover only
-          direction: 'top',
-          className: 'comic-bubble',
-          offset: [0, -35], // Position above the icon
-          opacity: 1
-        });
-      }
+      // Removed comic-bubble tooltip logic
 
       markersRef.current.push(marker);
     });
@@ -356,8 +347,7 @@ const DataScreen: React.FC<DataScreenProps> = ({ properties, onViewProperty }) =
 
       matched.forEach(p => {
         const routeLine = L.polyline([[p.coordinates.lat, p.coordinates.lng], [finalDest.lat, finalDest.lng]], { color: '#3b82f6', weight: 4, opacity: 0.7, dashArray: '10, 10', lineCap: 'round' }).addTo(map);
-        const estimate = commuteEstimates?.[p.id] || "计算中...";
-        routeLine.bindTooltip(`<div class="font-bold text-xs text-blue-700 bg-white px-2 py-1 rounded border border-blue-200 shadow-sm whitespace-nowrap">${estimate}</div>`, { permanent: true, direction: 'center', className: 'bg-transparent border-none shadow-none', opacity: 1 });
+        // Removed persistent tooltip (moved to hover bubble on marker)
         routeLayersRef.current.push(routeLine);
       });
     }
@@ -638,12 +628,7 @@ const DataScreen: React.FC<DataScreenProps> = ({ properties, onViewProperty }) =
           <div className="absolute top-4 right-4 z-[500] w-72 bg-white rounded-xl shadow-2xl overflow-hidden animate-fade-in-up">
             <div className="relative h-32 bg-slate-200">
               <img src={selectedProperty.imageUrl} alt={selectedProperty.title} className="w-full h-full object-cover" />
-              <button
-                onClick={() => setSelectedProperty(null)}
-                className="absolute top-2 right-2 bg-black/50 hover:bg-black/70 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm"
-              >
-                ✕
-              </button>
+              {/* Removed Close Button as it updates on hover now */}
             </div>
             <div className="p-4">
               <div className="flex justify-between items-start mb-2">
@@ -664,6 +649,19 @@ const DataScreen: React.FC<DataScreenProps> = ({ properties, onViewProperty }) =
                 <span className="text-xs px-2 py-1 bg-slate-100 rounded text-slate-600">{selectedProperty.layout}</span>
               </div>
 
+              {/* AI Commute Info Integration */}
+              {aiCommuteInfo[selectedProperty.id] && (
+                <div className="mb-3 p-2 bg-indigo-50 border border-indigo-100 rounded-lg">
+                  <div className="flex items-center gap-1 mb-1">
+                    <span className="text-xs">🤖</span>
+                    <span className="text-xs font-bold text-indigo-700">AI 通勤分析</span>
+                  </div>
+                  <div className="text-xs text-indigo-600 font-medium">
+                    {aiCommuteInfo[selectedProperty.id]}
+                  </div>
+                </div>
+              )}
+
               <div className="mt-3 flex gap-2">
                 <button
                   onClick={() => onViewProperty(selectedProperty)}
@@ -682,35 +680,6 @@ const DataScreen: React.FC<DataScreenProps> = ({ properties, onViewProperty }) =
           </div>
         )}
       </div>
-
-      <style>{`
-        .comic-bubble {
-          background: transparent;
-          border: none;
-          box-shadow: none;
-        }
-        .comic-bubble .leaflet-tooltip-content {
-          background: #fff;
-          border: 2px solid #000;
-          border-radius: 8px;
-          padding: 6px 10px;
-          font-family: 'Comic Sans MS', 'Chalkboard SE', sans-serif;
-          font-weight: bold;
-          font-size: 13px;
-          color: #000;
-          box-shadow: 3px 3px 0px rgba(0,0,0,1);
-          white-space: nowrap;
-          margin: 0;
-          position: relative;
-        }
-        /* Triangle pointer logic handled by Leaflet usually, but for comic style we might want custom */
-        .comic-bubble.leaflet-tooltip-top:before {
-            border-top-color: #000;
-        }
-        .comic-bubble.leaflet-tooltip-bottom:before {
-            border-bottom-color: #000;
-        }
-      `}</style>
     </div>
   );
 };
