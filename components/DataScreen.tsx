@@ -445,39 +445,54 @@ const DataScreen: React.FC<DataScreenProps> = ({ properties, onViewProperty }) =
     <div className="flex h-full relative overflow-hidden bg-slate-900">
 
       {/* Sidebar Control Panel */}
+      {/* Sidebar Control Panel - Optimized for Compactness */}
       <div className="w-80 bg-slate-800/95 border-r border-slate-700 flex flex-col z-10 shadow-xl backdrop-blur-sm">
-        <div className="p-4 border-b border-slate-700">
-          <h2 className="text-lg font-bold text-white flex items-center gap-2">
-            <span className="text-xl">🗺️</span>
+        <div className="p-3 border-b border-slate-700 shrink-0">
+          <h2 className="text-base font-bold text-white flex items-center gap-2">
+            <span className="text-lg">🗺️</span>
             AI 地图找房
           </h2>
         </div>
 
-        <div className="p-4 flex-1 overflow-y-auto space-y-5 custom-scrollbar">
+        <div className="p-3 flex-1 overflow-y-auto custom-scrollbar flex flex-col gap-3">
+
+          {/* Stats Row (Moved top for visibility) */}
+          <div className="grid grid-cols-2 gap-2 shrink-0">
+            <div className="bg-slate-700/50 p-2 rounded border border-slate-600/50 flex flex-col justify-center items-center">
+              <div className="text-slate-400 text-[10px]">匹配房源</div>
+              <div className="text-sm font-bold text-white leading-none mt-1">{stats.total} <span className="text-[10px] font-normal">套</span></div>
+            </div>
+            <div className="bg-slate-700/50 p-2 rounded border border-slate-600/50 flex flex-col justify-center items-center">
+              <div className="text-slate-400 text-[10px]">平均价格</div>
+              <div className="text-sm font-bold text-white leading-none mt-1">
+                {stats.avgPrice > 100000
+                  ? `${(stats.avgPrice / 10000).toFixed(0)}万`
+                  : `¥${stats.avgPrice}`}
+              </div>
+            </div>
+          </div>
 
           {/* 2. Destination & Interaction */}
-          <div className="relative">
-            <label className="text-xs font-bold text-slate-400 mb-2 block uppercase tracking-wider">通勤目的地</label>
-
+          <div className="shrink-0">
             <div className="flex flex-col gap-2">
               <div className="relative">
                 <input
                   type="text"
                   value={destination}
                   onChange={handleDestinationInput}
-                  placeholder="输入地点或使用下方按钮"
-                  className="w-full bg-slate-900 border border-slate-600 rounded-lg px-3 py-2 text-sm text-white focus:border-indigo-500 outline-none"
+                  placeholder="输入通勤目的地..."
+                  className="w-full bg-slate-900 border border-slate-600 rounded px-2 py-1.5 text-xs text-white focus:border-indigo-500 outline-none placeholder:text-slate-500"
                 />
-                {showSuggestions && suggestions.length > 0 && (
-                  <div className="absolute top-full left-0 right-0 mt-1 bg-white rounded-lg shadow-xl z-50 overflow-hidden border border-slate-200 max-h-60 overflow-y-auto">
+                {showSuggestions && (
+                  <div className="absolute top-full left-0 right-0 mt-1 bg-white rounded shadow-xl z-50 overflow-hidden border border-slate-200 max-h-40 overflow-y-auto">
                     {suggestions.map((item, idx) => (
                       <button
                         key={idx}
                         onClick={() => handleDestinationSelect(item)}
-                        className="w-full text-left px-4 py-2 hover:bg-indigo-50 border-b border-slate-100 last:border-0"
+                        className="w-full text-left px-3 py-1.5 hover:bg-indigo-50 border-b border-slate-100 last:border-0"
                       >
-                        <div className="font-bold text-slate-800 text-sm">{item.name}</div>
-                        <div className="text-xs text-slate-500 truncate">{item.address}</div>
+                        <div className="font-bold text-slate-800 text-xs">{item.name}</div>
+                        <div className="text-[10px] text-slate-500 truncate">{item.address}</div>
                       </button>
                     ))}
                   </div>
@@ -487,15 +502,13 @@ const DataScreen: React.FC<DataScreenProps> = ({ properties, onViewProperty }) =
               <div className="flex gap-2">
                 <button
                   onClick={() => setInteractionMode(interactionMode === 'PICK_POINT' ? 'VIEW' : 'PICK_POINT')}
-                  className={`flex-1 py-1.5 rounded border text-xs font-bold transition-all flex items-center justify-center gap-1 ${interactionMode === 'PICK_POINT' ? 'bg-indigo-600 border-indigo-500 text-white' : 'bg-slate-700 border-slate-600 text-slate-300 hover:bg-slate-600'
-                    }`}
+                  className={`flex-1 py-1 rounded border text-[10px] font-bold transition-all flex items-center justify-center gap-1 ${interactionMode === 'PICK_POINT' ? 'bg-indigo-600 border-indigo-500 text-white' : 'bg-slate-700 border-slate-600 text-slate-300 hover:bg-slate-600'}`}
                 >
                   📍 地图选点
                 </button>
                 <button
                   onClick={() => setInteractionMode(interactionMode === 'DRAW_CIRCLE' ? 'VIEW' : 'DRAW_CIRCLE')}
-                  className={`flex-1 py-1.5 rounded border text-xs font-bold transition-all flex items-center justify-center gap-1 ${interactionMode === 'DRAW_CIRCLE' ? 'bg-amber-600 border-amber-500 text-white' : 'bg-slate-700 border-slate-600 text-slate-300 hover:bg-slate-600'
-                    }`}
+                  className={`flex-1 py-1 rounded border text-[10px] font-bold transition-all flex items-center justify-center gap-1 ${interactionMode === 'DRAW_CIRCLE' ? 'bg-amber-600 border-amber-500 text-white' : 'bg-slate-700 border-slate-600 text-slate-300 hover:bg-slate-600'}`}
                 >
                   ⭕ 画圈找房
                 </button>
@@ -503,79 +516,69 @@ const DataScreen: React.FC<DataScreenProps> = ({ properties, onViewProperty }) =
             </div>
           </div>
 
-          {/* 3. Filters */}
-          <div className="space-y-3 pt-4 border-t border-slate-700">
-            <label className="text-xs font-bold text-slate-400 block uppercase tracking-wider">综合筛选</label>
-
-            {/* Region */}
-            <div className="space-y-2">
-              <select value={filterProvince} onChange={(e) => { setFilterProvince(e.target.value); setFilterCity('全部'); setFilterDistrict('全部'); }} className="w-full bg-slate-800 border border-slate-600 text-slate-300 text-xs rounded px-2 py-2 outline-none focus:border-indigo-500">
-                <option value="全部">全部省份</option>
-                {Object.keys(CASCADING_REGIONS).map(p => <option key={p} value={p}>{p}</option>)}
-              </select>
-              <div className="flex gap-2">
-                <select value={filterCity} onChange={(e) => setFilterCity(e.target.value)} disabled={filterProvince === '全部'} className="w-full bg-slate-800 border border-slate-600 text-slate-300 text-xs rounded px-2 py-2 outline-none focus:border-indigo-500">
-                  <option value="全部">全部城市</option>
+          {/* 3. Compact Filters Grid */}
+          <div className="pt-2 border-t border-slate-700 shrink-0">
+            <div className="grid grid-cols-2 gap-2">
+              {/* Region - Full Width Row */}
+              <div className="col-span-2 flex gap-1">
+                <select value={filterProvince} onChange={(e) => { setFilterProvince(e.target.value); setFilterCity('全部'); setFilterDistrict('全部'); }} className="flex-1 bg-slate-800 border border-slate-600 text-slate-300 text-[10px] rounded px-1 py-1 outline-none">
+                  <option value="全部">省份</option>
+                  {Object.keys(CASCADING_REGIONS).map(p => <option key={p} value={p}>{p}</option>)}
+                </select>
+                <select value={filterCity} onChange={(e) => setFilterCity(e.target.value)} disabled={filterProvince === '全部'} className="flex-1 bg-slate-800 border border-slate-600 text-slate-300 text-[10px] rounded px-1 py-1 outline-none">
+                  <option value="全部">城市</option>
                   {filterProvince !== '全部' && Object.keys(CASCADING_REGIONS[filterProvince]).map(c => <option key={c} value={c}>{c}</option>)}
                 </select>
-                <select value={filterDistrict} onChange={(e) => setFilterDistrict(e.target.value)} disabled={filterCity === '全部'} className="w-full bg-slate-800 border border-slate-600 text-slate-300 text-xs rounded px-2 py-2 outline-none focus:border-indigo-500">
-                  <option value="全部">全部区县</option>
+                <select value={filterDistrict} onChange={(e) => setFilterDistrict(e.target.value)} disabled={filterCity === '全部'} className="flex-1 bg-slate-800 border border-slate-600 text-slate-300 text-[10px] rounded px-1 py-1 outline-none">
+                  <option value="全部">区县</option>
                   {filterProvince !== '全部' && filterCity !== '全部' && CASCADING_REGIONS[filterProvince][filterCity]?.map(d => <option key={d} value={d}>{d}</option>)}
                 </select>
               </div>
+
+              <select value={filterCategory} onChange={(e) => setFilterCategory(e.target.value)} className="bg-slate-800 border border-slate-600 text-slate-300 text-[10px] rounded px-1 py-1 outline-none">
+                <option value="全部">全部房型</option>
+                {['住宅', '城市公寓', '城中村公寓', '别墅', '工厂', '写字楼', '商铺', '其他'].map(c => <option key={c} value={c}>{c}</option>)}
+              </select>
+
+              <select value={filterPrice} onChange={(e) => setFilterPrice(e.target.value)} className="bg-slate-800 border border-slate-600 text-slate-300 text-[10px] rounded px-1 py-1 outline-none">
+                <option value="全部">价格不限</option>
+                <option value="1000元以下">1000↓</option>
+                <option value="1000-2000元">1k-2k</option>
+                <option value="2000-3000元">2k-3k</option>
+                <option value="3000-4000元">3k-4k</option>
+                <option value="4000-5000元">4k-5k</option>
+                <option value="5000-8000元">5k-8k</option>
+                <option value="8000-12000元">8k-12k</option>
+                <option value="12000-15000元">12k-15k</option>
+                <option value="15000-20000元">15k-20k</option>
+                <option value="20000元以上">2w+</option>
+              </select>
+
+              <select value={filterCommute} onChange={(e) => setFilterCommute(e.target.value)} className="bg-slate-800 border border-slate-600 text-slate-300 text-[10px] rounded px-1 py-1 outline-none">
+                <option value="不限">通勤不限</option>
+                <option value="30分钟内">30分钟内</option>
+                <option value="45分钟内">45分钟内</option>
+                <option value="1小时内">1小时内</option>
+                <option value="1.5小时内">1.5h内</option>
+                <option value="2小时内">2h内</option>
+              </select>
+
+              <select value={filterLease} onChange={(e) => setFilterLease(e.target.value)} className="bg-slate-800 border border-slate-600 text-slate-300 text-[10px] rounded px-1 py-1 outline-none">
+                <option value="不限">租期不限</option>
+                {LEASE_TERM_OPTIONS.map(term => <option key={term} value={term} className="truncate">{term}</option>)}
+              </select>
             </div>
-
-            {/* Category */}
-            <select value={filterCategory} onChange={(e) => setFilterCategory(e.target.value)} className="w-full bg-slate-800 border border-slate-600 text-slate-300 text-xs rounded px-2 py-2 outline-none focus:border-indigo-500">
-              <option value="全部">全部房型 (住宅/别墅/商铺...)</option>
-              {['住宅', '城市公寓', '城中村公寓', '别墅', '工厂', '写字楼', '商铺', '其他'].map(c => <option key={c} value={c}>{c}</option>)}
-            </select>
-
-            {/* Price */}
-            <select value={filterPrice} onChange={(e) => setFilterPrice(e.target.value)} className="w-full bg-slate-800 border border-slate-600 text-slate-300 text-xs rounded px-2 py-2 outline-none focus:border-indigo-500">
-              <option value="全部">全部价格</option>
-              <option value="1000元以下">1000元以下</option>
-              <option value="1000-2000元">1000-2000元</option>
-              <option value="2000-3000元">2000-3000元</option>
-              <option value="3000-4000元">3000-4000元</option>
-              <option value="4000-5000元">4000-5000元</option>
-              <option value="5000-8000元">5000-8000元</option>
-              <option value="8000-12000元">8000-12000元</option>
-              <option value="12000-15000元">12000-15000元</option>
-              <option value="15000-20000元">15000-20000元</option>
-              <option value="20000元以上">20000元以上</option>
-            </select>
-
-            {/* Commute Time (Updated) */}
-            <select value={filterCommute} onChange={(e) => setFilterCommute(e.target.value)} className="w-full bg-slate-800 border border-slate-600 text-slate-300 text-xs rounded px-2 py-2 outline-none focus:border-indigo-500">
-              <option value="不限">不限通勤时间</option>
-              <option value="30分钟内">30分钟内</option>
-              <option value="45分钟内">45分钟内</option>
-              <option value="1小时内">1小时内</option>
-              <option value="1.5小时内">1.5小时内</option>
-              <option value="2小时内">2小时内</option>
-              <option value="2.5小时内">2.5小时内</option>
-              <option value="3小时内">3小时内</option>
-            </select>
-
-            {/* Lease Terms */}
-            <select value={filterLease} onChange={(e) => setFilterLease(e.target.value)} className="w-full bg-slate-800 border border-slate-600 text-slate-300 text-xs rounded px-2 py-2 outline-none focus:border-indigo-500">
-              <option value="不限">不限租赁方式</option>
-              {LEASE_TERM_OPTIONS.map(term => <option key={term} value={term}>{term}</option>)}
-            </select>
           </div>
 
-          {/* 4. Custom Requirements */}
-          <div className="pt-2">
-            <label className="text-xs font-bold text-slate-400 mb-2 block uppercase tracking-wider">自定义详细需求</label>
-
-            {/* Preset Chips */}
-            <div className="flex flex-wrap gap-2 mb-2">
+          {/* 4. Custom Requirements (Compact) */}
+          <div className="shrink-0">
+            {/* Preset Chips (Scrollable horizontal if needed, or wrap tight) */}
+            <div className="flex flex-wrap gap-1 mb-1">
               {PRESET_QUESTIONS.map(q => (
                 <button
                   key={q.label}
                   onClick={() => addPresetRequirement(q.text)}
-                  className="px-2 py-1 bg-slate-700 text-slate-300 rounded text-[10px] hover:bg-indigo-600 hover:text-white transition-colors border border-slate-600"
+                  className="px-1.5 py-0.5 bg-slate-700 text-slate-300 rounded text-[9px] hover:bg-indigo-600 hover:text-white transition-colors border border-slate-600"
                 >
                   {q.label}
                 </button>
@@ -585,56 +588,41 @@ const DataScreen: React.FC<DataScreenProps> = ({ properties, onViewProperty }) =
             <textarea
               value={requirements}
               onChange={(e) => setRequirements(e.target.value)}
-              placeholder="例如：朝南，有阳台，不要一楼..."
-              className="w-full bg-slate-900 border border-slate-600 rounded-lg px-3 py-2 text-sm text-white focus:border-indigo-500 outline-none h-20 resize-none"
+              placeholder="自定义详细需求..."
+              className="w-full bg-slate-900 border border-slate-600 rounded px-2 py-1 text-xs text-white focus:border-indigo-500 outline-none h-12 resize-none placeholder:text-slate-500"
             />
           </div>
 
-          {/* Action Buttons */}
-          <div className="pt-2 space-y-3 pb-6">
-            <button
-              onClick={handleAISearch}
-              disabled={isSearching}
-              className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-bold py-3 rounded-lg shadow-lg flex items-center justify-center transition-all"
-            >
-              {isSearching ? (
-                <>
-                  <svg className="animate-spin h-4 w-4 mr-2" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                  开始智能匹配
-                </>
-              ) : '开始智能匹配'}
-            </button>
-
-            <button onClick={handleReset} className="w-full text-slate-500 text-xs hover:text-white underline">
-              重置所有条件
-            </button>
-          </div>
-
-          {/* Analysis & Stats */}
+          {/* AI Analysis (Scrollable within) */}
           {aiAnalysis && (
-            <div className="bg-indigo-900/30 border border-indigo-500/30 rounded-xl p-4 mb-4">
-              <h3 className="text-indigo-300 font-bold text-sm mb-2 flex items-center">
-                <span className="mr-1">💡</span> AI 分析报告
+            <div className="bg-indigo-900/30 border border-indigo-500/30 rounded p-2 overflow-y-auto max-h-24">
+              <h3 className="text-indigo-400 font-bold text-[10px] flex items-center mb-1">
+                <span className="mr-1">💡</span> AI 分析
               </h3>
-              <p className="text-slate-300 text-xs leading-relaxed">
+              <p className="text-slate-300 text-[10px] leading-relaxed">
                 {aiAnalysis}
               </p>
             </div>
           )}
 
-          <div className="grid grid-cols-2 gap-3 mb-6">
-            <div className="bg-slate-700/50 p-3 rounded-lg">
-              <div className="text-slate-400 text-xs">匹配房源</div>
-              <div className="text-xl font-bold text-white">{stats.total} <span className="text-xs font-normal">套</span></div>
-            </div>
-            <div className="bg-slate-700/50 p-3 rounded-lg">
-              <div className="text-slate-400 text-xs">平均价格</div>
-              <div className="text-lg font-bold text-white">
-                {stats.avgPrice > 100000
-                  ? `${(stats.avgPrice / 10000).toFixed(0)}万`
-                  : `¥${stats.avgPrice}`}
-              </div>
-            </div>
+          {/* Action Buttons */}
+          <div className="pt-1 mt-auto shrink-0 pb-2">
+            <button
+              onClick={handleAISearch}
+              disabled={isSearching}
+              className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-bold py-2 rounded shadow-lg flex items-center justify-center transition-all text-sm"
+            >
+              {isSearching ? (
+                <>
+                  <svg className="animate-spin h-3 w-3 mr-2" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                  匹配
+                </>
+              ) : '开始智能匹配'}
+            </button>
+
+            <button onClick={handleReset} className="w-full text-slate-500 text-[10px] hover:text-white underline mt-1.5">
+              重置
+            </button>
           </div>
         </div>
       </div>
