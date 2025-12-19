@@ -388,7 +388,8 @@ export const db = {
             if (error || !data) throw error || new Error('No config');
             return { ...defaults, ...data.config_json };
         } catch (e) {
-            return _mockConfig ? { ...defaults, ..._mockConfig } : defaults;
+            // Fallback to memory cache or defaults
+            return _mockConfig ? Object.assign({}, defaults, _mockConfig) : defaults;
         }
     },
     saveConfig: async (config: SystemConfig): Promise<SystemConfig> => {
