@@ -380,7 +380,19 @@ const PropertyDetail: React.FC<PropertyDetailProps> = ({ property, onBack, onEdi
                                     <div key={idx} className="bg-white p-3 rounded-lg border border-purple-100 shadow-sm text-sm">
                                         <div className="flex justify-between items-center mb-1">
                                             <span className="font-bold text-slate-800">{contact.name}</span>
-                                            <span className="font-mono text-purple-700 font-bold">{contact.phone}</span>
+                                            <div className="flex items-center gap-2">
+                                                <span className="font-mono text-purple-700 font-bold">{contact.phone}</span>
+                                                <button
+                                                    onClick={() => {
+                                                        navigator.clipboard.writeText(contact.phone);
+                                                        alert('✅ 电话已复制: ' + contact.phone);
+                                                    }}
+                                                    className="text-xs bg-purple-100 text-purple-600 px-2 py-0.5 rounded hover:bg-purple-200 transition-colors"
+                                                    title="复制号码"
+                                                >
+                                                    复制
+                                                </button>
+                                            </div>
                                         </div>
                                         <div className="flex justify-between text-xs text-slate-500">
                                             <span>{contact.wechat ? `微信: ${contact.wechat}` : '无微信'}</span>

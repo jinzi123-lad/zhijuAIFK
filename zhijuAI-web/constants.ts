@@ -796,7 +796,13 @@ const generateMoreProperties = (): Property[] => {
       description: '自动生成的模拟房源数据，仅供展示使用。房屋状态良好，随时可看。',
       coordinates: { lat, lng },
       leaseTerms: ['年租'],
-      landlordType: LandlordType.INDIVIDUAL
+      landlordType: LandlordType.INDIVIDUAL,
+      landlordContacts: [{
+        name: ['张先生', '李女士', '王房东', '赵姐', '孙经理'][Math.floor(Math.random() * 5)],
+        phone: '138' + Math.floor(Math.random() * 100000000).toString().padStart(8, '0'),
+        wechat: 'wx_' + Math.floor(Math.random() * 10000),
+        note: Math.random() > 0.5 ? '看房需提前预约' : '业主直租，好说话'
+      }]
     });
   }
   return properties;
