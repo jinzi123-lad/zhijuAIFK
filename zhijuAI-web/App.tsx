@@ -1620,20 +1620,55 @@ const App: React.FC = () => {
                                     <h4 className="font-bold text-indigo-900 text-sm flex items-center">✨ AI 智能填单助手</h4>
                                     <span className="text-[10px] text-indigo-400 bg-white px-2 py-1 rounded-full shadow-sm">粘贴文本或图片自动识别</span>
                                 </div>
-                                <div className="flex gap-2">
-                                    <textarea
-                                        value={aiInputText}
-                                        onChange={e => setAiInputText(e.target.value)}
-                                        onPaste={handlePaste}
-                                        placeholder="在此粘贴房源描述文本，或直接粘贴聊天截图 (Ctrl+V)..."
-                                        className="flex-1 h-12 bg-white border border-indigo-200 rounded-lg p-3 text-xs outline-none resize-none focus:ring-2 focus:ring-indigo-500 transition-shadow"
-                                    />
+                                <div className="flex gap-2 items-start">
+                                    <div className="flex-1 relative">
+                                        <textarea
+                                            value={aiInputText}
+                                            onChange={e => setAiInputText(e.target.value)}
+                                            onPaste={handlePaste}
+                                            placeholder="在此粘贴房源描述文本，或直接粘贴聊天截图 (Ctrl+V)..."
+                                            className="w-full h-16 bg-white border border-indigo-200 rounded-lg p-3 pr-10 text-xs outline-none resize-none focus:ring-2 focus:ring-indigo-500 transition-shadow"
+                                        />
+                                        {/* Image Upload Button (Inside Textarea) */}
+                                        <div className="absolute bottom-2 right-2">
+                                            <label className="cursor-pointer text-indigo-400 hover:text-indigo-600 transition-colors p-1 rounded hover:bg-indigo-50" title="上传图片">
+                                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                                </svg>
+                                                <input type="file" accept="image/*" className="hidden" onChange={(e) => {
+                                                    const file = e.target.files?.[0];
+                                                    if (file) {
+                                                        const reader = new FileReader();
+                                                        reader.onload = (ev) => setAiInputImage(ev.target?.result as string);
+                                                        reader.readAsDataURL(file);
+                                                    }
+                                                    // Reset input
+                                                    e.target.value = '';
+                                                }} />
+                                            </label>
+                                        </div>
+                                    </div>
+
+                                    {/* Image Preview Thumbnail */}
+                                    {aiInputImage && (
+                                        <div className="relative h-16 w-16 flex-shrink-0 border border-indigo-200 rounded-lg overflow-hidden group">
+                                            <img src={aiInputImage} className="w-full h-full object-cover" alt="AI Input" />
+                                            <button
+                                                onClick={() => setAiInputImage(null)}
+                                                className="absolute inset-0 bg-black/50 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                                            >
+                                                <span className="text-xs">删除</span>
+                                            </button>
+                                        </div>
+                                    )}
+
                                     <button
                                         onClick={handleSmartFill}
                                         disabled={isAiParsing}
-                                        className="px-6 bg-indigo-600 text-white font-bold rounded-lg hover:bg-indigo-700 disabled:opacity-50 text-xs shadow-md shadow-indigo-200 transition-all active:scale-95"
+                                        className="h-16 px-6 bg-indigo-600 text-white font-bold rounded-lg hover:bg-indigo-700 disabled:opacity-50 text-xs shadow-md shadow-indigo-200 transition-all active:scale-95 flex flex-col items-center justify-center gap-1"
                                     >
-                                        {isAiParsing ? '分析中...' : '一键识别'}
+                                        <span>{isAiParsing ? '⌛' : '⚡'}</span>
+                                        <span>{isAiParsing ? '分析中' : '一键识别'}</span>
                                     </button>
                                 </div>
                             </div>
@@ -1850,6 +1885,42 @@ const App: React.FC = () => {
                                     <div className="h-40 bg-slate-100 border-2 border-dashed border-slate-300 rounded-lg flex items-center justify-center relative hover:border-indigo-400">
                                         {newProperty.floorPlanUrl ? <img src={newProperty.floorPlanUrl} className="w-full h-full object-contain rounded-lg" alt="" /> : <span className="text-slate-400 text-xs">点击上传户型图</span>}
                                         <input type="file" accept="image/*" onChange={(e) => handleImageUpload(e, 'floorPlanUrl')} className="absolute inset-0 opacity-0 cursor-pointer" />
+                                    </div>
+                                </div>
+
+                                {/* Multi-Image Upload */}
+                                <div className="mb-4">
+                                    <label className="block text-sm font-bold text-slate-700 mb-2">更多实拍图 ({newPropertyAdditionalImages.length})</label>
+                                    <div className="grid grid-cols-4 gap-2">
+                                        {newPropertyAdditionalImages.map((url, idx) => (
+                                            <div key={url} className="h-20 bg-slate-50 rounded border relative group">
+                                                <img src={url} className="w-full h-full object-cover rounded" alt="" />
+                                                <button onClick={() => setNewPropertyAdditionalImages(prev => prev.filter((_, i) => i !== idx))} className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-4 h-4 text-xs flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">×</button>
+                                            </div>
+                                        ))}
+                                        <div className="h-20 bg-slate-50 border-2 border-dashed border-slate-200 rounded flex items-center justify-center relative hover:border-indigo-300">
+                                            <span className="text-slate-300 text-2xl">+</span>
+                                            <input type="file" accept="image/*" multiple onChange={(e) => handleMultipleFilesUpload(e, 'IMAGES')} className="absolute inset-0 opacity-0 cursor-pointer" />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Video Upload */}
+                                <div>
+                                    <label className="block text-sm font-bold text-slate-700 mb-2">视频资料 ({newPropertyVideos.length})</label>
+                                    <div className="space-y-2">
+                                        {newPropertyVideos.map((url, idx) => (
+                                            <div key={url} className="flex items-center gap-2 p-2 bg-slate-50 rounded border border-slate-200">
+                                                <div className="w-8 h-8 bg-indigo-100 rounded flex items-center justify-center text-xs">🎥</div>
+                                                <div className="flex-1 text-xs truncate text-slate-500">{url.split('/').pop()}</div>
+                                                <button onClick={() => setNewPropertyVideos(prev => prev.filter((_, i) => i !== idx))} className="text-red-400 hover:text-red-600">删除</button>
+                                            </div>
+                                        ))}
+                                        <div className="flex items-center gap-2 p-2 border-2 border-dashed border-slate-200 rounded hover:border-indigo-300 relative cursor-pointer">
+                                            <div className="w-8 h-8 bg-slate-100 rounded flex items-center justify-center text-xs text-slate-400">+</div>
+                                            <div className="text-xs text-slate-400">点击上传房源视频 (支持多选)</div>
+                                            <input type="file" accept="video/*" multiple onChange={(e) => handleMultipleFilesUpload(e, 'VIDEOS')} className="absolute inset-0 opacity-0 cursor-pointer" />
+                                        </div>
                                     </div>
                                 </div>
                             </section>
