@@ -1,13 +1,12 @@
-
-import React, { useState } from 'react';
-import { Property, PropertyType, PropertyViewConfig, LandlordType, PropertyStatus } from '../types';
+﻿import React, { useState } from 'react';
+import { Property, PropertyType, PropertyViewConfig, LandlordType, PropertyStatus, PropertyUnit } from '../types';
 
 interface PropertyDetailProps {
     property: Property;
     onBack: () => void;
     onEdit: () => void;
     onDelete: () => void;
-    onOrderAction: (action: 'VIEWING' | 'SIGN') => void; // New prop for order actions
+    onOrderAction: (action: 'VIEWING' | 'SIGN') => void;
     viewConfig?: PropertyViewConfig;
 }
 
@@ -32,6 +31,8 @@ const PropertyDetail: React.FC<PropertyDetailProps> = ({ property, onBack, onEdi
     const [lightboxPos, setLightboxPos] = useState({ x: 0, y: 0 });
     const [isDragging, setIsDragging] = useState(false);
     const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+
+    const [viewingUnit, setViewingUnit] = useState<PropertyUnit | null>(null);
 
     const config = viewConfig || {
         showPrice: true,
@@ -86,14 +87,6 @@ const PropertyDetail: React.FC<PropertyDetailProps> = ({ property, onBack, onEdi
         setLightboxScale(1);
         setLightboxPos({ x: 0, y: 0 });
     };
-    const zoomIn = (e: React.MouseEvent) => {
-        e.stopPropagation();
-        setLightboxScale(prev => Math.min(prev + 0.5, 5));
-    };
-    const zoomOut = (e: React.MouseEvent) => {
-        e.stopPropagation();
-        setLightboxScale(prev => Math.max(prev - 0.5, 0.5));
-    };
 
     // Wheel Zoom
     const handleWheel = (e: React.WheelEvent) => {
@@ -144,11 +137,11 @@ const PropertyDetail: React.FC<PropertyDetailProps> = ({ property, onBack, onEdi
         const map = L.map(mapContainerRef.current, {
             center: [lat, lng],
             zoom: 15,
-            zoomControl: false, // Mini map style
+            zoomControl: false,
             attributionControl: false,
-            scrollWheelZoom: false, // Prevent scroll hijacking
-            dragging: !L.Browser.mobile, // Disable dragging on mobile to prevent scroll locking
-            tap: false // iOS fix
+            scrollWheelZoom: false,
+            dragging: !L.Browser.mobile,
+            tap: false
         });
 
         L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
@@ -161,7 +154,6 @@ const PropertyDetail: React.FC<PropertyDetailProps> = ({ property, onBack, onEdi
 
         mapInstanceRef.current = map;
 
-        // Fix: Force map to recalculate size after render to avoid "grey tiles" or partial display
         setTimeout(() => {
             map.invalidateSize();
         }, 200);
@@ -233,7 +225,6 @@ const PropertyDetail: React.FC<PropertyDetailProps> = ({ property, onBack, onEdi
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                {/* ... (Existing Media Logic, no changes) ... */}
                 {config.showMedia ? (
                     <div className="lg:col-span-2 space-y-4">
                         <div className="relative h-[400px] bg-slate-100 rounded-2xl overflow-hidden group shadow-inner cursor-pointer" onClick={openLightbox}>
@@ -249,7 +240,6 @@ const PropertyDetail: React.FC<PropertyDetailProps> = ({ property, onBack, onEdi
                                     {property.category}
                                 </span>
                             </div>
-                            {/* Status Overlay for Detail View */}
                             {!isAvailable && (
                                 <div className="absolute inset-0 bg-black/40 flex items-center justify-center z-20">
                                     <span className="border-4 border-white text-white font-bold text-3xl px-8 py-4 transform -rotate-12 uppercase">
@@ -258,7 +248,6 @@ const PropertyDetail: React.FC<PropertyDetailProps> = ({ property, onBack, onEdi
                                 </div>
                             )}
                         </div>
-                        {/* ... (Thumbnails, Video, etc logic remains same) ... */}
                         {allImages.length > 1 && (
                             <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
                                 {allImages.map((img, idx) => (
@@ -307,7 +296,6 @@ const PropertyDetail: React.FC<PropertyDetailProps> = ({ property, onBack, onEdi
                 )}
 
                 <div className="space-y-6">
-                    {/* Title & Price */}
                     <div>
                         <h1 className="text-2xl font-bold text-slate-900 mb-2 leading-tight">{property.title}</h1>
                         <p className="text-slate-500 mb-4 flex items-center">
@@ -345,7 +333,6 @@ const PropertyDetail: React.FC<PropertyDetailProps> = ({ property, onBack, onEdi
                         )}
                     </div>
 
-                    {/* Key Stats Grid */}
                     <div className="grid grid-cols-3 gap-4">
                         <div className="bg-slate-50 p-3 rounded-xl text-center border border-slate-100">
                             <div className="text-slate-400 text-xs mb-1">面积</div>
@@ -369,7 +356,6 @@ const PropertyDetail: React.FC<PropertyDetailProps> = ({ property, onBack, onEdi
                         ))}
                     </div>
 
-                    {/* Landlord Contact Info (Visible only in Internal Mode / Not Guest) */}
                     {!isGuestMode && property.landlordContacts && property.landlordContacts.length > 0 && (
                         <div className="bg-purple-50 p-4 rounded-xl border border-purple-100">
                             <h4 className="font-bold text-purple-800 text-sm mb-3 flex items-center">
@@ -404,7 +390,6 @@ const PropertyDetail: React.FC<PropertyDetailProps> = ({ property, onBack, onEdi
                         </div>
                     )}
 
-                    {/* CORPORATE UNITS */}
                     {property.landlordType === LandlordType.CORPORATE && property.units && (
                         <div className="bg-white border-2 border-orange-100 rounded-xl overflow-hidden">
                             <div className="bg-orange-50 p-3 border-b border-orange-100 flex justify-between items-center">
@@ -413,7 +398,7 @@ const PropertyDetail: React.FC<PropertyDetailProps> = ({ property, onBack, onEdi
                             </div>
                             <div className="divide-y divide-slate-100 max-h-60 overflow-y-auto">
                                 {property.units.map(unit => (
-                                    <div key={unit.id} className="p-3 flex items-center hover:bg-slate-50 transition-colors">
+                                    <div key={unit.id} className="p-3 flex items-center hover:bg-slate-50 transition-colors" onClick={() => setViewingUnit(unit)}>
                                         <div className="w-16 h-12 bg-slate-200 rounded overflow-hidden mr-3 flex-shrink-0">
                                             {unit.imageUrl ? (
                                                 <img src={unit.imageUrl} className="w-full h-full object-cover" alt="" loading="lazy" />
@@ -432,7 +417,7 @@ const PropertyDetail: React.FC<PropertyDetailProps> = ({ property, onBack, onEdi
                                             </div>
                                             <div className="flex justify-between items-center">
                                                 <span className="text-xs text-slate-500">{unit.layout} · {unit.area}㎡</span>
-                                                <button className="text-xs text-indigo-600 border border-indigo-200 px-2 py-0.5 rounded hover:bg-indigo-50">咨询</button>
+                                                <button className="text-xs text-indigo-600 border border-indigo-200 px-2 py-0.5 rounded hover:bg-indigo-50">查看</button>
                                             </div>
                                         </div>
                                     </div>
@@ -441,7 +426,6 @@ const PropertyDetail: React.FC<PropertyDetailProps> = ({ property, onBack, onEdi
                         </div>
                     )}
 
-                    {/* Lease Terms */}
                     {property.type === PropertyType.RENT && property.leaseTerms && (
                         <div className="bg-orange-50 p-4 rounded-xl border border-orange-100">
                             <h4 className="text-xs font-bold text-orange-800 uppercase mb-3">租赁方式与佣金</h4>
@@ -474,7 +458,6 @@ const PropertyDetail: React.FC<PropertyDetailProps> = ({ property, onBack, onEdi
                         </div>
                     )}
 
-                    {/* Embeds */}
                     {property.commuteInfo && config.showAddress && (
                         <div className="bg-green-50 p-4 rounded-xl border border-green-100 flex items-start">
                             <span className="mr-2 text-xl">🚇</span>
@@ -493,9 +476,7 @@ const PropertyDetail: React.FC<PropertyDetailProps> = ({ property, onBack, onEdi
 
                     {config.showAddress && (
                         <div className="relative h-64 rounded-xl overflow-hidden border border-slate-200 shadow-inner group">
-                            {/* Map Container */}
                             <div ref={mapContainerRef} className="w-full h-full z-0" style={{ minHeight: '100%' }} />
-
                             <a
                                 href={`https://www.amap.com/search?query=${encodeURIComponent(property.address)}`}
                                 target="_blank"
@@ -509,147 +490,138 @@ const PropertyDetail: React.FC<PropertyDetailProps> = ({ property, onBack, onEdi
                 </div>
             </div>
 
-            {/* Share Modal (omitted for brevity, same as previous) */}
             {isShareModalOpen && (
-                <div className="fixed inset-0 bg-black/60 z-[60] flex items-center justify-center p-4">
-                    <div className="bg-white rounded-xl w-[500px] max-w-full shadow-2xl overflow-hidden flex flex-col">
-                        <div className="p-5 border-b border-slate-100 flex justify-between items-center bg-slate-50">
-                            <div>
-                                <h3 className="text-lg font-bold text-slate-800">定制分享链接</h3>
-                                <p className="text-xs text-slate-500">选择您希望对外展示的房源信息</p>
-                            </div>
-                            <button onClick={() => setIsShareModalOpen(false)} className="text-slate-400 hover:text-slate-600 text-2xl leading-none">×</button>
+                <div className="fixed inset-0 bg-black/60 z-[70] flex items-center justify-center p-4 animate-fade-in" onClick={() => setIsShareModalOpen(false)}>
+                    <div className="bg-white rounded-xl w-[400px] max-w-full p-6" onClick={e => e.stopPropagation()}>
+                        <h3 className="text-lg font-bold text-slate-800 mb-4">分享房源</h3>
+                        <div className="space-y-3 mb-6">
+                            {(Object.keys(shareConfig) as Array<keyof PropertyViewConfig>).map(key => (
+                                <label key={key} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg cursor-pointer hover:bg-slate-100">
+                                    <span className="text-sm font-medium text-slate-700">
+                                        {key === 'showPrice' ? '显示价格' :
+                                            key === 'showAddress' ? '显示详细地址' :
+                                                key === 'showMedia' ? '显示图片/视频' :
+                                                    key === 'showDescription' ? '显示描述' : '显示佣金/合作信息'}
+                                    </span>
+                                    <input type="checkbox" checked={shareConfig[key]} onChange={() => toggleShareConfig(key)} className="w-5 h-5 text-indigo-600 rounded focus:ring-indigo-500" />
+                                </label>
+                            ))}
                         </div>
-
-                        <div className="p-6 space-y-4">
-                            {/* Checkboxes logic same as before... */}
-                            <div className="space-y-3">
-                                <label className="flex items-center justify-between p-3 border border-slate-200 rounded-lg hover:bg-slate-50 cursor-pointer">
-                                    <span className="text-sm font-medium text-slate-700">显示价格</span>
-                                    <input
-                                        type="checkbox"
-                                        checked={shareConfig.showPrice}
-                                        onChange={() => toggleShareConfig('showPrice')}
-                                        className="w-5 h-5 text-indigo-600 rounded focus:ring-indigo-500"
-                                    />
-                                </label>
-                                <label className="flex items-center justify-between p-3 border border-slate-200 rounded-lg hover:bg-slate-50 cursor-pointer">
-                                    <div>
-                                        <span className="block text-sm font-medium text-slate-700">显示详细地址</span>
-                                        {!shareConfig.showAddress && <span className="text-xs text-orange-500">将仅显示: {property.location} (隐藏门牌号)</span>}
-                                    </div>
-                                    <input
-                                        type="checkbox"
-                                        checked={shareConfig.showAddress}
-                                        onChange={() => toggleShareConfig('showAddress')}
-                                        className="w-5 h-5 text-indigo-600 rounded focus:ring-indigo-500"
-                                    />
-                                </label>
-                                <label className="flex items-center justify-between p-3 border border-slate-200 rounded-lg hover:bg-slate-50 cursor-pointer">
-                                    <span className="text-sm font-medium text-slate-700">包含图库与视频资料</span>
-                                    <input
-                                        type="checkbox"
-                                        checked={shareConfig.showMedia}
-                                        onChange={() => toggleShareConfig('showMedia')}
-                                        className="w-5 h-5 text-indigo-600 rounded focus:ring-indigo-500"
-                                    />
-                                </label>
-                                <label className="flex items-center justify-between p-3 border border-slate-200 rounded-lg hover:bg-slate-50 cursor-pointer">
-                                    <span className="text-sm font-medium text-slate-700">显示详细描述</span>
-                                    <input
-                                        type="checkbox"
-                                        checked={shareConfig.showDescription}
-                                        onChange={() => toggleShareConfig('showDescription')}
-                                        className="w-5 h-5 text-indigo-600 rounded focus:ring-indigo-500"
-                                    />
-                                </label>
-                                <label className="flex items-center justify-between p-3 border border-slate-200 rounded-lg hover:bg-slate-50 cursor-pointer">
-                                    <span className="text-sm font-medium text-slate-700">显示佣金信息 (仅限同行)</span>
-                                    <input
-                                        type="checkbox"
-                                        checked={shareConfig.showCommission}
-                                        onChange={() => toggleShareConfig('showCommission')}
-                                        className="w-5 h-5 text-indigo-600 rounded focus:ring-indigo-500"
-                                    />
-                                </label>
-                            </div>
-
-                            <div className="mt-6 pt-4 border-t border-slate-100">
-                                <button
-                                    onClick={handleCopyLink}
-                                    className={`w-full py-3 rounded-lg font-bold flex items-center justify-center transition-all ${linkCopied
-                                        ? 'bg-green-600 text-white'
-                                        : 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-lg shadow-indigo-200'
-                                        }`}
-                                >
-                                    {linkCopied ? (
-                                        <>
-                                            <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
-                                            链接已复制!
-                                        </>
-                                    ) : (
-                                        <>
-                                            <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
-                                            生成并复制链接
-                                        </>
-                                    )}
-                                </button>
-                            </div>
-                        </div>
+                        <button onClick={handleCopyLink} className="w-full bg-indigo-600 text-white py-3 rounded-xl font-bold hover:bg-indigo-700 transition-all active:scale-95 flex items-center justify-center gap-2">
+                            {linkCopied ? (
+                                <>
+                                    <span className="text-xl">✓</span> 已复制链接
+                                </>
+                            ) : (
+                                <>
+                                    <span className="text-xl">🔗</span> 复制分享链接
+                                </>
+                            )}
+                        </button>
                     </div>
                 </div>
             )}
-            {/* Image Lightbox */}
+
             {isLightboxOpen && (
-                <div className="fixed inset-0 bg-black/95 z-[100] flex items-center justify-center animate-fade-in" onClick={closeLightbox}>
-                    {/* Controls */}
-                    <div className="absolute top-4 right-4 flex space-x-4 z-[110]">
-                        <button onClick={zoomOut} className="bg-white/10 hover:bg-white/20 text-white p-3 rounded-full backdrop-blur-md transition-colors">
-                            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" /></svg>
-                        </button>
-                        <button onClick={zoomIn} className="bg-white/10 hover:bg-white/20 text-white p-3 rounded-full backdrop-blur-md transition-colors">
-                            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
-                        </button>
-                        <button onClick={closeLightbox} className="bg-white/10 hover:bg-white/20 text-white p-3 rounded-full backdrop-blur-md transition-colors">
-                            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-                        </button>
+                <div className="fixed inset-0 bg-black/95 z-[80] flex items-center justify-center animate-fade-in" onClick={closeLightbox} onWheel={handleWheel}>
+                    <div className="absolute top-4 right-4 z-[90] flex gap-4">
+                        <div className="bg-black/50 text-white px-3 py-1 rounded-full text-sm">
+                            {(viewingUnit ? (viewingUnit.imageUrls || [viewingUnit.imageUrl || '']).indexOf(activeImage || '') : allImages.indexOf(activeImage || '')) + 1} / {viewingUnit ? (viewingUnit.imageUrls?.length || 1) : allImages.length}
+                        </div>
+                        <button onClick={closeLightbox} className="text-white/70 hover:text-white text-4xl leading-none">&times;</button>
                     </div>
 
-                    {/* Navigation */}
-                    {allImages.length > 1 && (
-                        <>
-                            <button onClick={prevImage} className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/10 hover:bg-white/20 text-white p-4 rounded-full backdrop-blur-md transition-colors z-[110]">
-                                <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
-                            </button>
-                            <button onClick={nextImage} className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/10 hover:bg-white/20 text-white p-4 rounded-full backdrop-blur-md transition-colors z-[110]">
-                                <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
-                            </button>
-                        </>
-                    )}
+                    <button className="absolute left-4 top-1/2 -translate-y-1/2 p-4 text-white/50 hover:text-white transition-colors z-[90]" onClick={viewingUnit ? (e) => {
+                        e.stopPropagation();
+                        const unitImages = viewingUnit.imageUrls || [viewingUnit.imageUrl || ''];
+                        const currIdx = unitImages.indexOf(activeImage || '');
+                        const prevIdx = (currIdx - 1 + unitImages.length) % unitImages.length;
+                        setActiveImage(unitImages[prevIdx] || '');
+                    } : prevImage}>
+                        <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
+                    </button>
 
-                    {/* Image Container */}
+                    <button className="absolute right-4 top-1/2 -translate-y-1/2 p-4 text-white/50 hover:text-white transition-colors z-[90]" onClick={viewingUnit ? (e) => {
+                        e.stopPropagation();
+                        const unitImages = viewingUnit.imageUrls || [viewingUnit.imageUrl || ''];
+                        const currIdx = unitImages.indexOf(activeImage || '');
+                        const nextIdx = (currIdx + 1) % unitImages.length;
+                        setActiveImage(unitImages[nextIdx] || '');
+                    } : nextImage}>
+                        <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+                    </button>
+
                     <div
-                        className="overflow-hidden w-full h-full flex items-center justify-center"
-                        onWheel={handleWheel}
+                        className="relative overflow-hidden cursor-grab active:cursor-grabbing transition-transform duration-75"
+                        style={{ transform: `scale(${lightboxScale}) translate(${lightboxPos.x}px, ${lightboxPos.y}px)` }}
+                        onMouseDown={handleMouseDown}
+                        onMouseMove={handleMouseMove}
                         onMouseUp={handleMouseUp}
                         onMouseLeave={handleMouseUp}
-                        onClick={closeLightbox} // Allow closing if clicking outside image area
+                        onClick={e => e.stopPropagation()}
                     >
-                        <img
-                            src={allImages[lightboxIndex]}
-                            alt={`Full View ${lightboxIndex}`}
-                            className={`max-w-full max-h-full transition-transform duration-75 ease-out select-none ${isDragging ? 'cursor-grabbing' : lightboxScale > 1 ? 'cursor-grab' : 'cursor-default'}`}
-                            style={{
-                                transform: `translate(${lightboxPos.x}px, ${lightboxPos.y}px) scale(${lightboxScale})`
-                            }}
-                            onMouseDown={handleMouseDown}
-                            onMouseMove={handleMouseMove}
-                            onClick={(e) => e.stopPropagation()}
-                            draggable={false}
-                        />
+                        {activeImage && <img src={activeImage} className="max-w-[90vw] max-h-[90vh] object-contain select-none" draggable={false} />}
                     </div>
-                    <div className="absolute bottom-6 left-1/2 -translate-x-1/2 text-white/80 text-sm font-medium bg-black/40 px-4 py-2 rounded-full backdrop-blur-md">
-                        {lightboxIndex + 1} / {allImages.length}
+                </div>
+            )}
+
+            {viewingUnit && (
+                <div className="fixed inset-0 bg-black/60 z-[65] flex items-center justify-center p-4 animate-fade-in" onClick={() => setViewingUnit(null)}>
+                    <div className="bg-white rounded-2xl w-[900px] max-w-full max-h-[90vh] overflow-hidden flex flex-col shadow-2xl" onClick={e => e.stopPropagation()}>
+                        <div className="p-4 border-b border-slate-100 flex justify-between items-center">
+                            <div>
+                                <h3 className="text-xl font-bold text-slate-800">{property.title} - {viewingUnit.name}</h3>
+                                <div className="text-sm text-slate-500 mt-1">{viewingUnit.layout} · {viewingUnit.area}㎡</div>
+                            </div>
+                            <button onClick={() => setViewingUnit(null)} className="p-2 bg-slate-100 rounded-full hover:bg-slate-200 transition-colors">✕</button>
+                        </div>
+                        <div className="flex-1 overflow-y-auto p-6">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                <div className="space-y-4">
+                                    <div className="aspect-video bg-slate-100 rounded-xl overflow-hidden cursor-pointer shadow-sm relative group" onClick={() => { setActiveImage(viewingUnit.imageUrls?.[0] || viewingUnit.imageUrl || property.imageUrl || ''); setIsLightboxOpen(true); }}>
+                                        {viewingUnit.imageUrls?.[0] || viewingUnit.imageUrl || property.imageUrl ? (
+                                            <img src={viewingUnit.imageUrls?.[0] || viewingUnit.imageUrl || property.imageUrl} className="w-full h-full object-cover transition-transform group-hover:scale-105" />
+                                        ) : (
+                                            <div className="w-full h-full flex items-center justify-center text-slate-400">暂无图片</div>
+                                        )}
+                                        <div className="absolute inset-0 flex items-center justify-center bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity">
+                                            <span className="text-white font-bold bg-black/50 px-3 py-1 rounded-full text-sm">点击查看大图</span>
+                                        </div>
+                                    </div>
+                                    <div className="grid grid-cols-4 gap-2">
+                                        {(viewingUnit.imageUrls || [viewingUnit.imageUrl]).slice(1, 5).map((url, i) => (
+                                            url ? (
+                                                <div key={i} className="aspect-square bg-slate-100 rounded-lg overflow-hidden cursor-pointer" onClick={() => { setActiveImage(url); setIsLightboxOpen(true); }}>
+                                                    <img src={url} className="w-full h-full object-cover hover:opacity-90" />
+                                                </div>
+                                            ) : null
+                                        ))}
+                                    </div>
+                                </div>
+                                <div className="space-y-6">
+                                    <div className="bg-slate-50 p-6 rounded-xl border border-slate-100">
+                                        <div className="text-slate-500 text-sm mb-1">租金报价</div>
+                                        <div className="text-3xl font-bold text-indigo-600">¥{viewingUnit.price}<span className="text-base font-normal text-slate-500">/月</span></div>
+                                        <div className="mt-4 flex gap-2">
+                                            <span className={`px-2 py-1 rounded text-xs font-bold ${viewingUnit.status === PropertyStatus.AVAILABLE ? 'bg-green-100 text-green-700' : 'bg-slate-200 text-slate-600'}`}>
+                                                {viewingUnit.status === PropertyStatus.AVAILABLE ? '空置招租' : '非空置'}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <h4 className="font-bold text-slate-800 mb-2">房间描述</h4>
+                                        <p className="text-slate-600 text-sm leading-relaxed">
+                                            {viewingUnit.description || '暂无详细描述...'}
+                                        </p>
+                                    </div>
+                                    <div className="pt-6 border-t border-slate-100">
+                                        <button onClick={() => { onOrderAction('VIEWING'); setViewingUnit(null); }} className="w-full bg-indigo-600 text-white py-3 rounded-xl font-bold hover:bg-indigo-700 shadow-lg shadow-indigo-200 active:scale-95 transition-all">
+                                            预约看房 (此房间)
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             )}

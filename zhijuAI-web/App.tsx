@@ -540,7 +540,9 @@ const App: React.FC = () => {
     const [newPropertyLeaseCommissions, setNewPropertyLeaseCommissions] = useState<Record<string, string>>({});
     const [newPropertyLandlordType, setNewPropertyLandlordType] = useState<LandlordType>(LandlordType.INDIVIDUAL);
     const [newPropertyUnits, setNewPropertyUnits] = useState<PropertyUnit[]>([]);
-    const [tempUnit, setTempUnit] = useState<Partial<PropertyUnit>>({ name: '', price: 0, area: 0, layout: '1室1厅' });
+    const [tempUnit, setTempUnit] = useState<Partial<PropertyUnit>>({ name: '', price: 0, area: 0, layout: '1室1厅', status: PropertyStatus.AVAILABLE, imageUrls: [] });
+    const [isUnitDrawerOpen, setIsUnitDrawerOpen] = useState(false);
+    const [editingUnitIndex, setEditingUnitIndex] = useState<number | null>(null);
     const [newPropertyLandlordContacts, setNewPropertyLandlordContacts] = useState<LandlordContact[]>([]);
 
     const [aiInputText, setAiInputText] = useState('');
@@ -1412,9 +1414,123 @@ const App: React.FC = () => {
         document.body.removeChild(link);
     };
 
+    const renderUnitDrawer = () => (
+        <div className={`absolute top-0 right-0 h-full w-[450px] bg-white shadow-2xl z-[70] transform transition-transform duration-300 flex flex-col ${isUnitDrawerOpen ? 'translate-x-0' : 'translate-x-full'}`}>
+            <div className="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+                <h3 className="font-bold text-slate-800">{editingUnitIndex !== null ? '编辑房间信息' : '添加新房间'}</h3>
+                <button onClick={() => setIsUnitDrawerOpen(false)} className="text-slate-400 hover:text-slate-600 px-2 text-2xl">×</button>
+            </div>
+            <div className="flex-1 overflow-y-auto p-6 space-y-6">
+                <div>
+                    <label className="block text-xs font-bold text-slate-500 mb-1">房间号/名称 <span className="text-red-500">*</span></label>
+                    <input className="w-full p-2 border border-slate-300 rounded focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                        value={tempUnit.name || ''}
+                        onChange={e => setTempUnit({ ...tempUnit, name: e.target.value })}
+                        placeholder="例: 201室 / A户型-豪华"
+                    />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                    <div>
+                        <label className="block text-xs font-bold text-slate-500 mb-1">租金 (元/月)</label>
+                        <input type="number" className="w-full p-2 border border-slate-300 rounded outline-none"
+                            value={tempUnit.price || ''}
+                            onChange={e => setTempUnit({ ...tempUnit, price: Number(e.target.value) })}
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-xs font-bold text-slate-500 mb-1">面积 (㎡)</label>
+                        <input type="number" className="w-full p-2 border border-slate-300 rounded outline-none"
+                            value={tempUnit.area || ''}
+                            onChange={e => setTempUnit({ ...tempUnit, area: Number(e.target.value) })}
+                        />
+                    </div>
+                </div>
+                <div>
+                    <label className="block text-xs font-bold text-slate-500 mb-1">户型结构</label>
+                    <select className="w-full p-2 border border-slate-300 rounded outline-none bg-white"
+                        value={tempUnit.layout || '1室0厅1卫'}
+                        onChange={e => setTempUnit({ ...tempUnit, layout: e.target.value })}
+                    >
+                        {['1室0厅1卫', '1室1厅1卫', '2室1厅1卫', '2室2厅1卫', '3室1厅1卫', '3室2厅2卫', '其他'].map(o => <option key={o} value={o}>{o}</option>)}
+                    </select>
+                </div>
+                <div>
+                    <label className="block text-xs font-bold text-slate-500 mb-1">当前状态</label>
+                    <div className="flex gap-2">
+                        {[PropertyStatus.AVAILABLE, PropertyStatus.RENTED, PropertyStatus.LOCKED].map(s => (
+                            <button key={s}
+                                onClick={() => setTempUnit({ ...tempUnit, status: s })}
+                                className={`flex-1 py-1.5 rounded text-xs font-bold border ${tempUnit.status === s
+                                    ? (s === PropertyStatus.AVAILABLE ? 'bg-green-50 border-green-500 text-green-700' : s === PropertyStatus.RENTED ? 'bg-slate-100 border-slate-400 text-slate-600' : 'bg-yellow-50 border-yellow-500 text-yellow-700')
+                                    : 'border-slate-200 text-slate-500 hover:bg-slate-50'}`}
+                            >
+                                {s === PropertyStatus.AVAILABLE ? '空置招租' : s === PropertyStatus.RENTED ? '已出租' : '维护/预定'}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+                <div>
+                    <label className="block text-xs font-bold text-slate-500 mb-1">房间相册 (支持多张)</label>
+                    <div className="grid grid-cols-3 gap-2">
+                        {(tempUnit.imageUrls || []).map((url, idx) => (
+                            <div key={idx} className="relative aspect-square rounded-lg overflow-hidden group border border-slate-200">
+                                <img src={url} className="w-full h-full object-cover" />
+                                <button onClick={() => {
+                                    const newUrls = [...(tempUnit.imageUrls || [])];
+                                    newUrls.splice(idx, 1);
+                                    setTempUnit({ ...tempUnit, imageUrls: newUrls, imageUrl: newUrls[0] || '' });
+                                }} className="absolute top-1 right-1 bg-black/50 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity text-xs">✕</button>
+                            </div>
+                        ))}
+                        <label className="aspect-square flex flex-col items-center justify-center border-2 border-dashed border-slate-300 rounded-lg cursor-pointer hover:border-indigo-500 hover:bg-indigo-50 transition-colors">
+                            <span className="text-2xl text-slate-400">+</span>
+                            <span className="text-[10px] text-slate-400 mt-1">上传图片</span>
+                            <input type="file" className="hidden" accept="image/*" multiple onChange={async (e) => {
+                                if (e.target.files) {
+                                    const files = Array.from(e.target.files);
+                                    const uploadPromises = files.map(f => uploadFile(f));
+                                    const urls = await Promise.all(uploadPromises);
+                                    const newUrls = [...(tempUnit.imageUrls || []), ...urls];
+                                    setTempUnit({ ...tempUnit, imageUrls: newUrls, imageUrl: newUrls[0] || '' });
+                                }
+                            }} />
+                        </label>
+                    </div>
+                </div>
+            </div>
+            <div className="p-4 border-t border-slate-100 flex justify-end gap-3 bg-slate-50">
+                <button onClick={() => setIsUnitDrawerOpen(false)} className="px-4 py-2 text-sm text-slate-600 hover:bg-slate-100 rounded">取消</button>
+                <button onClick={() => {
+                    if (!tempUnit.name) { alert('请输入房间号'); return; }
+                    const updatedUnits = [...newPropertyUnits];
+                    const unitToSave = {
+                        ...tempUnit,
+                        id: tempUnit.id || crypto.randomUUID(),
+                        status: tempUnit.status || PropertyStatus.AVAILABLE,
+                        imageUrls: tempUnit.imageUrls || [],
+                        imageUrl: tempUnit.imageUrls?.[0] || '',
+                        price: Number(tempUnit.price) || 0,
+                        area: Number(tempUnit.area) || 0
+                    } as PropertyUnit;
+
+                    if (editingUnitIndex !== null) {
+                        updatedUnits[editingUnitIndex] = unitToSave;
+                    } else {
+                        updatedUnits.push(unitToSave);
+                    }
+                    setNewPropertyUnits(updatedUnits);
+                    setIsUnitDrawerOpen(false);
+                }} className="px-6 py-2 bg-indigo-600 text-white text-sm font-bold rounded shadow-lg shadow-indigo-200">
+                    保存房间
+                </button>
+            </div>
+        </div>
+    );
+
     const renderAddPropertyModal = () => (
         <div className="fixed inset-0 bg-black/60 z-[60] flex items-center justify-center p-4">
-            <div className="bg-white rounded-xl w-[1000px] max-w-full h-[90vh] flex flex-col shadow-2xl overflow-hidden">
+            <div className="bg-white rounded-xl w-[1000px] max-w-full h-[90vh] flex flex-col shadow-2xl overflow-hidden relative">
+                {renderUnitDrawer()}
                 <div className="px-6 py-4 border-b border-slate-200 flex justify-between items-center bg-white z-20 shadow-sm flex-shrink-0">
                     <h3 className="text-xl font-bold text-slate-800">{editingPropertyId ? '编辑房源' : '发布新房源'}</h3>
                     <button onClick={() => setIsAddModalOpen(false)} className="text-slate-400 hover:text-slate-600 text-2xl leading-none">×</button>
@@ -1673,6 +1789,72 @@ const App: React.FC = () => {
                                     <button onClick={addContact} className="text-xs text-indigo-600 font-bold hover:underline">+ 添加联系人</button>
                                 </div>
                             </section>
+
+                            {/* SECTION 7: Room Management (7. 房间管理) - ONLY FOR CORPORATE */}
+                            {newPropertyLandlordType === LandlordType.CORPORATE && (
+                                <section className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm ring-2 ring-purple-100">
+                                    <div className="flex justify-between items-center mb-6">
+                                        <h4 className="text-lg font-bold text-slate-800 flex items-center border-l-4 border-purple-600 pl-3">
+                                            7. 房间管理 (Room Management)
+                                        </h4>
+                                        <button onClick={() => {
+                                            setTempUnit({ name: '', price: 0, area: 0, layout: '1室1厅', status: PropertyStatus.AVAILABLE, imageUrls: [] });
+                                            setEditingUnitIndex(null);
+                                            setIsUnitDrawerOpen(true);
+                                        }} className="px-4 py-2 bg-purple-600 text-white text-sm font-bold rounded-lg shadow-md hover:bg-purple-700 transition-colors">
+                                            + 添加房间
+                                        </button>
+                                    </div>
+
+                                    {newPropertyUnits.length === 0 ? (
+                                        <div className="text-center py-12 bg-slate-50 rounded-lg border-2 border-dashed border-slate-200">
+                                            <div className="text-4xl mb-3">🏢</div>
+                                            <p className="text-slate-500 text-sm font-medium">暂无房间数据</p>
+                                            <p className="text-slate-400 text-xs mt-1">请点击右上角添加按钮录入房间</p>
+                                        </div>
+                                    ) : (
+                                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                            {newPropertyUnits.map((unit, idx) => (
+                                                <div key={unit.id || idx} className="bg-slate-50 rounded-lg p-3 border border-slate-200 hover:shadow-md transition-shadow relative group">
+                                                    <div className="flex gap-3">
+                                                        <div className="w-16 h-16 bg-slate-200 rounded overflow-hidden flex-shrink-0">
+                                                            {unit.imageUrls && unit.imageUrls.length > 0 ? (
+                                                                <img src={unit.imageUrls[0]} className="w-full h-full object-cover" />
+                                                            ) : (
+                                                                <div className="w-full h-full flex items-center justify-center text-slate-400 text-xs">无图</div>
+                                                            )}
+                                                        </div>
+                                                        <div className="flex-1 min-w-0">
+                                                            <div className="flex justify-between items-start">
+                                                                <h5 className="font-bold text-slate-800 truncate">{unit.name}</h5>
+                                                                <span className={`text-[10px] px-1.5 py-0.5 rounded ${unit.status === PropertyStatus.AVAILABLE ? 'bg-green-100 text-green-700' : 'bg-slate-200 text-slate-600'}`}>
+                                                                    {unit.status === PropertyStatus.AVAILABLE ? '空置' : '非空'}
+                                                                </span>
+                                                            </div>
+                                                            <div className="text-xs text-slate-500 mt-1">{unit.layout} · {unit.area}㎡</div>
+                                                            <div className="text-sm font-bold text-indigo-600 mt-1">¥{unit.price}/月</div>
+                                                        </div>
+                                                    </div>
+                                                    <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
+                                                        <button onClick={() => {
+                                                            setTempUnit({ ...unit });
+                                                            setEditingUnitIndex(idx);
+                                                            setIsUnitDrawerOpen(true);
+                                                        }} className="p-1.5 bg-white text-indigo-600 rounded shadow hover:bg-indigo-50">✎</button>
+                                                        <button onClick={() => {
+                                                            if (confirm('确定删除此房间吗？')) {
+                                                                const newUnits = [...newPropertyUnits];
+                                                                newUnits.splice(idx, 1);
+                                                                setNewPropertyUnits(newUnits);
+                                                            }
+                                                        }} className="p-1.5 bg-white text-red-500 rounded shadow hover:bg-red-50">🗑</button>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </section>
+                            )}
 
                         </div>
                     </div>

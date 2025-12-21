@@ -61,7 +61,9 @@ export interface PropertyUnit {
   area: number;
   layout: string;
   imageUrl?: string;
+  imageUrls?: string[]; // [NEW] Multiple images for the unit
   description?: string;
+  status?: PropertyStatus; // [NEW] Status for specific unit (Available, Rented, etc.)
 }
 
 export interface LandlordContact {
