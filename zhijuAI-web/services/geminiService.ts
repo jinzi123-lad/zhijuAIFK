@@ -301,24 +301,29 @@ export const parsePropertyInfoWithAI = async (text: string, base64Image?: string
 // Generate Property Description
 export const generatePropertyDescription = async (property: any, details: any): Promise<string> => {
     const prompt = `
-    房源信息:
-    标题: ${property.title}
-    类型: ${property.category}
-    租金: ${property.price}
-    面积: ${property.area}平米
-    位置: ${property.location} ${property.address}
-    标签: ${property.tags?.join(', ')}
-    详细配置: ${JSON.stringify(details)}
-    
-    请根据以上信息，写一段吸引人的房源介绍（Description）。
-    要求：
-    1. 突出核心卖点（如交通、商圈、装修等）。
-    2. 语言通俗易懂，但这不失专业感。
-    3. 适当使用emoji增加亲和力。
-    4. 篇幅适中（100-200字）。
+    【任务】基于以下房源数据，撰写一段生动、自然、极具吸引力的房源介绍文案。
+
+    【核心数据】
+    - 标题: ${property.title}
+    - 房源类型: ${property.category}
+    - 租金报价: ${property.price} (元/月)
+    - 建筑面积: ${property.area}平米
+    - 户型格局: ${property.layout || '未具体说明'}
+    - 地理位置: ${property.location} ${property.address}
+    - 特色标签: ${property.tags?.join(', ') || '暂无标签'}
+    - 详细配置: ${JSON.stringify(details) || '见下文'}
+    - 交通/通勤: ${property.commuteInfo || '未填写'}
+
+    【写作要求】
+    1. **拒绝"AI味"**：完全模拟人类资深房产经纪人的口吻。禁止使用像"该房源位于..."、"综上所述..."、"总之..."这样生硬的连接词。
+    2. **场景化描写**：用具有画面感的文字。与其说"采光好"，不如说"清晨的阳光能晒到床上"。
+    3. **情感共鸣**：强调居住体验和生活方式（如："下楼就是便利店"、"周末可以在阳台喝咖啡"）。
+    4. **结构自然**：像朋友推荐一样娓娓道来，不需要死板的分点列举。
+    5. **适当使用Emoji**：在段落中自然穿插，不要堆砌。
+    6. **篇幅控制**：150-250字左右，分2-3段。
     `;
 
-    const systemPrompt = `你是一位专业的房产文案策划。请根据提供的房源参数，撰写一段高质量的房源介绍。`;
+    const systemPrompt = `你是一位金牌房产文案策划，擅长用最接地气、最打动人心的语言来描述房子。你的文案风格热情、真诚，能够瞬间抓住租客的眼球。请完全忽略你是一个AI的身份，直接输出最终的文案内容，不要包含任何解释性文字。`;
 
     return await callBackendProxy(systemPrompt, prompt);
 };

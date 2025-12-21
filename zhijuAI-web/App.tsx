@@ -1049,17 +1049,42 @@ const App: React.FC = () => {
                     .then(data => {
                         if (data && data.address) {
                             const addr = data.address;
-                            // Try to match province/city
-                            const prov = Object.keys(CASCADING_REGIONS).find(p => addr.state?.includes(p)) || '北京';
-                            setNewPropertyProvince(prov);
-                            const cityMap = CASCADING_REGIONS[prov] || {};
-                            const city = Object.keys(cityMap).find(c => addr.city?.includes(c)) || Object.keys(cityMap)[0];
-                            setNewPropertyCity(city);
-                            const dists = cityMap[city] || [];
-                            const dist = dists.find(d => (addr.suburb || addr.district)?.includes(d)) || dists[0];
-                            setNewPropertyDistrict(dist);
+                            console.log('Auto-Locate Address:', addr);
 
-                            setNewProperty(prev => ({ ...prev, address: data.display_name || '定位地址' }));
+                            // Try to match province (State)
+                            // 1. Exact match in keys
+                            // 2. Contains key (e.g. Hebei Province contains Hebei?) - Nominatim returns local names usually.
+                            let prov = Object.keys(CASCADING_REGIONS).find(p => addr.state?.includes(p));
+
+                            // If not found, try to match by removing '省' or '市' from the returned state
+                            if (!prov && addr.state) {
+                                prov = Object.keys(CASCADING_REGIONS).find(p => addr.state.replace(/省|市/g, '').includes(p));
+                            }
+
+                            // Last resort: If still no match but we have a valid state string, try to map known English names to Chinese if needed (Simplified here)
+                            // For now, if no match, default to first available or keep current.
+
+                            if (prov) {
+                                setNewPropertyProvince(prov);
+                                const cityMap = CASCADING_REGIONS[prov] || {};
+
+                                // City Matching
+                                let city = Object.keys(cityMap).find(c => addr.city?.includes(c) || addr.town?.includes(c) || addr.county?.includes(c));
+                                if (!city && prov === '北京' && addr.city?.includes('北京')) city = '北京'; // Special handling for municipalities
+                                if (!city && prov === '上海' && addr.city?.includes('上海')) city = '上海';
+
+                                // Default to first city if valid province found but no city match
+                                if (!city) city = Object.keys(cityMap)[0];
+
+                                if (city) {
+                                    setNewPropertyCity(city);
+                                    const dists = cityMap[city] || [];
+                                    const dist = dists.find(d => (addr.suburb || addr.district || addr.county)?.includes(d)) || dists[0];
+                                    if (dist) setNewPropertyDistrict(dist);
+                                }
+                            }
+
+                            setNewProperty(prev => ({ ...prev, address: data.display_name || '自动定位地址' }));
                         }
                     }).catch(() => console.log(`定位成功 (Lat:${latitude.toFixed(2)}, Lng:${longitude.toFixed(2)})，未能解析详细地址。`));
             },
@@ -1589,10 +1614,34 @@ const App: React.FC = () => {
                     <div className="flex-1 overflow-y-auto bg-slate-50 scroll-smooth">
                         <div className="max-w-4xl mx-auto p-6 space-y-8">
 
+                            {/* AI Smart Fill (Top Placement) */}
+                            <div className="bg-gradient-to-r from-indigo-50 to-purple-50 p-4 rounded-xl border border-indigo-100 shadow-sm flex flex-col gap-3">
+                                <div className="flex justify-between items-center">
+                                    <h4 className="font-bold text-indigo-900 text-sm flex items-center">✨ AI 智能填单助手</h4>
+                                    <span className="text-[10px] text-indigo-400 bg-white px-2 py-1 rounded-full shadow-sm">粘贴文本或图片自动识别</span>
+                                </div>
+                                <div className="flex gap-2">
+                                    <textarea
+                                        value={aiInputText}
+                                        onChange={e => setAiInputText(e.target.value)}
+                                        onPaste={handlePaste}
+                                        placeholder="在此粘贴房源描述文本，或直接粘贴聊天截图 (Ctrl+V)..."
+                                        className="flex-1 h-12 bg-white border border-indigo-200 rounded-lg p-3 text-xs outline-none resize-none focus:ring-2 focus:ring-indigo-500 transition-shadow"
+                                    />
+                                    <button
+                                        onClick={handleSmartFill}
+                                        disabled={isAiParsing}
+                                        className="px-6 bg-indigo-600 text-white font-bold rounded-lg hover:bg-indigo-700 disabled:opacity-50 text-xs shadow-md shadow-indigo-200 transition-all active:scale-95"
+                                    >
+                                        {isAiParsing ? '分析中...' : '一键识别'}
+                                    </button>
+                                </div>
+                            </div>
+
                             {/* SECTION 1: Basic Info & Location (Merged) */}
                             <section className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
                                 <h4 className="text-lg font-bold text-slate-800 mb-4 flex items-center border-l-4 border-indigo-600 pl-3">
-                                    1. 基础信息 (Basic Info)
+                                    1. 基础信息
                                 </h4>
                                 <div className="grid grid-cols-12 gap-5">
                                     <div className="col-span-12">
@@ -1625,52 +1674,38 @@ const App: React.FC = () => {
                                                 <label className="block text-sm font-bold text-slate-700 mb-1">
                                                     租金 (元/月) <span className="text-red-500">*</span>
                                                 </label>
-                                                <input type="number" className="w-full p-2.5 bg-slate-50 text-slate-900 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none" value={newProperty.price || ''} onChange={e => setNewProperty({ ...newProperty, price: Number(e.target.value) })} />
+                                                <input type="number" className="w-full p-2.5 bg-slate-50 text-slate-900 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none" placeholder="0" value={newProperty.price || ''} onChange={e => setNewProperty({ ...newProperty, price: Number(e.target.value) })} />
                                             </div>
                                         </>
                                     )}
 
-                                    {/* Area (Always Visible) */}
                                     <div className="col-span-12 md:col-span-4">
                                         <label className="block text-sm font-bold text-slate-700 mb-1">
                                             {newPropertyLandlordType === LandlordType.CORPORATE ? '总建筑面积 (㎡)' : '面积 (㎡)'} <span className="text-red-500">*</span>
                                         </label>
-                                        <input type="number" className="w-full p-2.5 bg-slate-50 text-slate-900 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none" value={newProperty.area || ''} onChange={e => setNewProperty({ ...newProperty, area: Number(e.target.value) })} />
+                                        <input type="number" className="w-full p-2.5 bg-slate-50 text-slate-900 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none" placeholder="0" value={newProperty.area || ''} onChange={e => setNewProperty({ ...newProperty, area: Number(e.target.value) })} />
                                     </div>
 
-                                    {/* Location Fields (Merged Here) */}
-                                    <div className="col-span-12 border-t border-slate-100 pt-4 mt-2">
-                                        <label className="block text-sm font-bold text-slate-700 mb-3">地理位置</label>
+                                    <div className="col-span-12 bg-slate-50 p-4 rounded-lg border border-slate-200">
+                                        <div className="flex justify-between items-center mb-3">
+                                            <label className="block text-sm font-bold text-slate-700">地理位置 <span className="text-red-500">*</span></label>
+                                            <button onClick={handleAutoLocate} className="text-xs text-indigo-600 font-bold flex items-center hover:bg-indigo-50 px-2 py-1 rounded transition-colors">
+                                                📍 自动定位
+                                            </button>
+                                        </div>
                                         <div className="grid grid-cols-3 gap-3 mb-3">
-                                            <div>
-                                                <label className="block text-xs font-bold text-slate-500 mb-1">省份 <span className="text-red-500">*</span></label>
-                                                <select className="w-full p-2 border rounded-lg bg-slate-50 text-slate-800 text-sm" value={newPropertyProvince} onChange={e => setNewPropertyProvince(e.target.value)}>
-                                                    {Object.keys(CASCADING_REGIONS).map(p => <option key={p} value={p}>{p}</option>)}
-                                                </select>
-                                            </div>
-                                            <div>
-                                                <label className="block text-xs font-bold text-slate-500 mb-1">城市 <span className="text-red-500">*</span></label>
-                                                <select className="w-full p-2 border rounded-lg bg-slate-50 text-slate-800 text-sm" value={newPropertyCity} onChange={e => setNewPropertyCity(e.target.value)}>
-                                                    {Object.keys(CASCADING_REGIONS[newPropertyProvince] || {}).map(c => <option key={c} value={c}>{c}</option>)}
-                                                </select>
-                                            </div>
-                                            <div>
-                                                <label className="block text-xs font-bold text-slate-500 mb-1">区域 <span className="text-red-500">*</span></label>
-                                                <select className="w-full p-2 border rounded-lg bg-slate-50 text-slate-800 text-sm" value={newPropertyDistrict} onChange={e => setNewPropertyDistrict(e.target.value)}>
-                                                    {(CASCADING_REGIONS[newPropertyProvince]?.[newPropertyCity] || []).map(d => <option key={d} value={d}>{d}</option>)}
-                                                </select>
-                                            </div>
+                                            <select className="p-2 border border-slate-300 rounded text-sm" value={newPropertyProvince} onChange={e => setNewPropertyProvince(e.target.value)}>
+                                                {Object.keys(CASCADING_REGIONS).map(p => <option key={p} value={p}>{p}</option>)}
+                                            </select>
+                                            <select className="p-2 border border-slate-300 rounded text-sm" value={newPropertyCity} onChange={e => setNewPropertyCity(e.target.value)}>
+                                                {Object.keys(CASCADING_REGIONS[newPropertyProvince] || {}).map(c => <option key={c} value={c}>{c}</option>)}
+                                            </select>
+                                            <select className="p-2 border border-slate-300 rounded text-sm" value={newPropertyDistrict} onChange={e => setNewPropertyDistrict(e.target.value)}>
+                                                {CASCADING_REGIONS[newPropertyProvince]?.[newPropertyCity]?.map(d => <option key={d} value={d}>{d}</option>)}
+                                            </select>
                                         </div>
-                                        <div className="flex gap-2 mb-3">
-                                            <div className="flex-1">
-                                                <label className="block text-xs font-bold text-slate-500 mb-1">详细地址 <span className="text-red-500">*</span></label>
-                                                <input className="w-full p-2.5 bg-slate-50 text-slate-900 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none" placeholder="小区名 / 街道 / 门牌号..." value={newProperty.address || ''} onChange={e => setNewProperty({ ...newProperty, address: e.target.value })} />
-                                            </div>
-                                            <div className="flex items-end">
-                                                <button onClick={handleAutoLocate} className="px-4 py-2.5 bg-emerald-600 text-white rounded-lg font-bold text-sm hover:bg-emerald-700 flex items-center whitespace-nowrap shadow-sm">📍 自动定位</button>
-                                            </div>
-                                        </div>
-                                        <div className="grid grid-cols-3 gap-4">
+                                        <input className="w-full p-2.5 bg-white border border-slate-300 rounded-lg text-sm" placeholder="详细地址 (街道/小区/门牌号)" value={newProperty.address || ''} onChange={e => setNewProperty({ ...newProperty, address: e.target.value })} />
+                                        <div className="grid grid-cols-3 gap-3 mt-3">
                                             <div><label className="block text-xs font-bold text-slate-500 mb-1">楼号</label><input className="w-full p-2 bg-slate-50 border border-slate-300 rounded text-sm" placeholder="如: 8号楼" value={newPropertyDetails.buildingNum || ''} onChange={e => setNewPropertyDetails({ ...newPropertyDetails, buildingNum: e.target.value })} /></div>
                                             <div><label className="block text-xs font-bold text-slate-500 mb-1">单元</label><input className="w-full p-2 bg-slate-50 border border-slate-300 rounded text-sm" placeholder="如: 2单元" value={newPropertyDetails.unitNum || ''} onChange={e => setNewPropertyDetails({ ...newPropertyDetails, unitNum: e.target.value })} /></div>
                                             <div><label className="block text-xs font-bold text-slate-500 mb-1">楼层</label><input className="w-full p-2 bg-slate-50 border border-slate-300 rounded text-sm" placeholder="如: 601" value={newPropertyDetails.floorNum || ''} onChange={e => setNewPropertyDetails({ ...newPropertyDetails, floorNum: e.target.value })} /></div>
@@ -1679,20 +1714,44 @@ const App: React.FC = () => {
                                 </div>
                             </section>
 
-                            {/* SECTION 2: Business Terms (2. 商务条款) */}
+                            {/* SECTION 2: Billing Config (Merged Fees + Business Terms) */}
                             <section className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
                                 <h4 className="text-lg font-bold text-slate-800 mb-4 flex items-center border-l-4 border-orange-500 pl-3">
-                                    2. 商务条款 (Business Terms)
+                                    2. 收费配置
                                 </h4>
-                                <div className="space-y-4">
+                                <div className="space-y-6">
+                                    {/* Lease Terms & Commissions */}
                                     <div>
-                                        <label className="block text-sm font-bold text-slate-700 mb-2">租赁方式 (可多选)</label>
-                                        <div className="flex flex-wrap gap-2">
-                                            {LEASE_TERM_OPTIONS.map(term => (
-                                                <button key={term} onClick={() => toggleLeaseTerm(term)} className={`px-4 py-2 rounded-lg text-sm font-bold border transition-colors ${newPropertyLeaseTerms.includes(term) ? 'bg-orange-500 text-white border-orange-600' : 'bg-white text-slate-500 border-slate-200 hover:bg-orange-50'}`}>{term}</button>
-                                            ))}
+                                        <label className="block text-sm font-bold text-slate-700 mb-2">租赁方式与佣金配置</label>
+                                        <div className="space-y-3 bg-slate-50 p-4 rounded-lg border border-slate-200">
+                                            {LEASE_TERM_OPTIONS.map(term => {
+                                                const isSelected = newPropertyLeaseTerms.includes(term);
+                                                return (
+                                                    <div key={term} className={`flex items-center gap-3 p-2 rounded transition-colors ${isSelected ? 'bg-white shadow-sm border border-orange-200' : 'opacity-70'}`}>
+                                                        <button
+                                                            onClick={() => toggleLeaseTerm(term)}
+                                                            className={`flex-shrink-0 w-24 px-3 py-1.5 rounded-lg text-xs font-bold border transition-colors ${isSelected ? 'bg-orange-500 text-white border-orange-600' : 'bg-white text-slate-500 border-slate-300 hover:bg-slate-100'}`}
+                                                        >
+                                                            {term}
+                                                        </button>
+
+                                                        {isSelected && (
+                                                            <div className="flex items-center gap-2 flex-1 animate-fade-in">
+                                                                <span className="text-xs text-slate-500 font-bold">佣金:</span>
+                                                                <input
+                                                                    className="flex-1 p-1.5 text-xs border border-slate-300 rounded focus:ring-1 focus:ring-orange-500 outline-none"
+                                                                    placeholder="如: 50%月租"
+                                                                    value={newPropertyLeaseCommissions?.[term] || ''}
+                                                                    onChange={e => handleCommissionChange(term, e.target.value)}
+                                                                />
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                );
+                                            })}
                                         </div>
                                     </div>
+
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         <div>
                                             <label className="block text-sm font-bold text-slate-700 mb-1">支付方式</label>
@@ -1709,45 +1768,43 @@ const App: React.FC = () => {
                                             </select>
                                         </div>
                                     </div>
-                                </div>
-                            </section>
 
-                            {/* SECTION 3: Utility & Fees Config (3. 杂费/收费配置) [NEW] */}
-                            <section className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
-                                <h4 className="text-lg font-bold text-slate-800 mb-4 flex items-center border-l-4 border-cyan-500 pl-3">
-                                    3. 杂费/收费配置 (Fees)
-                                </h4>
-                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                                    {[
-                                        { key: 'water', label: '💧 水费' },
-                                        { key: 'electricity', label: '⚡ 电费' },
-                                        { key: 'gas', label: '🔥 燃气费' },
-                                        { key: 'propertyMgmt', label: '🏢 物业费' },
-                                        { key: 'internet', label: '🌐 网费' },
-                                        { key: 'parking', label: '🚗 停车位' },
-                                        { key: 'serviceFee', label: '🤵 管理/服务费' }
-                                    ].map(item => (
-                                        <div key={item.key}>
-                                            <label className="block text-xs font-bold text-slate-500 mb-1">{item.label}</label>
-                                            <input
-                                                className="w-full p-2 bg-slate-50 border border-slate-300 rounded text-sm focus:ring-1 focus:ring-cyan-500 outline-none"
-                                                placeholder="例: 5元/吨 或 包含在房租内"
-                                                value={(newProperty.fees as any)?.[item.key] || ''}
-                                                onChange={e => setNewProperty({
-                                                    ...newProperty,
-                                                    fees: { ...newProperty.fees, [item.key]: e.target.value }
-                                                })}
-                                            />
+                                    {/* Detailed Fees */}
+                                    <div className="border-t border-slate-100 pt-4">
+                                        <label className="block text-sm font-bold text-slate-700 mb-3">杂费明细</label>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                            {[
+                                                { key: 'water', label: '💧 水费' },
+                                                { key: 'electricity', label: '⚡ 电费' },
+                                                { key: 'gas', label: '🔥 燃气费' },
+                                                { key: 'propertyMgmt', label: '🏢 物业费' },
+                                                { key: 'internet', label: '🌐 网费' },
+                                                { key: 'parking', label: '🚗 停车位' },
+                                                { key: 'serviceFee', label: '🤵 管理/服务费' }
+                                            ].map(item => (
+                                                <div key={item.key}>
+                                                    <label className="block text-xs font-bold text-slate-500 mb-1">{item.label}</label>
+                                                    <input
+                                                        className="w-full p-2 bg-slate-50 border border-slate-300 rounded text-sm focus:ring-1 focus:ring-orange-500 outline-none"
+                                                        placeholder="例: 5元/吨 或 包含在房租内"
+                                                        value={(newProperty.fees as any)?.[item.key] || ''}
+                                                        onChange={e => setNewProperty({
+                                                            ...newProperty,
+                                                            fees: { ...newProperty.fees, [item.key]: e.target.value }
+                                                        })}
+                                                    />
+                                                </div>
+                                            ))}
                                         </div>
-                                    ))}
+                                    </div>
                                 </div>
                             </section>
 
 
-                            {/* SECTION 4: Configuration (4. 详细配置) */}
+                            {/* SECTION 3: Configuration (Renumbered) */}
                             <section className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
                                 <h4 className="text-lg font-bold text-slate-800 mb-4 flex items-center border-l-4 border-blue-500 pl-3">
-                                    4. 详细配置 (Configuration)
+                                    3. 详细配置
                                 </h4>
                                 <div className="space-y-4">
                                     <div>
@@ -1780,19 +1837,11 @@ const App: React.FC = () => {
                                 </div>
                             </section>
 
-                            {/* SECTION 5: Media (5. 图文介绍) */}
+                            {/* SECTION 4: Media (Renumbered) */}
                             <section className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
                                 <h4 className="text-lg font-bold text-slate-800 mb-4 flex items-center border-l-4 border-purple-500 pl-3">
-                                    5. 影像资料 (Media)
+                                    4. 影像资料
                                 </h4>
-                                {/* AI Helper */}
-                                <div className="bg-gradient-to-r from-indigo-50 to-purple-50 p-4 rounded-lg border border-indigo-100 mb-4">
-                                    <div className="flex gap-2">
-                                        <textarea value={aiInputText} onChange={e => setAiInputText(e.target.value)} onPaste={handlePaste} placeholder="在此粘贴房源描述文本，或直接粘贴聊天截图 (Ctrl+V)..." className="flex-1 h-16 bg-white border border-indigo-200 rounded p-2 text-xs outline-none resize-none" />
-                                        <button onClick={handleSmartFill} disabled={isAiParsing} className="px-4 bg-indigo-600 text-white font-bold rounded hover:bg-indigo-700 disabled:opacity-50 text-xs">{isAiParsing ? '分析中' : 'AI识别'}</button>
-                                    </div>
-                                </div>
-
                                 <div className="grid grid-cols-2 gap-4 mb-4">
                                     <div className="h-40 bg-slate-100 border-2 border-dashed border-slate-300 rounded-lg flex items-center justify-center relative hover:border-indigo-400">
                                         {newProperty.imageUrl ? <img src={newProperty.imageUrl} className="w-full h-full object-cover rounded-lg" alt="" /> : <span className="text-slate-400 text-xs">点击上传主图</span>}
@@ -1803,19 +1852,13 @@ const App: React.FC = () => {
                                         <input type="file" accept="image/*" onChange={(e) => handleImageUpload(e, 'floorPlanUrl')} className="absolute inset-0 opacity-0 cursor-pointer" />
                                     </div>
                                 </div>
-
-                                <div>
-                                    <label className="block text-sm font-bold text-slate-700 mb-2">房源详细描述</label>
-                                    <textarea className="w-full p-3 bg-slate-50 border border-slate-300 rounded-lg text-sm h-32 resize-none" value={newProperty.description || ''} onChange={e => setNewProperty({ ...newProperty, description: e.target.value })} placeholder="详细描述房源的亮点..." />
-                                </div>
                             </section>
 
-                            {/* SECTION 6: Landlord (6. 房东信息) */}
+                            {/* SECTION 5: Landlord (Renumbered) */}
                             <section className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
                                 <h4 className="text-lg font-bold text-slate-800 mb-4 flex items-center border-l-4 border-slate-500 pl-3">
-                                    6. 房东信息 (Landlord)
+                                    5. 房东信息
                                 </h4>
-                                {/* Toggle Removed - Logic moved to Step 1 */}
                                 <div className="mb-4 text-xs font-bold px-3 py-1.5 bg-slate-100 inline-block rounded text-slate-500">
                                     当前模式: {newPropertyLandlordType === LandlordType.INDIVIDUAL ? '👤 独立式房源 (个人)' : '🏢 集中式房源 (企业/公寓)'}
                                 </div>
@@ -1831,12 +1874,12 @@ const App: React.FC = () => {
                                 </div>
                             </section>
 
-                            {/* SECTION 7: Room Management (7. 房间管理) - ONLY FOR CORPORATE */}
+                            {/* SECTION 6: Room Management (Renumbered) */}
                             {newPropertyLandlordType === LandlordType.CORPORATE && (
                                 <section className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm ring-2 ring-purple-100">
                                     <div className="flex justify-between items-center mb-6">
                                         <h4 className="text-lg font-bold text-slate-800 flex items-center border-l-4 border-purple-600 pl-3">
-                                            7. 房间管理 (Room Management)
+                                            6. 房间管理
                                         </h4>
                                         <button onClick={() => {
                                             setTempUnit({ name: '', price: 0, area: 0, layout: '1室1厅', status: PropertyStatus.AVAILABLE, imageUrls: [] });
@@ -1896,6 +1939,22 @@ const App: React.FC = () => {
                                     )}
                                 </section>
                             )}
+
+                            {/* SECTION 7: Description (Moved to Bottom) */}
+                            <section className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+                                <h4 className="text-lg font-bold text-slate-800 mb-4 flex items-center border-l-4 border-gray-500 pl-3">
+                                    7. 房源详细描述
+                                </h4>
+                                <div>
+                                    <div className="flex justify-between mb-2">
+                                        <label className="block text-sm font-bold text-slate-700">描述内容</label>
+                                        <button onClick={handleGenerateDescription} disabled={isGeneratingDesc} className="text-xs text-indigo-600 font-bold hover:underline">
+                                            {isGeneratingDesc ? '生成中...' : '✨ AI辅助生成描述'}
+                                        </button>
+                                    </div>
+                                    <textarea className="w-full p-3 bg-slate-50 border border-slate-300 rounded-lg text-sm h-32 resize-none focus:ring-2 focus:ring-indigo-500 outline-none" value={newProperty.description || ''} onChange={e => setNewProperty({ ...newProperty, description: e.target.value })} placeholder="详细描述房源的亮点、周边环境、交通情况等..." />
+                                </div>
+                            </section>
 
                         </div>
                     </div>
