@@ -145,6 +145,20 @@ export interface Property {
 
   // Detailed Inspection Info
   details?: PropertyDetailedInfo;
+
+  // Usage Costs / Fees Config [NEW]
+  fees?: PropertyFeeConfig;
+}
+
+export interface PropertyFeeConfig {
+  water?: string;       // e.g. "5元/吨" or "包含在房租内"
+  electricity?: string; // e.g. "1.5元/度"
+  gas?: string;
+  parking?: string;     // e.g. "300元/月"
+  propertyMgmt?: string;// 物业费
+  internet?: string;    // 网费
+  serviceFee?: string;  // 管理费
+  other?: string;
 }
 
 export interface PropertyViewConfig {
