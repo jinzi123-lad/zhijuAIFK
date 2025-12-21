@@ -1,43 +1,77 @@
-<view class="container">
-  <!-- Dashboard Header -->
-  <view class="dashboard-header">
-    <view class="stat-item">
-      <text class="stat-num">12</text>
-      <text class="stat-label">管理房源</text>
-    </view>
-    <view class="stat-divider"></view>
-    <view class="stat-item">
-      <text class="stat-num">8</text>
-      <text class="stat-label">在租中</text>
-    </view>
-    <view class="stat-divider"></view>
-    <view class="stat-item">
-      <text class="stat-num">95%</text>
-      <text class="stat-label">出租率</text>
-    </view>
-  </view>
+<view class="container pb-24">
+  <!-- Mesh Gradient Background -->
+  <view class="mesh-gradient"></view>
 
-  <!-- Management List -->
-  <view class="section-title">我的房源管理</view>
-  <scroll-view class="property-list" scroll-y>
-    <block wx:for="{{properties}}" wx:key="id">
-      <view class="manage-card">
-        <view class="card-header">
-          <text class="card-title">{{item.title}}</text>
-          <text class="status-badge {{item.status === 'RENTED' ? 'rented' : 'vacant'}}">{{item.status === 'RENTED' ? '已租' : '待租'}}</text>
-        </view>
-        <view class="card-body">
-          <text>租金: ¥{{item.price}}/月</text>
-          <text>访客: {{item.views}} 人</text>
-        </view>
-        <view class="card-actions">
-          <button size="mini" plain>编辑</button>
-          <button size="mini" plain>下架</button>
-          <button size="mini" type="primary" plain>推广</button>
+  <!-- Custom Native-Like Navbar -->
+  <navbar title="智居AI-房东管理助手" showBack="{{true}}"></navbar>
+
+  <view class="main-content">
+    <!-- Stats Card -->
+    <view class="stats-card glass-card glass-shimmer shadow-lg" bindtap="navToProperties">
+      <view class="card-header">
+        <text class="text-sm text-muted font-medium">房源管理</text>
+        <view class="icon-circle-sm bg-primary-10 icon-hover-bounce">
+          <icon name="home" color="#2563eb" size="32"></icon>
         </view>
       </view>
-    </block>
-  </scroll-view>
+      <view class="card-body">
+        <view class="stats-main">
+          <text class="stats-num text-primary">{{stats.total || 0}}</text>
+          <text class="stats-label text-muted">总房源</text>
+        </view>
+        <view class="stats-side">
+          <view class="stats-detail">
+            <text class="detail-item text-success">已租 {{stats.occupied || 0}}</text>
+            <text class="detail-item text-warning">空置 {{stats.vacant || 0}}</text>
+          </view>
+          <icon name="chevronRight" color="#94a3b8" size="32"></icon>
+        </view>
+      </view>
+    </view>
 
-  <view class="fab-add">+</view>
+    <!-- Main Functions Grid -->
+    <view class="section">
+      <text class="section-title text-foreground">常用功能</text>
+      <view class="glass-card glass-shimmer shadow-md p-5 rounded-3xl">
+        <view class="grid-cols-4">
+          <block wx:for="{{mainFunctions}}" wx:key="index">
+            <view class="grid-item icon-fade-in stagger-{{index+1}}" bindtap="navTo" data-path="{{item.path}}">
+              <view class="grid-icon-box {{item.bgClass}} icon-glow">
+                <icon name="{{item.iconName}}" color="{{item.iconColor}}" size="48"></icon>
+              </view>
+              <text class="grid-label text-foreground">{{item.label}}</text>
+            </view>
+          </block>
+        </view>
+      </view>
+    </view>
+
+    <!-- To-Do Items -->
+    <view class="section">
+      <text class="section-title text-foreground">待办事项</text>
+      <view class="todo-list">
+        <block wx:for="{{todos}}" wx:key="id">
+          <view class="todo-item glass-card glass-shimmer shadow-md" bindtap="handleTodo" data-id="{{item.id}}">
+            <view class="todo-content">
+              <view class="todo-icon-box {{item.urgent ? 'bg-destructive-10 icon-pulse' : 'bg-primary-10'}}">
+                 <icon name="{{item.iconName}}" color="{{item.urgent ? '#ef4444' : '#2563eb'}}" size="40"></icon>
+              </view>
+              <view class="todo-text">
+                <text class="todo-title text-foreground">{{item.title}}</text>
+                <text class="todo-desc text-muted">{{item.description}}</text>
+                <view class="todo-time text-muted">
+                  <icon name="clock" color="#64748b" size="24"></icon>
+                  <text class="ml-1">{{item.time}}</text>
+                </view>
+              </view>
+              <icon name="chevronRight" color="#94a3b8" size="32"></icon>
+            </view>
+          </view>
+        </block>
+      </view>
+    </view>
+  </view>
+  
+  <!-- TabBar Component -->
+  <landlord-tabbar selected="{{0}}"></landlord-tabbar>
 </view>

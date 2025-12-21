@@ -1,39 +1,77 @@
+const app = getApp()
+const { post } = require('../../utils/request')
+
 Page({
     data: {
-        role: 'TENANT',
-        roleName: '租客'
+        role: '',
+        isLoading: false
     },
 
     onLoad(options) {
         if (options.role) {
-            this.setData({
-                role: options.role,
-                roleName: options.role === 'LANDLORD' ? '房东' : '租客'
-            })
+            this.setData({ role: options.role })
         }
     },
 
-    handleLogin() {
-        wx.showLoading({
-            title: '登录中...',
+    async handleWechatLogin() {
+        this.setData({ isLoading: true })
+
+        // Simulate Wechat Login
+        wx.login({
+            success: async (res) => {
+                if (res.code) {
+                    try {
+                        // In a real app, we would call the backend here:
+                        // const result = await post('/auth/wechat-login', { 
+                        //   code: res.code,
+                        //   role: this.data.role 
+                        // })
+
+                        // Mocking successful login for demonstration
+                        console.log('Login Code:', res.code)
+                        const mockToken = 'mock-jwt-token-' + Date.now()
+
+                        // Save to Storage & Global Data
+                        wx.setStorageSync('token', mockToken)
+                        wx.setStorageSync('currentRole', this.data.role)
+                        app.globalData.token = mockToken
+                        app.globalData.currentRole = this.data.role
+
+                        wx.showToast({
+                            title: '登录成功',
+                            icon: 'success'
+                        })
+
+                        setTimeout(() => {
+                            const url = this.data.role === 'TENANT'
+                                ? '/pages/tenant/home/index'
+                                : '/pages/landlord/home/index'
+
+                            wx.reLaunch({ url })
+                        }, 1000)
+
+                    } catch (error) {
+                        console.error(error)
+                        wx.showToast({
+                            title: '登录失败',
+                            icon: 'none'
+                        })
+                    } finally {
+                        this.setData({ isLoading: false })
+                    }
+                }
+            },
+            fail: () => {
+                this.setData({ isLoading: false })
+                wx.showToast({ title: '微信登录失败', icon: 'none' })
+            }
         })
+    },
 
-        // Mock Login Delay and Success
-        setTimeout(() => {
-            wx.hideLoading()
-
-            // Store user info (Mock)
-            wx.setStorageSync('userRole', this.data.role);
-            wx.setStorageSync('isLoggedIn', true);
-
-            // Navigate to respective home
-            const url = this.data.role === 'LANDLORD'
-                ? '/pages/landlord/home/index'
-                : '/pages/tenant/home/index';
-
-            wx.reLaunch({
-                url: url
-            })
-        }, 1500)
+    handlePhoneLogin() {
+        wx.showToast({
+            title: '暂未开放',
+            icon: 'none'
+        })
     }
 })

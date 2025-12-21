@@ -1,30 +1,54 @@
 <view class="container">
-  <!-- Design Point: Background Blobs -->
-  <view class="bg-blob blob-1"></view>
-  <view class="bg-blob blob-2"></view>
+  <!-- Mesh Gradient Background -->
+  <view class="mesh-gradient"></view>
 
-  <view class="header">
-    <text class="title">智居AI</text>
-    <text class="subtitle">Next-Gen Property OS</text>
-  </view>
+  <view class="content-wrapper">
+    <!-- Header / Logo -->
+    <view class="header-section icon-fade-in">
+        <view class="logo-circle bg-gradient-blue-purple icon-float">
+            <!-- Simple House Icon (Using Text for now or replace with SVG image if available) -->
+            <text class="logo-icon">🏠</text> 
+        </view>
+        <view class="brand-title">智居AI</view>
+        <view class="brand-subtitle">定义未来居住新方式</view>
+    </view>
 
-  <view class="role-selection">
-    <view class="role-card tenant" bindtap="selectTenant">
-      <view class="icon-box">🏠</view>
-      <view class="card-text">
-        <text class="role-title">我是租客</text>
-        <text class="role-desc">智能找房 · 拎包入住</text>
-      </view>
-      <view class="arrow">➜</view>
+    <!-- Role Buttons -->
+    <view class="role-cards">
+        <!-- Tenant Button -->
+        <view class="role-card glass-card icon-fade-in stagger-1" bindtap="selectRole" data-role="tenant">
+            <view class="card-inner">
+                <view class="card-left">
+                    <view class="icon-circle bg-gradient-green icon-pulse">
+                        <text class="role-icon">👤</text>
+                    </view>
+                    <view class="text-group">
+                        <text class="role-title">我是租客</text>
+                        <text class="role-desc">寻找理想的居住空间</text>
+                    </view>
+                </view>
+                <view class="arrow-icon">></view>
+            </view>
+        </view>
+
+        <!-- Landlord Button -->
+        <view class="role-card glass-card icon-fade-in stagger-2" bindtap="selectRole" data-role="landlord">
+            <view class="card-inner">
+                <view class="card-left">
+                    <view class="icon-circle bg-gradient-blue-purple icon-pulse">
+                        <text class="role-icon">🏠</text>
+                    </view>
+                    <view class="text-group">
+                        <text class="role-title">我是房东</text>
+                        <text class="role-desc">智能管理我的房产</text>
+                    </view>
+                </view>
+                <view class="arrow-icon">></view>
+            </view>
+        </view>
     </view>
-    
-    <view class="role-card landlord" bindtap="selectLandlord">
-      <view class="icon-box">🔑</view>
-       <view class="card-text">
-        <text class="role-title">我是房东</text>
-        <text class="role-desc">资产托管 · 收益可视化</text>
-      </view>
-      <view class="arrow">➜</view>
-    </view>
+
+    <!-- Footer -->
+    <view class="footer-text icon-fade-in stagger-3">选择您的身份以继续使用</view>
   </view>
 </view>

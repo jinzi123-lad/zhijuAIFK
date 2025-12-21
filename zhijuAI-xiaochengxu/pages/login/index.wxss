@@ -1,61 +1,89 @@
 /* pages/login/index.wxss */
 .container {
-  height: 100vh;
-  display: flex;
-  flex-direction: column;
-  padding: 60rpx;
-  background-color: white;
+  /* Inherits centered flex from app.wxss */
+  background: white; /* Clean white background for login */
 }
 
-.logo-area {
-  margin-top: 100rpx;
+.login-box {
+  width: 100%;
+  max-width: 600rpx;
   display: flex;
   flex-direction: column;
   align-items: center;
 }
 
-.logo {
-  width: 160rpx;
-  height: 160rpx;
-  background-color: #f1f5f9;
-  border-radius: 40rpx;
-  margin-bottom: 30rpx;
+.login-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 100rpx;
 }
 
-.app-name {
-  font-size: 40rpx;
-  font-weight: bold;
-  color: #334155;
+.role-badge {
+  background: #F3F4F6;
+  color: #4B5563;
+  padding: 8rpx 24rpx;
+  font-size: 24rpx;
+  border-radius: 100rpx;
+  margin-bottom: 32rpx;
+  font-weight: 500;
 }
 
-.login-content {
-  margin-top: 120rpx;
-}
-
-.welcome-text {
-  font-size: 48rpx;
-  font-weight: 800;
-  color: #0f172a;
-  display: block;
+.login-title {
+  font-size: 56rpx;
+  font-weight: 700;
+  color: var(--text-main);
   margin-bottom: 16rpx;
 }
 
-.instruction-text {
-  font-size: 28rpx;
-  color: #94a3b8;
-  display: block;
-  margin-bottom: 80rpx;
+.login-subtitle {
+  font-size: 30rpx;
+  color: var(--text-secondary);
 }
 
-.login-btn {
-  background-color: #07c160;
+.login-actions {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 32rpx;
+}
+
+.action-btn {
+  width: 100% !important;
+  border-radius: 100rpx;
+  padding: 32rpx 0;
+  font-size: 32rpx;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.action-btn::after { border: none; }
+
+.wechat-btn {
+  background: #18191C; /* Stylish Black */
   color: white;
-  border-radius: 999rpx;
-  font-weight: bold;
-  padding: 24rpx 0;
+  box-shadow: 0 8rpx 20rpx rgba(0, 0, 0, 0.15);
+}
+
+.phone-btn {
+  background: #F3F4F6;
+  color: #1F2937;
+}
+
+.footer-agreement {
+  position: absolute;
+  bottom: 80rpx;
+  font-size: 24rpx;
+  color: #9CA3AF;
+  text-align: center;
   width: 100%;
 }
 
-.login-btn:active {
-  opacity: 0.9;
+.link {
+  color: #18191C;
+  font-weight: 500;
+  margin: 0 4rpx;
 }

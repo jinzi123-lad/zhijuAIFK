@@ -1,16 +1,40 @@
 <view class="container">
-  <view class="logo-area">
-    <image class="logo" src="https://via.placeholder.com/100" mode="aspectFit"></image> 
-    <!-- Placeholder, can handle image later -->
-    <text class="app-name">智居AI</text>
+  <view class="mesh-bg">
+    <view class="mesh-blob mesh-blob-1"></view>
+    <view class="mesh-blob mesh-blob-2"></view>
+  </view>
+  
+  <view class="login-box">
+    <!-- Centered Header -->
+    <view class="login-header">
+      <view class="role-badge">{{role === 'TENANT' ? '租客端' : '房东端'}}</view>
+      <text class="login-title">欢迎使用智居AI</text>
+      <text class="login-subtitle">请完成登录以继续</text>
+    </view>
+
+    <!-- Centered Actions -->
+    <view class="login-actions">
+      <button 
+        class="action-btn wechat-btn" 
+        bindtap="handleWechatLogin" 
+        loading="{{isLoading}}"
+        hover-class="btn-hover"
+      >
+        <image class="wechat-icon" src="/images/wechat-icon.png" wx:if="{{false}}"></image> <!-- Placeholder -->
+        <text>微信一键登录</text>
+      </button>
+      
+      <button 
+        class="action-btn phone-btn" 
+        bindtap="handlePhoneLogin"
+        hover-class="btn-hover"
+      >
+        手机号码登录
+      </button>
+    </view>
   </view>
 
-  <view class="login-content">
-    <text class="welcome-text">欢迎归来，{{roleName}}</text>
-    <text class="instruction-text">请授权微信登录以访问您的账户</text>
-    
-    <button class="login-btn" bindtap="handleLogin">
-      微信一键登录
-    </button>
+  <view class="footer-agreement">
+    <text>登录即代表同意 <text class="link">用户协议</text> 与 <text class="link">隐私政策</text></text>
   </view>
 </view>

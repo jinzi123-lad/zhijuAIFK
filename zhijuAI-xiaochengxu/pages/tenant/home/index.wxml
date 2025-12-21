@@ -1,39 +1,80 @@
-<view class="container">
-  <!-- Search Header -->
-  <view class="search-header">
-    <view class="search-bar">
-      <icon type="search" size="14"></icon>
-      <input placeholder="搜索小区/商圈/地铁" placeholder-class="placeholder"></input>
+<view class="container pb-24">
+  <view class="mesh-gradient"></view>
+  <navbar title="智居租房" showBack="{{false}}"></navbar>
+
+  <view class="main-body px-4 pt-4">
+    <!-- Header / Search -->
+    <view class="glass-card flex-row p-3 rounded-full mb-4 shadow-sm">
+        <icon name="search" color="#94a3b8" size="32" class="ml-2"></icon>
+        <input class="flex-1 ml-2 text-sm" placeholder="搜索房源..." placeholder-class="text-muted" />
+    </view>
+
+    <!-- Services Grid -->
+    <view class="glass-card rounded-2xl p-4 mb-4 grid-4">
+        <block wx:for="{{serviceMenu}}" wx:key="label">
+             <view class="service-item centered flex-col icon-hover-bounce" bindtap="navTo" data-path="{{item.path}}" data-action="{{item.action}}">
+                 <view class="icon-circle {{item.bg}} mb-1 icon-glow">
+                     <icon name="{{item.icon}}" color="{{item.color}}" size="40"></icon>
+                 </view>
+                 <text class="text-xs text-muted">{{item.label}}</text>
+             </view>
+        </block>
+    </view>
+
+    <!-- Property List for Sales -->
+    <view class="list-section">
+        <text class="section-title font-bold text-lg mb-3 block px-1">全量房源库 (销售端)</text>
+        
+        <block wx:if="{{isLoading}}">
+             <view class="loading-state centered p-8">
+                 <text class="text-muted">加载中...</text>
+             </view>
+        </block>
+        
+        <block wx:elif="{{properties.length > 0}}">
+            <block wx:for="{{properties}}" wx:key="id">
+                 <view class="property-card glass-card rounded-2xl overflow-hidden mb-4 shadow-md icon-hover-card">
+                     <!-- Image Placeholder -->
+                     <view class="card-img bg-muted-20 h-40 relative">
+                         <image src="{{item.image_url || 'https://via.placeholder.com/400x200'}}" mode="aspectFill" class="w-full h-full"></image>
+                         <view class="price-tag absolute bottom-2 left-2 bg-black-50 text-white px-2 py-1 rounded text-sm font-bold">
+                             ¥{{item.rent_amount || item.price}}/月
+                         </view>
+                         <!-- Landlord Tag for Sales -->
+                         <view class="landlord-tag absolute top-2 right-2 bg-primary text-white px-2 py-1 rounded-full text-xs flex-row">
+                             <icon name="user" color="#fff" size="20"></icon>
+                             <text class="ml-1">房东: {{item.short_landlord_id}}</text>
+                         </view>
+                     </view>
+                     <view class="card-content p-3">
+                         <text class="title font-bold text-base block mb-1 text-ellips-1">{{item.title}}</text>
+                         <view class="flex-row text-xs text-muted mb-2">
+                             <text>{{item.city || item.location || '未知区域'}}</text>
+                             <text class="mx-1">|</text>
+                             <text>{{item.area}}㎡</text>
+                             <text class="mx-1">|</text>
+                             <text>{{item.layout || (item.bedroom_count + '室')}}</text>
+                         </view>
+                         <view class="tags flex-row flex-wrap gap-1">
+                             <block wx:for="{{item.tags || ['随时看房']}}" wx:key="*this" wx:for-item="tag">
+                                 <text class="tag bg-primary-10 text-primary text-xs px-1 rounded">{{tag}}</text>
+                             </block>
+                         </view>
+                     </view>
+                 </view>
+            </block>
+        </block>
+
+        <block wx:else>
+            <view class="empty-state centered p-8 flex-col">
+                <icon name="home" color="#cbd5e1" size="64"></icon>
+                <text class="text-muted mt-2">暂无房源数据</text>
+            </view>
+        </block>
     </view>
   </view>
 
-  <!-- Filter Tags -->
-  <scroll-view class="filter-scroll" scroll-x enable-flex>
-    <view class="filter-tag active">全部</view>
-    <view class="filter-tag">整租</view>
-    <view class="filter-tag">合租</view>
-    <view class="filter-tag">近地铁</view>
-    <view class="filter-tag">精装修</view>
-  </scroll-view>
-
-  <!-- Property List -->
-  <scroll-view class="property-list" scroll-y>
-    <block wx:for="{{properties}}" wx:key="id">
-      <view class="property-card">
-        <image class="cover-img" src="{{item.imageUrl}}" mode="aspectFill"></image>
-        <view class="info">
-          <text class="title">{{item.title}}</text>
-          <text class="desc">{{item.area}}㎡ | {{item.layout}} | {{item.location}}</text>
-          
-          <view class="tags">
-            <text class="tag" wx:for="{{item.tags}}" wx:for-item="tag" wx:key="*this">{{tag}}</text>
-          </view>
-          
-          <view class="price-row">
-            <text class="price">¥{{item.price}}<text class="unit">/月</text></text>
-          </view>
-        </view>
-      </view>
-    </block>
-  </scroll-view>
+  <!-- Tenant TabBar (TODO: Make a separate tenant-tabbar component or reuse) -->
+  <!-- For now, no tabbar shown here since it's a sub-page in app.json context usually, wait, it IS a tab -->
+  <!-- We need a tenant-tabbar component logic similar to landlord -->
 </view>

@@ -1,4 +1,9 @@
 {
     "navigationBarTitleText": "智居租房",
-    "enablePullDownRefresh": true
+    "navigationStyle": "custom",
+    "enablePullDownRefresh": true,
+    "usingComponents": {
+        "navbar": "/components/navbar/index",
+        "icon": "/components/icon/index"
+    }
 }

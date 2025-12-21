@@ -1,161 +1,126 @@
-/* pages/index/index.wxss */
-page {
-  background-color: #f8fafc;
-}
-
+/** index.wxss **/
 .container {
-  height: 100vh;
   display: flex;
-  flex-direction: column;
   justify-content: center;
-  padding: 60rpx;
-  position: relative;
-  overflow: hidden;
+  align-items: center;
+  height: 100vh;
+  padding: 40rpx;
 }
 
-/* Background Decoration (Design Point) */
-.bg-blob {
-  position: absolute;
-  filter: blur(80rpx);
-  opacity: 0.6;
-  z-index: -1;
-  animation: float 10s ease-in-out infinite;
-}
-
-.blob-1 {
-  width: 500rpx;
-  height: 500rpx;
-  background: #cffafe; /* Cyan-100 */
-  top: -100rpx;
-  right: -100rpx;
-}
-
-.blob-2 {
-  width: 600rpx;
-  height: 600rpx;
-  background: #e0e7ff; /* Indigo-100 */
-  bottom: -100rpx;
-  left: -100rpx;
-  animation-delay: -5s;
-}
-
-@keyframes float {
-  0% { transform: translate(0, 0) rotate(0deg); }
-  50% { transform: translate(20rpx, 30rpx) rotate(5deg); }
-  100% { transform: translate(0, 0) rotate(0deg); }
-}
-
-.header {
-  margin-bottom: 100rpx;
-  position: relative;
-  z-index: 10;
-}
-
-.title {
-  font-size: 64rpx;
-  font-weight: 800;
-  color: #1e293b;
-  display: block;
-  margin-bottom: 16rpx;
-  letter-spacing: -2rpx;
-  background: linear-gradient(135deg, #0f172a 0%, #334155 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-}
-
-.subtitle {
-  font-size: 28rpx;
-  color: #64748b;
-  font-weight: 500;
-  letter-spacing: 2rpx;
-  text-transform: uppercase;
-}
-
-.role-selection {
+.content-wrapper {
   width: 100%;
+  max-width: 600rpx;
+}
+
+/* Header */
+.header-section {
+  text-align: center;
+  margin-bottom: 96rpx;
   display: flex;
   flex-direction: column;
-  gap: 40rpx;
-  position: relative;
-  z-index: 10;
+  align-items: center; /* Center flex children */
+}
+
+.logo-circle {
+  width: 160rpx;
+  height: 160rpx;
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 48rpx;
+  box-shadow: 0 20rpx 50rpx rgba(59, 130, 246, 0.3);
+}
+
+.logo-icon {
+  font-size: 80rpx;
+  color: white;
+}
+
+.brand-title {
+  font-size: 72rpx; /* text-4xl ~ 36px * 2 */
+  font-weight: bold;
+  margin-bottom: 24rpx;
+  background: linear-gradient(to right, #2563eb, #9333ea);
+  -webkit-background-clip: text;
+  color: transparent; /* Use fallback if needed, but miniprogram supports transparent for background-clip often */
+  color: #2563eb; /* Fallback */
+}
+
+.brand-subtitle {
+  font-size: 36rpx; /* text-lg */
+  color: #4b5563;
+}
+
+/* Role Cards */
+.role-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 32rpx;
 }
 
 .role-card {
-  position: relative;
-  border-radius: 40rpx;
-  padding: 50rpx 40rpx;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  box-shadow: 0 20rpx 40rpx -10rpx rgba(148, 163, 184, 0.15);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.6);
-}
-
-.role-card::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: rgba(255, 255, 255, 0.7);
-  backdrop-filter: blur(20px);
-  z-index: -1;
+  padding: 48rpx;
+  border-radius: 32rpx;
+  transition: all 0.3s;
 }
 
 .role-card:active {
   transform: scale(0.98);
-  box-shadow: 0 10rpx 20rpx -5rpx rgba(148, 163, 184, 0.1);
 }
 
-/* Tenant Card Styles */
-.role-card.tenant .icon-box {
-  background: linear-gradient(135deg, #0ea5e9, #22d3ee);
-  box-shadow: 0 10rpx 20rpx -5rpx rgba(14, 165, 233, 0.3);
+.card-inner {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
-.role-card.landlord .icon-box {
-  background: linear-gradient(135deg, #6366f1, #8b5cf6);
-  box-shadow: 0 10rpx 20rpx -5rpx rgba(99, 102, 241, 0.3);
-}
-
-.icon-box {
-  width: 100rpx;
-  height: 100rpx;
-  border-radius: 30rpx;
+.card-left {
   display: flex;
   align-items: center;
+  gap: 32rpx;
+}
+
+.icon-circle {
+  width: 112rpx; /* w-14 */
+  height: 112rpx;
+  border-radius: 50%;
+  display: flex;
   justify-content: center;
-  font-size: 44rpx;
+  align-items: center;
+}
+
+.role-icon {
+  font-size: 56rpx;
   color: white;
 }
 
-.card-text {
-  flex: 1;
-  margin-left: 30rpx;
+.text-group {
+  display: flex;
+  flex-direction: column;
 }
 
 .role-title {
-  font-size: 36rpx;
+  font-size: 40rpx; /* text-xl */
   font-weight: bold;
-  color: #1e293b;
-  display: block;
+  color: #1f2937;
   margin-bottom: 8rpx;
 }
 
 .role-desc {
-  font-size: 24rpx;
-  color: #64748b;
+  font-size: 28rpx; /* text-sm */
+  color: #6b7280;
 }
 
-.arrow {
-  width: 60rpx;
-  height: 60rpx;
-  background: #f1f5f9;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #94a3b8;
-  font-size: 24rpx;
+.arrow-icon {
+  color: #9ca3af;
+  font-size: 40rpx;
 }
 
+/* Footer */
+.footer-text {
+  text-align: center;
+  font-size: 28rpx;
+  color: #9ca3af;
+  margin-top: 64rpx;
+}
