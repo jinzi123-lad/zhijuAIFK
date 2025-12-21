@@ -181,18 +181,52 @@ export const db = {
     // --- Properties ---
     getProperties: async (): Promise<Property[]> => {
         try {
-            const { data, error } = await supabase.from('properties').select('*').order('created_at', { ascending: false });
+            // 1. Fetch Properties
+            const { data: props, error } = await supabase.from('properties').select('*').order('created_at', { ascending: false });
             if (error) throw error;
 
             // Auto-seed if empty (Fresh DB)
-            if (data.length === 0) {
+            if (!props || props.length === 0) {
                 console.log('fresh DB detected, seeding properties...');
                 await supabase.from('properties').insert(MOCK_PROPERTIES.map(mapPropertyToDB));
                 return MOCK_PROPERTIES;
             }
 
-            return data.map(mapPropertyFromDB);
+            // 2. Fetch Landlord Profiles (Manual Join to avoid FK constraint dependency)
+            const landlordIds = [...new Set(props.map(p => p.landlord_id).filter(Boolean))];
+            let profilesMap: Record<string, any> = {};
+
+            if (landlordIds.length > 0) {
+                const { data: profiles } = await supabase
+                    .from('landlord_profiles')
+                    .select('*')
+                    .in('landlord_id', landlordIds);
+
+                if (profiles) {
+                    profiles.forEach(p => {
+                        profilesMap[p.landlord_id] = p;
+                    });
+                }
+            }
+
+            // 3. Merge & Map
+            return props.map(row => {
+                const mapped = mapPropertyFromDB(row);
+                // Inject Profile if exists
+                if (row.landlord_id && profilesMap[row.landlord_id]) {
+                    const profile = profilesMap[row.landlord_id];
+                    // Overwrite or append to landlordContacts
+                    mapped.landlordContacts = [{
+                        name: profile.name || '房东',
+                        phone: profile.phone || '',
+                        wechat: profile.wechat || '',
+                        note: '来自小程序资料'
+                    }];
+                }
+                return mapped;
+            });
         } catch (e) {
+            console.error('Fetch Properties Error:', e);
             return _mockProperties;
         }
     },
