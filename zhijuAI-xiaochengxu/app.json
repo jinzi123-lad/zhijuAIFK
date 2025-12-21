@@ -15,7 +15,8 @@
     "pages/landlord/inspection/index",
     "pages/landlord/revenue/index",
     "pages/landlord/analytics/index",
-    "pages/landlord/settings/index"
+    "pages/landlord/settings/index",
+    "pages/landlord/profile/index"
   ],
   "window": {
     "backgroundTextStyle": "light",

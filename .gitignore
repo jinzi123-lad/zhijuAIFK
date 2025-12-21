@@ -1,3 +1,7 @@
+# Helper files
+PROJECT_MASTER_GUIDE.md
+SYSTEM_ARCHITECTURE.md
+
 # Logs
 logs
 *.log
@@ -7,12 +11,17 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
+# Dependencies
 node_modules
+.pnp
+.pnp.js
+
+# Build
 dist
 dist-ssr
 *.local
 
-# Editor directories and files
+# Editor
 .vscode/*
 !.vscode/extensions.json
 .idea
@@ -23,8 +32,14 @@ dist-ssr
 *.sln
 *.sw?
 
-# Project Documentation
-PROJECT_MASTER_GUIDE.md
+# Env
+.env
+.env.*
+!.env.example
+
+# OS
+.DS_Store
+Thumbs.db
 
 # Miniprogram
 zhijuAI-xiaochengxu/
