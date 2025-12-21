@@ -697,15 +697,15 @@ const App: React.FC = () => {
         let result = properties;
 
         if (filterProvince !== '全部') {
-            result = result.filter(p => p.location.includes(filterProvince));
+            result = result.filter(p => p.location?.includes(filterProvince));
         }
         if (filterCity !== '全部') {
             if (filterCity !== filterProvince) {
-                result = result.filter(p => p.location.includes(filterCity));
+                result = result.filter(p => p.location?.includes(filterCity));
             }
         }
         if (filterDistrict !== '全部') {
-            result = result.filter(p => p.location.includes(filterDistrict) || p.address.includes(filterDistrict));
+            result = result.filter(p => p.location?.includes(filterDistrict) || p.address?.includes(filterDistrict));
         }
 
         if (filterCategory !== '全部') {

@@ -15,6 +15,8 @@ let _mockConfig: SystemConfig | null = null;
 // --- Data Mapping Helpers (App <-> Database) ---
 const mapPropertyFromDB = (row: any): Property => ({
     ...row,
+    location: row.location || '',
+    address: row.address || '',
     imageUrl: row.image_url,
     imageUrls: row.image_urls || [],
     videoUrls: row.video_urls || [],
