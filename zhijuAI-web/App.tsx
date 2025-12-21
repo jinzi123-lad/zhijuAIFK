@@ -1620,52 +1620,17 @@ const App: React.FC = () => {
                                     <h4 className="font-bold text-indigo-900 text-sm flex items-center">✨ AI 智能填单助手</h4>
                                     <span className="text-[10px] text-indigo-400 bg-white px-2 py-1 rounded-full shadow-sm">粘贴文本或图片自动识别</span>
                                 </div>
-                                <div className="flex gap-2 items-start">
-                                    <div className="flex-1 relative">
-                                        <textarea
-                                            value={aiInputText}
-                                            onChange={e => setAiInputText(e.target.value)}
-                                            onPaste={handlePaste}
-                                            placeholder="在此粘贴房源描述文本，或直接粘贴聊天截图 (Ctrl+V)..."
-                                            className="w-full h-16 bg-white border border-indigo-200 rounded-lg p-3 pr-10 text-xs outline-none resize-none focus:ring-2 focus:ring-indigo-500 transition-shadow"
-                                        />
-                                        {/* Image Upload Button (Inside Textarea) */}
-                                        <div className="absolute bottom-2 right-2">
-                                            <label className="cursor-pointer text-indigo-400 hover:text-indigo-600 transition-colors p-1 rounded hover:bg-indigo-50" title="上传图片">
-                                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                                </svg>
-                                                <input type="file" accept="image/*" className="hidden" onChange={(e) => {
-                                                    const file = e.target.files?.[0];
-                                                    if (file) {
-                                                        const reader = new FileReader();
-                                                        reader.onload = (ev) => setAiInputImage(ev.target?.result as string);
-                                                        reader.readAsDataURL(file);
-                                                    }
-                                                    // Reset input
-                                                    e.target.value = '';
-                                                }} />
-                                            </label>
-                                        </div>
-                                    </div>
-
-                                    {/* Image Preview Thumbnail */}
-                                    {aiInputImage && (
-                                        <div className="relative h-16 w-16 flex-shrink-0 border border-indigo-200 rounded-lg overflow-hidden group">
-                                            <img src={aiInputImage} className="w-full h-full object-cover" alt="AI Input" />
-                                            <button
-                                                onClick={() => setAiInputImage(null)}
-                                                className="absolute inset-0 bg-black/50 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                                            >
-                                                <span className="text-xs">删除</span>
-                                            </button>
-                                        </div>
-                                    )}
-
+                                <div className="flex gap-2">
+                                    <textarea
+                                        value={aiInputText}
+                                        onChange={e => setAiInputText(e.target.value)}
+                                        placeholder="在此粘贴房源描述文本..."
+                                        className="flex-1 h-32 bg-white border border-indigo-200 rounded-lg p-3 text-sm outline-none resize-none focus:ring-2 focus:ring-indigo-500 transition-shadow"
+                                    />
                                     <button
                                         onClick={handleSmartFill}
                                         disabled={isAiParsing}
-                                        className="h-16 px-6 bg-indigo-600 text-white font-bold rounded-lg hover:bg-indigo-700 disabled:opacity-50 text-xs shadow-md shadow-indigo-200 transition-all active:scale-95 flex flex-col items-center justify-center gap-1"
+                                        className="px-6 bg-indigo-600 text-white font-bold rounded-lg hover:bg-indigo-700 disabled:opacity-50 text-xs shadow-md shadow-indigo-200 transition-all active:scale-95 flex flex-col items-center justify-center gap-1"
                                     >
                                         <span>{isAiParsing ? '⌛' : '⚡'}</span>
                                         <span>{isAiParsing ? '分析中' : '一键识别'}</span>
