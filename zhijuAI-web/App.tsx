@@ -1051,35 +1051,47 @@ const App: React.FC = () => {
                             const addr = data.address;
                             console.log('Auto-Locate Address:', addr);
 
-                            // Try to match province (State)
-                            // 1. Exact match in keys
-                            // 2. Contains key (e.g. Hebei Province contains Hebei?) - Nominatim returns local names usually.
+                            // Simplified Universal Logic: Always use the detected address components, 
+                            // trying to match CASCADING_REGIONS first, but falling back to the raw value if not found.
+
+                            // 1. Province
                             let prov = Object.keys(CASCADING_REGIONS).find(p => addr.state?.includes(p));
-
-                            // If not found, try to match by removing '省' or '市' from the returned state
                             if (!prov && addr.state) {
-                                prov = Object.keys(CASCADING_REGIONS).find(p => addr.state.replace(/省|市/g, '').includes(p));
+                                // Fallback: Raw state name (remove '省'/'市' suffix for cleanliness if desired, or keep as is)
+                                prov = addr.state.replace(/省|市/g, '');
                             }
-
-                            // Last resort: If still no match but we have a valid state string, try to map known English names to Chinese if needed (Simplified here)
-                            // For now, if no match, default to first available or keep current.
 
                             if (prov) {
                                 setNewPropertyProvince(prov);
                                 const cityMap = CASCADING_REGIONS[prov] || {};
 
-                                // City Matching
+                                // 2. City
+                                // Try to match known cities in that province
                                 let city = Object.keys(cityMap).find(c => addr.city?.includes(c) || addr.town?.includes(c) || addr.county?.includes(c));
-                                if (!city && prov === '北京' && addr.city?.includes('北京')) city = '北京'; // Special handling for municipalities
-                                if (!city && prov === '上海' && addr.city?.includes('上海')) city = '上海';
 
-                                // Default to first city if valid province found but no city match
-                                if (!city) city = Object.keys(cityMap)[0];
+                                // If not matched in presets, use raw city name
+                                if (!city) {
+                                    // Special handling for municipalities (Beijing/Shanghai/Tianjin/Chongqing)
+                                    if (['北京', '上海', '天津', '重庆'].includes(prov)) {
+                                        city = prov;
+                                    } else {
+                                        // Fallback to raw city/town/county
+                                        city = (addr.city || addr.town || addr.county || '').replace(/市|县/g, '');
+                                    }
+                                }
 
                                 if (city) {
                                     setNewPropertyCity(city);
+
+                                    // 3. District
                                     const dists = cityMap[city] || [];
-                                    const dist = dists.find(d => (addr.suburb || addr.district || addr.county)?.includes(d)) || dists[0];
+                                    let dist = dists.find(d => (addr.suburb || addr.district || addr.county)?.includes(d));
+
+                                    // Fallback to raw district
+                                    if (!dist) {
+                                        dist = (addr.suburb || addr.district || addr.county || '').replace(/区|县/g, '');
+                                    }
+
                                     if (dist) setNewPropertyDistrict(dist);
                                 }
                             }
@@ -1696,12 +1708,24 @@ const App: React.FC = () => {
                                         <div className="grid grid-cols-3 gap-3 mb-3">
                                             <select className="p-2 border border-slate-300 rounded text-sm" value={newPropertyProvince} onChange={e => setNewPropertyProvince(e.target.value)}>
                                                 {Object.keys(CASCADING_REGIONS).map(p => <option key={p} value={p}>{p}</option>)}
+                                                {/* Fallback Option for Auto-Located Provinces not in Presets */}
+                                                {!Object.keys(CASCADING_REGIONS).includes(newPropertyProvince) && newPropertyProvince && (
+                                                    <option value={newPropertyProvince}>{newPropertyProvince} (自动)</option>
+                                                )}
                                             </select>
                                             <select className="p-2 border border-slate-300 rounded text-sm" value={newPropertyCity} onChange={e => setNewPropertyCity(e.target.value)}>
                                                 {Object.keys(CASCADING_REGIONS[newPropertyProvince] || {}).map(c => <option key={c} value={c}>{c}</option>)}
+                                                {/* Fallback Option for Auto-Located City */}
+                                                {(!CASCADING_REGIONS[newPropertyProvince] || !Object.keys(CASCADING_REGIONS[newPropertyProvince]).includes(newPropertyCity)) && newPropertyCity && (
+                                                    <option value={newPropertyCity}>{newPropertyCity} (自动)</option>
+                                                )}
                                             </select>
                                             <select className="p-2 border border-slate-300 rounded text-sm" value={newPropertyDistrict} onChange={e => setNewPropertyDistrict(e.target.value)}>
                                                 {CASCADING_REGIONS[newPropertyProvince]?.[newPropertyCity]?.map(d => <option key={d} value={d}>{d}</option>)}
+                                                {/* Fallback Option for Auto-Located District */}
+                                                {(!CASCADING_REGIONS[newPropertyProvince]?.[newPropertyCity] || !CASCADING_REGIONS[newPropertyProvince][newPropertyCity].includes(newPropertyDistrict)) && newPropertyDistrict && (
+                                                    <option value={newPropertyDistrict}>{newPropertyDistrict} (自动)</option>
+                                                )}
                                             </select>
                                         </div>
                                         <input className="w-full p-2.5 bg-white border border-slate-300 rounded-lg text-sm" placeholder="详细地址 (街道/小区/门牌号)" value={newProperty.address || ''} onChange={e => setNewProperty({ ...newProperty, address: e.target.value })} />
