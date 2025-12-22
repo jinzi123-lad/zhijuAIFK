@@ -1,5 +1,7 @@
 // 租客-房源详情页
 const app = getApp()
+const { supabase } = require('../../../../utils/supabase')
+const { ViewingService } = require('../../../../services/viewingService')
 
 Page({
     data: {
@@ -8,49 +10,88 @@ Page({
         showAppointmentModal: false,
         appointmentDate: '',
         appointmentTime: '',
-        appointmentNotes: ''
+        appointmentTimeIndex: 0,
+        appointmentNotes: '',
+        timeOptions: ['09:00-12:00 上午', '14:00-18:00 下午', '19:00-21:00 晚上'],
+        minDate: ''
     },
 
     onLoad(options) {
+        // 设置最小日期为今天
+        const today = new Date()
+        const minDate = today.toISOString().split('T')[0]
+        this.setData({ minDate })
+
         if (options.id) {
             this.loadProperty(options.id)
+        } else {
+            wx.showToast({ title: '参数错误', icon: 'none' })
+            setTimeout(() => wx.navigateBack(), 1500)
         }
     },
 
     async loadProperty(id) {
         this.setData({ loading: true })
         try {
-            // TODO: 从Supabase加载房源详情
-            const mockData = {
-                id: id,
-                title: '阳光花园精装两居室',
-                price: 3500,
-                deposit: 7000,
-                layout: '2室1厅1卫',
-                area: 85,
-                floor: '6/18层',
-                location: '朝阳区',
-                address: '阳光花园3号楼302室',
-                description: '精装修，南北通透，采光好...',
-                images: [],
-                facilities: ['空调', '热水器', '洗衣机', '冰箱', 'WiFi'],
-                landlord: { name: '张先生', verified: true },
-                certified: true
+            // 从Supabase加载房源详情
+            const { data, error } = await supabase
+                .from('properties')
+                .select('*')
+                .eq('id', id)
+                .exec()
+
+            if (error || !data || data.length === 0) {
+                wx.showToast({ title: '房源不存在', icon: 'none' })
+                setTimeout(() => wx.navigateBack(), 1500)
+                return
             }
-            this.setData({ property: mockData, loading: false })
+
+            const property = data[0]
+            // 处理设施数据
+            if (typeof property.facilities === 'string') {
+                try {
+                    property.facilities = JSON.parse(property.facilities)
+                } catch (e) {
+                    property.facilities = []
+                }
+            }
+
+            this.setData({ property, loading: false })
         } catch (err) {
             console.error('加载失败', err)
+            wx.showToast({ title: '加载失败', icon: 'none' })
             this.setData({ loading: false })
         }
     },
 
     // 打开预约弹窗
     openAppointment() {
+        // 检查是否登录
+        const tenantId = wx.getStorageSync('tenant_id') || wx.getStorageSync('user_id')
+        if (!tenantId) {
+            wx.showModal({
+                title: '提示',
+                content: '请先登录后再预约',
+                confirmText: '去登录',
+                success: (res) => {
+                    if (res.confirm) {
+                        wx.navigateTo({ url: '/pages/login/index' })
+                    }
+                }
+            })
+            return
+        }
         this.setData({ showAppointmentModal: true })
     },
 
     closeAppointment() {
-        this.setData({ showAppointmentModal: false })
+        this.setData({
+            showAppointmentModal: false,
+            appointmentDate: '',
+            appointmentTime: '',
+            appointmentTimeIndex: 0,
+            appointmentNotes: ''
+        })
     },
 
     onDateChange(e) {
@@ -58,8 +99,11 @@ Page({
     },
 
     onTimeChange(e) {
-        const times = ['上午', '下午', '晚上']
-        this.setData({ appointmentTime: times[e.detail.value] })
+        const index = e.detail.value
+        this.setData({
+            appointmentTimeIndex: index,
+            appointmentTime: this.data.timeOptions[index]
+        })
     },
 
     onNotesInput(e) {
@@ -69,22 +113,85 @@ Page({
     // 提交预约
     async submitAppointment() {
         const { property, appointmentDate, appointmentTime, appointmentNotes } = this.data
-        if (!appointmentDate || !appointmentTime) {
-            wx.showToast({ title: '请选择时间', icon: 'none' })
+
+        // 验证
+        if (!appointmentDate) {
+            wx.showToast({ title: '请选择日期', icon: 'none' })
+            return
+        }
+        if (!appointmentTime) {
+            wx.showToast({ title: '请选择时间段', icon: 'none' })
             return
         }
 
+        const tenantId = wx.getStorageSync('tenant_id') || wx.getStorageSync('user_id')
+        const tenantName = wx.getStorageSync('user_name') || '租客'
+        const tenantPhone = wx.getStorageSync('user_phone') || ''
+
         wx.showLoading({ title: '提交中...' })
         try {
-            // TODO: 提交到Supabase
-            console.log('预约信息:', { propertyId: property.id, appointmentDate, appointmentTime, appointmentNotes })
+            // 提交到Supabase
+            const { data, error } = await supabase
+                .from('viewing_appointments')
+                .insert([{
+                    property_id: property.id,
+                    landlord_id: property.landlord_id,
+                    tenant_id: tenantId,
+                    guest_name: tenantName,
+                    guest_phone: tenantPhone,
+                    appointment_date: appointmentDate,
+                    appointment_time: appointmentTime,
+                    notes: appointmentNotes,
+                    source: 'miniapp',
+                    status: 'pending'
+                }])
+                .exec()
+
+            if (error) {
+                throw error
+            }
 
             wx.hideLoading()
             wx.showToast({ title: '预约成功', icon: 'success' })
-            this.setData({ showAppointmentModal: false })
+            this.closeAppointment()
+
+            // 提示跳转到我的预约
+            setTimeout(() => {
+                wx.showModal({
+                    title: '预约已提交',
+                    content: '房东确认后会通知您，是否查看我的预约？',
+                    confirmText: '查看',
+                    cancelText: '留在这里',
+                    success: (res) => {
+                        if (res.confirm) {
+                            wx.navigateTo({ url: '/pages/tenant/viewing/list/index' })
+                        }
+                    }
+                })
+            }, 1000)
         } catch (err) {
+            console.error('预约失败', err)
             wx.hideLoading()
-            wx.showToast({ title: '预约失败', icon: 'none' })
+            wx.showToast({ title: '预约失败，请重试', icon: 'none' })
+        }
+    },
+
+    // 预览图片
+    previewImage(e) {
+        const current = e.currentTarget.dataset.url
+        const urls = this.data.property.images || []
+        if (urls.length > 0) {
+            wx.previewImage({ current, urls })
+        }
+    },
+
+    // 拨打电话
+    callLandlord() {
+        const phone = this.data.property.landlord_phone
+        if (phone) {
+            wx.makePhoneCall({ phoneNumber: phone })
+        } else {
+            wx.showToast({ title: '暂无联系方式', icon: 'none' })
         }
     }
 })

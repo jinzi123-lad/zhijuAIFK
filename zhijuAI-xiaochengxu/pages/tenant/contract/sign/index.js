@@ -1,5 +1,6 @@
 // 租客-签约确认页面（含电子签名）
 const app = getApp()
+const { supabase } = require('../../../../utils/supabase')
 
 Page({
   data: {
@@ -8,44 +9,55 @@ Page({
     showSignature: false,
     signatureData: '',
     agreed: false,
-    submitting: false
+    submitting: false,
+    contractId: ''
   },
 
   onLoad(options) {
     if (options.id) {
+      this.setData({ contractId: options.id })
       this.loadContract(options.id)
+    } else {
+      wx.showToast({ title: '参数错误', icon: 'none' })
+      setTimeout(() => wx.navigateBack(), 1500)
     }
   },
 
   async loadContract(id) {
     this.setData({ loading: true })
     try {
-      // TODO: 从Supabase加载合同详情
-      const mockData = {
-        id: id,
-        propertyTitle: '阳光花园302室',
-        propertyAddress: '朝阳区阳光花园3号楼302室',
-        landlordName: '张先生',
-        landlordSignature: 'data:image/png;base64,xxxxx', // 房东已签名
-        rentAmount: 3500,
-        depositAmount: 7000,
-        paymentDay: 5,
-        startDate: '2025-01-01',
-        endDate: '2025-12-31',
-        content: [
-          { title: '甲方（出租方）', value: '张先生' },
-          { title: '乙方（承租方）', value: '待签署' },
-          { title: '房屋地址', value: '朝阳区阳光花园3号楼302室' },
-          { title: '月租金', value: '¥3,500元' },
-          { title: '押金', value: '¥7,000元' },
-          { title: '租赁期限', value: '2025年1月1日至2025年12月31日' },
-          { title: '付款日期', value: '每月5日前' }
-        ],
-        terms: '1. 乙方应按时支付租金...\n2. 乙方不得擅自转租...\n3. 租赁期满前一个月...'
+      // 从Supabase加载合同详情
+      const { data, error } = await supabase
+        .from('contracts')
+        .select('*')
+        .eq('id', id)
+        .exec()
+
+      if (error || !data || data.length === 0) {
+        wx.showToast({ title: '合同不存在', icon: 'none' })
+        setTimeout(() => wx.navigateBack(), 1500)
+        return
       }
-      this.setData({ contract: mockData, loading: false })
+
+      const contract = data[0]
+
+      // 构建显示内容
+      contract.content = [
+        { title: '甲方（出租方）', value: contract.landlord_name || '房东' },
+        { title: '乙方（承租方）', value: contract.tenant_signature ? '已签署' : '待签署' },
+        { title: '房屋地址', value: contract.property_address || '-' },
+        { title: '月租金', value: `¥${contract.rent_amount}元` },
+        { title: '押金', value: `¥${contract.deposit_amount || 0}元` },
+        { title: '租赁期限', value: `${contract.start_date} 至 ${contract.end_date}` },
+        { title: '付款日期', value: `每月${contract.payment_day || 5}日前` }
+      ]
+
+      contract.terms = '1. 乙方应按时支付租金，不得无故拖欠。\n2. 乙方不得擅自转租、转借房屋。\n3. 租赁期满前一个月，双方应协商续租事宜。\n4. 乙方应爱护房屋及设施，损坏需照价赔偿。\n5. 发生不可抗力时，双方可协商解除合同。'
+
+      this.setData({ contract, loading: false })
     } catch (err) {
       console.error('加载合同失败', err)
+      wx.showToast({ title: '加载失败', icon: 'none' })
       this.setData({ loading: false })
     }
   },
@@ -68,7 +80,6 @@ Page({
   },
 
   // 签名相关
-  signatureCtx: null,
   lastX: 0,
   lastY: 0,
 
@@ -130,7 +141,9 @@ Page({
 
   // 提交签约
   async submitSign() {
-    if (!this.data.signatureData) {
+    const { signatureData, contract } = this.data
+
+    if (!signatureData) {
       wx.showToast({ title: '请先签名', icon: 'none' })
       return
     }
@@ -139,20 +152,42 @@ Page({
     wx.showLoading({ title: '签约中...' })
 
     try {
-      // TODO: 提交签名到Supabase
-      // TODO: 更新合同状态
-      // TODO: 如果双方都签名了，触发入住验房流程
+      // 更新合同：添加租客签名，更新状态
+      const tenantId = wx.getStorageSync('tenant_id') || wx.getStorageSync('user_id')
+      const updateData = {
+        tenant_signature: signatureData,
+        tenant_signed_at: new Date().toISOString(),
+        tenant_id: tenantId
+      }
+
+      // 如果房东已签名，则合同状态变为signed
+      if (contract.landlord_signature) {
+        updateData.status = 'signed'
+      } else {
+        updateData.status = 'pending_landlord'
+      }
+
+      const { error } = await supabase
+        .from('contracts')
+        .update(updateData)
+        .eq('id', contract.id)
+        .exec()
+
+      if (error) throw error
 
       wx.hideLoading()
       wx.showModal({
         title: '签约成功',
-        content: '请完成入住验房后合同正式生效',
+        content: contract.landlord_signature
+          ? '双方签约完成，请完成入住验房后合同正式生效'
+          : '签约已提交，等待房东签署',
         showCancel: false,
         success() {
           wx.redirectTo({ url: '/pages/tenant/contract/list/index' })
         }
       })
     } catch (err) {
+      console.error('签约失败', err)
       wx.hideLoading()
       wx.showToast({ title: '签约失败', icon: 'none' })
       this.setData({ submitting: false })

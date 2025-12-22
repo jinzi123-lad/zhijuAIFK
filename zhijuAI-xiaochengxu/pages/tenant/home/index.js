@@ -8,8 +8,8 @@ Page({
         serviceMenu: [
             { icon: 'dollar', label: '在线缴费', path: '/pages/tenant/payment/index', color: '#FFD93D', bg: 'bg-yellow-light' },
             { icon: 'wrench', label: '报修申请', path: '/pages/tenant/repair/index', color: '#A8DADC', bg: 'bg-blue-light' },
-            { icon: 'file', label: '我的合同', path: '/pages/tenant/contract/index', color: '#95E1D3', bg: 'bg-teal-light' },
-            { icon: 'message', label: '联系房东', path: '', action: 'contact', color: '#FF6B9D', bg: 'bg-pink-light' }
+            { icon: 'file', label: '我的合同', path: '/pages/tenant/contract/list/index', color: '#95E1D3', bg: 'bg-teal-light' },
+            { icon: 'calendar', label: '我的预约', path: '/pages/tenant/viewing/list/index', color: '#FF6B9D', bg: 'bg-pink-light' }
         ]
     },
 
@@ -63,5 +63,17 @@ Page({
                 fail: () => wx.showToast({ title: '功能开发中', icon: 'none' })
             });
         }
+    },
+
+    // 跳转到房源详情页
+    goToDetail(e) {
+        const id = e.currentTarget.dataset.id;
+        wx.navigateTo({
+            url: `/pages/tenant/property/detail/index?id=${id}`,
+            fail: (err) => {
+                console.error('导航失败', err);
+                wx.showToast({ title: '页面跳转失败', icon: 'none' });
+            }
+        });
     }
 })

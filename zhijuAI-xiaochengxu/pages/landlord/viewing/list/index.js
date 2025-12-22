@@ -1,11 +1,18 @@
 // 房东-预约管理列表页
 const app = getApp()
+const { supabase } = require('../../../../utils/supabase')
 
 Page({
     data: {
         appointments: [],
         loading: true,
-        currentTab: 'pending' // pending/confirmed/completed/cancelled
+        currentTab: 'pending', // all/pending/confirmed/completed/cancelled
+        tabs: [
+            { key: 'pending', label: '待处理' },
+            { key: 'confirmed', label: '已确认' },
+            { key: 'completed', label: '已完成' },
+            { key: 'all', label: '全部' }
+        ]
     },
 
     onLoad() {
@@ -16,37 +23,64 @@ Page({
         this.loadAppointments()
     },
 
+    onPullDownRefresh() {
+        this.loadAppointments().then(() => {
+            wx.stopPullDownRefresh()
+        })
+    },
+
     async loadAppointments() {
+        const landlordId = wx.getStorageSync('landlord_id')
+        if (!landlordId) {
+            this.setData({ loading: false, appointments: [] })
+            return
+        }
+
         this.setData({ loading: true })
         try {
-            // TODO: 从Supabase加载预约
-            const mockData = [
-                {
-                    id: '1',
-                    propertyTitle: '阳光花园302室',
-                    tenantName: '李小姐',
-                    tenantPhone: '138****1234',
-                    date: '2024-12-25',
-                    time: '下午',
-                    notes: '希望能看厨房',
-                    status: 'pending',
-                    createdAt: '2024-12-22 14:30'
-                },
-                {
-                    id: '2',
-                    propertyTitle: '翠湖雅苑101',
-                    tenantName: '王先生',
-                    tenantPhone: '139****5678',
-                    date: '2024-12-26',
-                    time: '上午',
-                    notes: '',
-                    status: 'confirmed',
-                    createdAt: '2024-12-21 10:15'
-                }
-            ]
-            this.setData({ appointments: mockData, loading: false })
+            // 构建查询
+            let query = supabase
+                .from('viewing_appointments')
+                .select('*')
+                .eq('landlord_id', landlordId)
+                .order('created_at', { ascending: false })
+
+            // 状态筛选
+            const { currentTab } = this.data
+            if (currentTab !== 'all') {
+                query = query.eq('status', currentTab)
+            }
+
+            const { data, error } = await query.exec()
+
+            if (error) {
+                console.error('加载预约失败', error)
+                this.setData({ loading: false })
+                return
+            }
+
+            // 处理状态文本
+            const statusMap = {
+                'pending': '待处理',
+                'confirmed': '已确认',
+                'rescheduled': '改期待确认',
+                'cancelled': '已取消',
+                'completed': '已完成'
+            }
+
+            const appointments = (data || []).map(item => ({
+                ...item,
+                statusText: statusMap[item.status] || item.status,
+                statusClass: `status-${item.status}`,
+                canConfirm: item.status === 'pending',
+                canReschedule: item.status === 'pending' || item.status === 'confirmed',
+                canComplete: item.status === 'confirmed'
+            }))
+
+            this.setData({ appointments, loading: false })
         } catch (err) {
             console.error('加载预约失败', err)
+            wx.showToast({ title: '加载失败', icon: 'none' })
             this.setData({ loading: false })
         }
     },
@@ -72,11 +106,50 @@ Page({
                 if (res.confirm) {
                     wx.showLoading({ title: '处理中...' })
                     try {
-                        // TODO: 更新Supabase
+                        const { error } = await supabase
+                            .from('viewing_appointments')
+                            .update({ status: 'confirmed' })
+                            .eq('id', id)
+                            .exec()
+
+                        if (error) throw error
+
                         wx.hideLoading()
                         wx.showToast({ title: '已确认', icon: 'success' })
                         this.loadAppointments()
                     } catch (err) {
+                        console.error('确认失败', err)
+                        wx.hideLoading()
+                        wx.showToast({ title: '操作失败', icon: 'none' })
+                    }
+                }
+            }
+        })
+    },
+
+    // 快速完成
+    async completeAppointment(e) {
+        const id = e.currentTarget.dataset.id
+        wx.showModal({
+            title: '完成看房',
+            content: '确认看房已完成？',
+            success: async (res) => {
+                if (res.confirm) {
+                    wx.showLoading({ title: '处理中...' })
+                    try {
+                        const { error } = await supabase
+                            .from('viewing_appointments')
+                            .update({ status: 'completed' })
+                            .eq('id', id)
+                            .exec()
+
+                        if (error) throw error
+
+                        wx.hideLoading()
+                        wx.showToast({ title: '已完成', icon: 'success' })
+                        this.loadAppointments()
+                    } catch (err) {
+                        console.error('操作失败', err)
                         wx.hideLoading()
                         wx.showToast({ title: '操作失败', icon: 'none' })
                     }

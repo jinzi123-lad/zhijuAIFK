@@ -1,5 +1,6 @@
 // 房东-预约详情页（确认/改期/取消）
 const app = getApp()
+const { supabase } = require('../../../../utils/supabase')
 
 Page({
     data: {
@@ -9,55 +10,122 @@ Page({
         showCancelModal: false,
         rescheduleDate: '',
         rescheduleTime: '',
+        rescheduleTimeIndex: 0,
         rescheduleReason: '',
-        cancelReason: ''
+        cancelReason: '',
+        timeOptions: ['09:00-12:00 上午', '14:00-18:00 下午', '19:00-21:00 晚上'],
+        cancelReasons: ['时间冲突', '房源已出租', '租客反馈不合适', '其他原因'],
+        minDate: '',
+        appointmentId: ''
     },
 
     onLoad(options) {
+        // 设置最小日期为今天
+        const today = new Date()
+        const minDate = today.toISOString().split('T')[0]
+        this.setData({ minDate })
+
         if (options.id) {
+            this.setData({ appointmentId: options.id })
             this.loadAppointment(options.id)
+        } else {
+            wx.showToast({ title: '参数错误', icon: 'none' })
+            setTimeout(() => wx.navigateBack(), 1500)
         }
     },
 
     async loadAppointment(id) {
         this.setData({ loading: true })
         try {
-            // TODO: 从Supabase加载预约详情
-            const mockData = {
-                id: id,
-                propertyTitle: '阳光花园302室',
-                propertyAddress: '朝阳区阳光花园3号楼302室',
-                tenantName: '李小姐',
-                tenantPhone: '13812341234',
-                tenantAvatar: '',
-                date: '2024-12-25',
-                time: '下午',
-                notes: '希望能看厨房',
-                status: 'pending',
-                createdAt: '2024-12-22 14:30'
+            // 从Supabase加载预约详情
+            const { data, error } = await supabase
+                .from('viewing_appointments')
+                .select('*')
+                .eq('id', id)
+                .exec()
+
+            if (error || !data || data.length === 0) {
+                wx.showToast({ title: '预约不存在', icon: 'none' })
+                setTimeout(() => wx.navigateBack(), 1500)
+                return
             }
-            this.setData({ appointment: mockData, loading: false })
+
+            const appointment = data[0]
+            // 处理状态文本
+            const statusMap = {
+                'pending': '待处理',
+                'confirmed': '已确认',
+                'rescheduled': '改期待确认',
+                'cancelled': '已取消',
+                'completed': '已完成'
+            }
+            appointment.statusText = statusMap[appointment.status] || appointment.status
+            appointment.canConfirm = appointment.status === 'pending'
+            appointment.canReschedule = appointment.status === 'pending' || appointment.status === 'confirmed'
+            appointment.canCancel = appointment.status === 'pending' || appointment.status === 'confirmed'
+            appointment.canComplete = appointment.status === 'confirmed'
+
+            this.setData({ appointment, loading: false })
         } catch (err) {
             console.error('加载失败', err)
+            wx.showToast({ title: '加载失败', icon: 'none' })
             this.setData({ loading: false })
         }
     },
 
     // 确认预约
     async confirmAppointment() {
+        const { appointment } = this.data
         wx.showModal({
             title: '确认预约',
-            content: `确认于 ${this.data.appointment.date} ${this.data.appointment.time} 带看？`,
+            content: `确认于 ${appointment.appointment_date} ${appointment.appointment_time} 带看？`,
             success: async (res) => {
                 if (res.confirm) {
                     wx.showLoading({ title: '处理中...' })
                     try {
-                        // TODO: 更新Supabase预约状态为confirmed
-                        // TODO: 发送通知给租客
+                        const { error } = await supabase
+                            .from('viewing_appointments')
+                            .update({ status: 'confirmed' })
+                            .eq('id', appointment.id)
+                            .exec()
+
+                        if (error) throw error
+
                         wx.hideLoading()
                         wx.showToast({ title: '已确认', icon: 'success' })
                         setTimeout(() => wx.navigateBack(), 1500)
                     } catch (err) {
+                        console.error('确认失败', err)
+                        wx.hideLoading()
+                        wx.showToast({ title: '操作失败', icon: 'none' })
+                    }
+                }
+            }
+        })
+    },
+
+    // 标记完成
+    async completeAppointment() {
+        wx.showModal({
+            title: '完成看房',
+            content: '确认看房已完成？',
+            success: async (res) => {
+                if (res.confirm) {
+                    wx.showLoading({ title: '处理中...' })
+                    try {
+                        const { error } = await supabase
+                            .from('viewing_appointments')
+                            .update({ status: 'completed' })
+                            .eq('id', this.data.appointment.id)
+                            .exec()
+
+                        if (error) throw error
+
+                        wx.hideLoading()
+                        wx.showToast({ title: '已完成', icon: 'success' })
+                        setTimeout(() => wx.navigateBack(), 1500)
+                    } catch (err) {
+                        console.error('操作失败', err)
                         wx.hideLoading()
                         wx.showToast({ title: '操作失败', icon: 'none' })
                     }
@@ -72,7 +140,12 @@ Page({
     },
 
     closeReschedule() {
-        this.setData({ showRescheduleModal: false })
+        this.setData({
+            showRescheduleModal: false,
+            rescheduleDate: '',
+            rescheduleTime: '',
+            rescheduleReason: ''
+        })
     },
 
     onRescheduleDateChange(e) {
@@ -80,8 +153,11 @@ Page({
     },
 
     onRescheduleTimeChange(e) {
-        const times = ['上午', '下午', '晚上']
-        this.setData({ rescheduleTime: times[e.detail.value] })
+        const index = e.detail.value
+        this.setData({
+            rescheduleTimeIndex: index,
+            rescheduleTime: this.data.timeOptions[index]
+        })
     },
 
     onRescheduleReasonInput(e) {
@@ -89,7 +165,7 @@ Page({
     },
 
     async submitReschedule() {
-        const { rescheduleDate, rescheduleTime, rescheduleReason } = this.data
+        const { rescheduleDate, rescheduleTime, rescheduleReason, appointment } = this.data
         if (!rescheduleDate || !rescheduleTime) {
             wx.showToast({ title: '请选择新时间', icon: 'none' })
             return
@@ -97,13 +173,25 @@ Page({
 
         wx.showLoading({ title: '提交中...' })
         try {
-            // TODO: 更新Supabase预约，状态改为rescheduled
-            // TODO: 发送通知给租客，询问是否同意新时间
+            const { error } = await supabase
+                .from('viewing_appointments')
+                .update({
+                    status: 'rescheduled',
+                    reschedule_date: rescheduleDate,
+                    reschedule_time: rescheduleTime,
+                    reschedule_reason: rescheduleReason
+                })
+                .eq('id', appointment.id)
+                .exec()
+
+            if (error) throw error
+
             wx.hideLoading()
             wx.showToast({ title: '已发送改期请求', icon: 'success' })
-            this.setData({ showRescheduleModal: false })
+            this.closeReschedule()
             setTimeout(() => wx.navigateBack(), 1500)
         } catch (err) {
+            console.error('提交失败', err)
             wx.hideLoading()
             wx.showToast({ title: '操作失败', icon: 'none' })
         }
@@ -115,7 +203,7 @@ Page({
     },
 
     closeCancel() {
-        this.setData({ showCancelModal: false })
+        this.setData({ showCancelModal: false, cancelReason: '' })
     },
 
     selectCancelReason(e) {
@@ -124,7 +212,7 @@ Page({
     },
 
     async submitCancel() {
-        const { cancelReason } = this.data
+        const { cancelReason, appointment } = this.data
         if (!cancelReason) {
             wx.showToast({ title: '请选择取消原因', icon: 'none' })
             return
@@ -132,13 +220,23 @@ Page({
 
         wx.showLoading({ title: '提交中...' })
         try {
-            // TODO: 更新Supabase预约状态为cancelled
-            // TODO: 发送通知给租客
+            const { error } = await supabase
+                .from('viewing_appointments')
+                .update({
+                    status: 'cancelled',
+                    cancel_reason: cancelReason
+                })
+                .eq('id', appointment.id)
+                .exec()
+
+            if (error) throw error
+
             wx.hideLoading()
             wx.showToast({ title: '已取消', icon: 'success' })
-            this.setData({ showCancelModal: false })
+            this.closeCancel()
             setTimeout(() => wx.navigateBack(), 1500)
         } catch (err) {
+            console.error('取消失败', err)
             wx.hideLoading()
             wx.showToast({ title: '操作失败', icon: 'none' })
         }
@@ -146,8 +244,11 @@ Page({
 
     // 拨打电话
     callTenant() {
-        wx.makePhoneCall({
-            phoneNumber: this.data.appointment.tenantPhone
-        })
+        const phone = this.data.appointment.guest_phone
+        if (phone) {
+            wx.makePhoneCall({ phoneNumber: phone })
+        } else {
+            wx.showToast({ title: '暂无联系方式', icon: 'none' })
+        }
     }
 })

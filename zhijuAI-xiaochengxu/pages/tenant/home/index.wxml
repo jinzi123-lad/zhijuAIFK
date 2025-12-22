@@ -33,7 +33,7 @@
         
         <block wx:elif="{{properties.length > 0}}">
             <block wx:for="{{properties}}" wx:key="id">
-                 <view class="property-card glass-card rounded-2xl overflow-hidden mb-4 shadow-md icon-hover-card">
+                 <view class="property-card glass-card rounded-2xl overflow-hidden mb-4 shadow-md icon-hover-card" bindtap="goToDetail" data-id="{{item.id}}">
                      <!-- Image Placeholder -->
                      <view class="card-img bg-muted-20 h-40 relative">
                          <image src="{{item.image_url || 'https://via.placeholder.com/400x200'}}" mode="aspectFill" class="w-full h-full"></image>

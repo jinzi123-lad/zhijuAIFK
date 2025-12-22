@@ -1,5 +1,6 @@
 // 房东-团队管理页面
 const app = getApp()
+const { supabase } = require('../../../utils/supabase')
 
 Page({
   data: {
@@ -26,18 +27,52 @@ Page({
     this.loadMembers()
   },
 
+  onPullDownRefresh() {
+    this.loadMembers().then(() => {
+      wx.stopPullDownRefresh()
+    })
+  },
+
   async loadMembers() {
+    const landlordId = wx.getStorageSync('landlord_id')
+    if (!landlordId) {
+      this.setData({ loading: false, members: [] })
+      return
+    }
+
     this.setData({ loading: true })
     try {
-      // TODO: 从Supabase加载团队成员
-      const mockData = [
-        { id: '1', name: '李管家', phone: '138****1234', role: 'manager', roleName: '管家', status: 'active', joinedAt: '2024-11-01' },
-        { id: '2', name: '王销售', phone: '139****5678', role: 'sales', roleName: '销售', status: 'active', joinedAt: '2024-12-01' },
-        { id: '3', name: '张师傅', phone: '137****9999', role: 'maintenance', roleName: '维修', status: 'pending', joinedAt: '' }
-      ]
-      this.setData({ members: mockData, loading: false })
+      // 从Supabase加载团队成员
+      const { data, error } = await supabase
+        .from('team_members')
+        .select('*')
+        .eq('landlord_id', landlordId)
+        .order('created_at', { ascending: false })
+        .exec()
+
+      if (error) {
+        console.error('加载失败', error)
+        this.setData({ loading: false })
+        return
+      }
+
+      const roleMap = {
+        'manager': '管家',
+        'sales': '销售',
+        'finance': '财务',
+        'maintenance': '维修'
+      }
+
+      const members = (data || []).map(item => ({
+        ...item,
+        roleName: roleMap[item.role] || item.role,
+        isPending: item.status === 'pending'
+      }))
+
+      this.setData({ members, loading: false })
     } catch (err) {
       console.error('加载失败', err)
+      wx.showToast({ title: '加载失败', icon: 'none' })
       this.setData({ loading: false })
     }
   },
@@ -67,6 +102,8 @@ Page({
   // 发送邀请
   async sendInvite() {
     const { newMemberPhone, newMemberRole } = this.data
+    const landlordId = wx.getStorageSync('landlord_id')
+
     if (!newMemberPhone || newMemberPhone.length !== 11) {
       wx.showToast({ title: '请输入正确手机号', icon: 'none' })
       return
@@ -74,15 +111,37 @@ Page({
 
     wx.showLoading({ title: '发送中...' })
     try {
-      // TODO: 查询用户是否存在
-      // TODO: 创建邀请记录
-      // TODO: 发送通知
+      // 查询用户是否已存在
+      const { data: existingUser } = await supabase
+        .from('users')
+        .select('id, name')
+        .eq('phone', newMemberPhone)
+        .exec()
+
+      const memberName = existingUser && existingUser.length > 0
+        ? existingUser[0].name
+        : `用户${newMemberPhone.slice(-4)}`
+
+      // 创建邀请记录
+      const { error } = await supabase
+        .from('team_members')
+        .insert([{
+          landlord_id: landlordId,
+          member_phone: newMemberPhone,
+          member_name: memberName,
+          role: newMemberRole,
+          status: 'pending'
+        }])
+        .exec()
+
+      if (error) throw error
 
       wx.hideLoading()
       wx.showToast({ title: '邀请已发送', icon: 'success' })
       this.closeAddModal()
       this.loadMembers()
     } catch (err) {
+      console.error('发送失败', err)
       wx.hideLoading()
       wx.showToast({ title: '发送失败', icon: 'none' })
     }
@@ -102,14 +161,24 @@ Page({
   // 保存角色变更
   async saveRole() {
     const { selectedMember } = this.data
+    if (!selectedMember) return
+
     wx.showLoading({ title: '保存中...' })
     try {
-      // TODO: 更新Supabase
+      const { error } = await supabase
+        .from('team_members')
+        .update({ role: selectedMember.role })
+        .eq('id', selectedMember.id)
+        .exec()
+
+      if (error) throw error
+
       wx.hideLoading()
       wx.showToast({ title: '已保存', icon: 'success' })
       this.closeRoleModal()
       this.loadMembers()
     } catch (err) {
+      console.error('保存失败', err)
       wx.hideLoading()
       wx.showToast({ title: '保存失败', icon: 'none' })
     }
@@ -119,18 +188,30 @@ Page({
   removeMember(e) {
     const id = e.currentTarget.dataset.id
     const member = this.data.members.find(m => m.id === id)
+
     wx.showModal({
       title: '移除成员',
-      content: `确定将 ${member.name} 移出团队？`,
+      content: `确定将 ${member.member_name || member.name} 移出团队？`,
       success: async (res) => {
         if (res.confirm) {
           wx.showLoading({ title: '移除中...' })
-          // TODO: 更新Supabase
-          setTimeout(() => {
+          try {
+            const { error } = await supabase
+              .from('team_members')
+              .delete()
+              .eq('id', id)
+              .exec()
+
+            if (error) throw error
+
             wx.hideLoading()
             wx.showToast({ title: '已移除', icon: 'success' })
             this.loadMembers()
-          }, 500)
+          } catch (err) {
+            console.error('移除失败', err)
+            wx.hideLoading()
+            wx.showToast({ title: '操作失败', icon: 'none' })
+          }
         }
       }
     })
