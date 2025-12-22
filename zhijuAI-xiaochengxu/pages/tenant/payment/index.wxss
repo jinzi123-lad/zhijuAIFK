@@ -1,0 +1,189 @@
+.page-container {
+  min-height: 100vh;
+  background: #f5f7fa;
+  padding-top: 88px;
+}
+
+.tabs {
+  display: flex;
+  background: #fff;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.tab {
+  flex: 1;
+  text-align: center;
+  padding: 14px 0;
+  font-size: 14px;
+  color: #666;
+  position: relative;
+}
+
+.tab.active { color: #667eea; font-weight: 600; }
+.tab.active::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 24px;
+  height: 3px;
+  background: #667eea;
+  border-radius: 2px;
+}
+
+.bill-list { padding: 12px 16px; }
+
+.bill-card {
+  background: #fff;
+  border-radius: 12px;
+  margin-bottom: 12px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+
+.card-header {
+  display: flex;
+  align-items: center;
+  padding: 16px;
+  border-bottom: 1px solid #f5f7fa;
+  gap: 12px;
+}
+
+.type-icon {
+  width: 44px;
+  height: 44px;
+  background: #f0f5ff;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+}
+
+.bill-info { flex: 1; }
+.type-text { display: block; font-size: 15px; font-weight: 600; color: #333; }
+.property-name { display: block; font-size: 12px; color: #999; margin-top: 2px; }
+
+.amount { font-size: 20px; font-weight: 700; color: #e74c3c; }
+
+.card-body { padding: 12px 16px; }
+
+.info-row { display: flex; justify-content: space-between; margin-bottom: 8px; }
+.info-row:last-child { margin-bottom: 0; }
+.info-row .label { font-size: 13px; color: #999; }
+.info-row .value { font-size: 13px; color: #333; }
+.info-row .value.overdue { color: #ff4d4f; }
+.overdue-tag { font-size: 10px; background: #ff4d4f; color: #fff; padding: 1px 4px; border-radius: 3px; margin-left: 4px; }
+
+.status-pending { color: #fa8c16; }
+.status-paid { color: #1890ff; }
+.status-confirmed { color: #52c41a; }
+
+.card-footer { padding: 12px 16px; border-top: 1px solid #f5f7fa; }
+
+.pay-btn {
+  text-align: center;
+  padding: 10px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #fff;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+/* 弹窗 */
+.modal-mask {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.5);
+  z-index: 1000;
+  display: flex;
+  align-items: flex-end;
+}
+
+.modal-content {
+  width: 100%;
+  background: #fff;
+  border-radius: 16px 16px 0 0;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.modal-title { font-size: 16px; font-weight: 600; }
+.close-btn { font-size: 20px; color: #999; }
+
+.modal-body { padding: 16px; }
+
+.pay-amount {
+  text-align: center;
+  padding: 20px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 12px;
+  margin-bottom: 20px;
+}
+
+.pay-amount .label { display: block; font-size: 12px; color: rgba(255,255,255,0.8); }
+.pay-amount .amount { display: block; font-size: 32px; font-weight: 700; color: #fff; margin-top: 6px; }
+
+.section-title { font-size: 14px; font-weight: 600; color: #333; margin-bottom: 12px; display: block; }
+
+.qrcode-section { text-align: center; margin-bottom: 20px; }
+.qrcode-image { width: 180px; height: 180px; border: 1px solid #f0f0f0; border-radius: 8px; }
+.qrcode-tip { display: block; font-size: 11px; color: #999; margin-top: 8px; }
+
+.proof-section { margin-bottom: 16px; }
+
+.proof-upload {
+  width: 100%;
+  height: 120px;
+  background: #f9fafb;
+  border: 1px dashed #ddd;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.proof-image { width: 100%; height: 100%; }
+
+.upload-placeholder {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.upload-icon { font-size: 32px; }
+.upload-text { font-size: 12px; color: #999; margin-top: 8px; }
+
+.modal-footer { padding: 16px; border-top: 1px solid #f0f0f0; }
+
+.submit-btn {
+  width: 100%;
+  height: 48px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #fff;
+  border-radius: 24px;
+  font-size: 16px;
+  font-weight: 500;
+}
+
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 60px 20px;
+}
+
+.empty-icon { font-size: 48px; margin-bottom: 12px; }
+.empty-text { font-size: 14px; color: #999; }
+
+.loading { text-align: center; padding: 100px; color: #999; }

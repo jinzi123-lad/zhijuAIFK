@@ -1,0 +1,85 @@
+<view class="page-container">
+  <navbar title="实名认证" />
+
+  <view wx:if="{{loading}}" class="loading">加载中...</view>
+
+  <block wx:if="{{!loading}}">
+    <!-- 已认证状态 -->
+    <view wx:if="{{verification.status === 'approved'}}" class="status-card success">
+      <text class="status-icon">✅</text>
+      <text class="status-title">认证通过</text>
+      <text class="status-desc">您已完成实名认证</text>
+      <view class="info-display">
+        <text class="info-item">姓名：{{verification.realName}}</text>
+        <text class="info-item">身份证：{{verification.idNumber}}</text>
+      </view>
+    </view>
+
+    <!-- 审核中状态 -->
+    <view wx:elif="{{verification.status === 'pending'}}" class="status-card pending">
+      <text class="status-icon">⏳</text>
+      <text class="status-title">审核中</text>
+      <text class="status-desc">您的认证申请正在审核中，请耐心等待</text>
+    </view>
+
+    <!-- 被驳回状态 -->
+    <view wx:elif="{{verification.status === 'rejected'}}" class="status-card rejected">
+      <text class="status-icon">❌</text>
+      <text class="status-title">认证失败</text>
+      <text class="status-desc">原因：{{verification.rejectedReason}}</text>
+      <view class="retry-btn" bindtap="loadVerification">重新提交</view>
+    </view>
+
+    <!-- 未认证，显示表单 -->
+    <block wx:else>
+      <view class="form-card">
+        <view class="section">
+          <view class="section-title">上传身份证</view>
+          <view class="id-card-upload">
+            <view class="upload-item" bindtap="uploadFront">
+              <image wx:if="{{idCardFront}}" src="{{idCardFront}}" class="uploaded-image" mode="aspectFill" />
+              <view wx:else class="upload-placeholder">
+                <text class="upload-icon">📷</text>
+                <text class="upload-text">身份证正面</text>
+                <text class="upload-hint">人像面</text>
+              </view>
+            </view>
+            <view class="upload-item" bindtap="uploadBack">
+              <image wx:if="{{idCardBack}}" src="{{idCardBack}}" class="uploaded-image" mode="aspectFill" />
+              <view wx:else class="upload-placeholder">
+                <text class="upload-icon">📷</text>
+                <text class="upload-text">身份证反面</text>
+                <text class="upload-hint">国徽面</text>
+              </view>
+            </view>
+          </view>
+        </view>
+
+        <view class="section">
+          <view class="section-title">核对信息</view>
+          <view class="form-item">
+            <text class="label">姓名</text>
+            <input class="input" placeholder="请输入真实姓名" value="{{realName}}" bindinput="onNameInput" />
+          </view>
+          <view class="form-item">
+            <text class="label">身份证号</text>
+            <input class="input" placeholder="请输入身份证号码" value="{{idNumber}}" bindinput="onIdNumberInput" />
+          </view>
+        </view>
+
+        <view class="tips">
+          <text class="tip-title">📌 温馨提示</text>
+          <text class="tip-item">• 请确保身份证照片清晰、完整</text>
+          <text class="tip-item">• 认证信息将用于签订合同等场景</text>
+          <text class="tip-item">• 您的信息将被严格保密</text>
+        </view>
+      </view>
+
+      <view class="submit-area">
+        <button class="submit-btn" disabled="{{submitting}}" bindtap="submitVerification">
+          {{submitting ? '提交中...' : '提交认证'}}
+        </button>
+      </view>
+    </block>
+  </block>
+</view>

@@ -1,0 +1,52 @@
+<view class="page-container">
+  <navbar title="我的合同" />
+
+  <!-- Tab切换 -->
+  <view class="tabs">
+    <view class="tab {{currentTab === 'active' ? 'active' : ''}}" bindtap="switchTab" data-tab="active">生效中</view>
+    <view class="tab {{currentTab === 'pending' ? 'active' : ''}}" bindtap="switchTab" data-tab="pending">待签约</view>
+    <view class="tab {{currentTab === 'expired' ? 'active' : ''}}" bindtap="switchTab" data-tab="expired">已结束</view>
+  </view>
+
+  <view wx:if="{{loading}}" class="loading">加载中...</view>
+
+  <view class="contract-list" wx:if="{{!loading}}">
+    <view class="contract-card" wx:for="{{contracts}}" wx:key="id" 
+      wx:if="{{(currentTab === 'active' && item.status === 'active') || (currentTab === 'pending' && (item.status === 'pending_tenant' || item.status === 'pending_landlord')) || (currentTab === 'expired' && (item.status === 'expired' || item.status === 'terminated'))}}">
+      
+      <view class="card-header">
+        <text class="property-name">{{item.propertyTitle}}</text>
+        <text class="status-tag status-{{item.status}}">{{item.statusText}}</text>
+      </view>
+      
+      <view class="card-body" bindtap="goToDetail" data-id="{{item.id}}">
+        <view class="info-row">
+          <text class="label">房东</text>
+          <text class="value">{{item.landlordName}}</text>
+        </view>
+        <view class="info-row">
+          <text class="label">月租</text>
+          <text class="value price">¥{{item.rentAmount}}</text>
+        </view>
+        <view class="info-row">
+          <text class="label">租期</text>
+          <text class="value">{{item.startDate}} ~ {{item.endDate}}</text>
+        </view>
+        <view class="info-row" wx:if="{{item.nextPayDate && item.status === 'active'}}">
+          <text class="label">下次缴费</text>
+          <text class="value highlight">{{item.nextPayDate}}</text>
+        </view>
+      </view>
+
+      <!-- 待签约操作 -->
+      <view class="card-footer" wx:if="{{item.status === 'pending_tenant'}}">
+        <view class="btn btn-primary" catchtap="goToSign" data-id="{{item.id}}">查看并签约</view>
+      </view>
+    </view>
+
+    <view wx:if="{{contracts.length === 0}}" class="empty">
+      <text class="empty-icon">📄</text>
+      <text class="empty-text">暂无合同</text>
+    </view>
+  </view>
+</view>

@@ -37,6 +37,22 @@
         <input class="input" placeholder="例: 泊寓(科技园店)" data-field="community" value="{{formData.community}}" bindinput="onInput" />
       </view>
 
+      <!-- 省市区三级联动 -->
+      <view class="form-item">
+        <text class="label">地理位置</text>
+        <view class="form-row three-col" style="margin-top: 12rpx;">
+          <picker bindchange="bindProvinceChange" range="{{provinceOptions}}">
+            <view class="picker-display sm-picker">{{formData.province}} <text class="arrow">></text></view>
+          </picker>
+          <picker bindchange="bindCityChange" range="{{cityOptions}}">
+            <view class="picker-display sm-picker">{{formData.city}} <text class="arrow">></text></view>
+          </picker>
+          <picker bindchange="bindDistrictChange" range="{{districtOptions}}">
+            <view class="picker-display sm-picker">{{formData.district || '区县'}} <text class="arrow">></text></view>
+          </picker>
+        </view>
+      </view>
+
       <view class="form-item">
         <text class="label">详细地址</text>
         <input class="input" placeholder="街道/门牌号" data-field="address" value="{{formData.address}}" bindinput="onInput" />

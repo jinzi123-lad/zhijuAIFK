@@ -34,6 +34,7 @@
                 <view class="status-toggles">
                     <view class="status-btn {{formData.status === 'vacant' ? 'active-green' : ''}}" bindtap="toggleStatus" data-status="vacant">空置</view>
                     <view class="status-btn {{formData.status === 'rented' ? 'active-gray' : ''}}" bindtap="toggleStatus" data-status="rented">已租</view>
+                    <view class="status-btn {{formData.status === 'maintenance' ? 'active-yellow' : ''}}" bindtap="toggleStatus" data-status="maintenance">维护</view>
                 </view>
             </view>
       </view>

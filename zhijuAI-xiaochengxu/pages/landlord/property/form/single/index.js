@@ -1,4 +1,5 @@
 const { supabase } = require('../../../../../utils/supabase');
+const { CASCADING_REGIONS } = require('../../../../../utils/constants');
 
 const BACKEND_URL = 'https://zhiju-backend.vercel.app';
 
@@ -55,9 +56,16 @@ Page({
             videoUrl: '', // unused, kept for schema
             videos: [],   // New: Array of video URLs
             floorPlanUrl: '',
+            vrUrl: '',    // New: VR link
+            status: 'vacant', // New: Property status (vacant/rented/maintenance)
 
             landlordContacts: [{ name: '', phone: '' }] // New: Contacts
         },
+
+        // Province/City/District Options (Dynamic)
+        provinceOptions: Object.keys(CASCADING_REGIONS),
+        cityOptions: Object.keys(CASCADING_REGIONS['上海'] || {}),
+        districtOptions: CASCADING_REGIONS['上海']?.['上海'] || [],
 
         // Options (Synced with Web)
         categoryOptions: ['住宅', '城市公寓', '城中村公寓', '别墅', '工厂', '写字楼', '商铺', '其他'],
@@ -80,6 +88,78 @@ Page({
         const menuButton = wx.getMenuButtonBoundingClientRect()
         const navBarHeight = (menuButton.top - systemInfo.statusBarHeight) * 2 + menuButton.height
         this.setData({ navHeight: systemInfo.statusBarHeight + navBarHeight + 12 })
+
+        // Initialize province/city/district options
+        const province = this.data.formData.province || '上海'
+        const cityMap = CASCADING_REGIONS[province] || {}
+        const cityOptions = Object.keys(cityMap)
+        const city = cityOptions[0] || ''
+        const districtOptions = cityMap[city] || []
+        this.setData({
+            provinceOptions: Object.keys(CASCADING_REGIONS),
+            cityOptions,
+            districtOptions,
+            ['formData.city']: city
+        })
+    },
+
+    // --- Province/City/District Cascading ---
+    bindProvinceChange(e) {
+        const province = this.data.provinceOptions[e.detail.value]
+        const cityMap = CASCADING_REGIONS[province] || {}
+        const cityOptions = Object.keys(cityMap)
+        const city = cityOptions[0] || ''
+        const districtOptions = cityMap[city] || []
+        this.setData({
+            ['formData.province']: province,
+            ['formData.city']: city,
+            ['formData.district']: districtOptions[0] || '',
+            cityOptions,
+            districtOptions
+        })
+    },
+
+    bindCityChange(e) {
+        const city = this.data.cityOptions[e.detail.value]
+        const province = this.data.formData.province
+        const districtOptions = CASCADING_REGIONS[province]?.[city] || []
+        this.setData({
+            ['formData.city']: city,
+            ['formData.district']: districtOptions[0] || '',
+            districtOptions
+        })
+    },
+
+    bindDistrictChange(e) {
+        const district = this.data.districtOptions[e.detail.value]
+        this.setData({ ['formData.district']: district })
+    },
+
+    // --- Property Status Selection ---
+    selectStatus(e) {
+        const status = e.currentTarget.dataset.status
+        this.setData({ ['formData.status']: status })
+    },
+
+    // --- Floor Plan Upload ---
+    chooseFloorPlan() {
+        wx.chooseMedia({
+            count: 1,
+            mediaType: ['image'],
+            sourceType: ['album', 'camera'],
+            success: async (res) => {
+                wx.showLoading({ title: '上传中...' })
+                const uploadedUrls = await this.uploadFiles([res.tempFiles[0].tempFilePath])
+                if (uploadedUrls.length > 0) {
+                    this.setData({ ['formData.floorPlanUrl']: uploadedUrls[0] })
+                }
+                wx.hideLoading()
+            }
+        })
+    },
+
+    removeFloorPlan() {
+        this.setData({ ['formData.floorPlanUrl']: '' })
     },
 
     // --- AI Smart Fill Logic ---
@@ -354,7 +434,7 @@ Page({
     // --- Submit ---
     async onSubmit() {
         const { title, community, category, province, city, district, address, buildingNum, unitNum, floorNum,
-            layout, area, rent, deposit, desc, tags, images, videos, floorPlanUrl,
+            layout, area, rent, deposit, desc, tags, images, videos, floorPlanUrl, vrUrl, status,
             paymentMethod, moveInDate, leaseTerms, commissions,
             fees, facilities, nearbyFacilities, wallCondition, utilitiesStatus, landlordContacts }
             = this.data.formData;
@@ -386,13 +466,15 @@ Page({
             deposit_info: deposit,
             description: desc || '暂无描述',
             tags: tags,
-            status: 'vacant',
+            status: status || 'vacant', // New: Property status
             property_type: 'residential',
 
-            // Images
+            // Images & Media
             image_url: images.length > 0 ? images[0] : '',
             image_urls: images,
-            video_urls: videos, // New field
+            video_urls: videos,
+            floor_plan_url: floorPlanUrl || '', // New: Floor plan
+            vr_url: vrUrl || '', // New: VR link
 
             // Detailed JSONB fields (matching Web App.tsx details structure)
             details: {

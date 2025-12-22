@@ -44,9 +44,35 @@
           </picker>
       </view>
 
+      <!-- 省市区三级联动 -->
+      <view class="form-item">
+        <text class="label">地理位置</text>
+        <view class="form-row three-col" style="margin-top: 12rpx;">
+          <picker bindchange="bindProvinceChange" range="{{provinceOptions}}">
+            <view class="picker-display sm-picker">{{formData.province}} <text class="arrow">></text></view>
+          </picker>
+          <picker bindchange="bindCityChange" range="{{cityOptions}}">
+            <view class="picker-display sm-picker">{{formData.city}} <text class="arrow">></text></view>
+          </picker>
+          <picker bindchange="bindDistrictChange" range="{{districtOptions}}">
+            <view class="picker-display sm-picker">{{formData.district || '区县'}} <text class="arrow">></text></view>
+          </picker>
+        </view>
+      </view>
+
       <view class="form-item">
         <text class="label">详细地址</text>
         <input class="input" placeholder="街道/门牌号" data-field="address" value="{{formData.address}}" bindinput="onInput" />
+      </view>
+
+      <!-- 房源状态选择 -->
+      <view class="form-item">
+        <text class="label">房源状态</text>
+        <view class="status-selector">
+          <view class="status-btn {{formData.status === 'vacant' ? 'active-green' : ''}}" bindtap="selectStatus" data-status="vacant">空置招租</view>
+          <view class="status-btn {{formData.status === 'rented' ? 'active-gray' : ''}}" bindtap="selectStatus" data-status="rented">已出租</view>
+          <view class="status-btn {{formData.status === 'maintenance' ? 'active-yellow' : ''}}" bindtap="selectStatus" data-status="maintenance">维护中</view>
+        </view>
       </view>
 
       <!-- Building/Unit/Floor Grid -->
@@ -206,6 +232,19 @@
         </view>
       </view>
       
+      <!-- 户型图上传 -->
+      <view class="media-group" style="margin-top: 32rpx;">
+        <text class="label">户型图</text>
+        <view class="floor-plan-upload" bindtap="chooseFloorPlan">
+          <image wx:if="{{formData.floorPlanUrl}}" src="{{formData.floorPlanUrl}}" mode="aspectFit" class="floor-plan-img"></image>
+          <view wx:else class="upload-hint">
+            <text class="plus">+</text>
+            <text class="hint-text">上传户型图</text>
+          </view>
+          <view wx:if="{{formData.floorPlanUrl}}" class="delete-btn" catchtap="removeFloorPlan">×</view>
+        </view>
+      </view>
+
       <!-- Videos -->
       <view class="media-group" style="margin-top: 32rpx;">
         <text class="label">视频资料 ({{formData.videos.length}})</text>
@@ -221,6 +260,12 @@
                 <text>+ 添加视频</text>
             </view>
         </view>
+      </view>
+
+      <!-- VR链接 -->
+      <view class="media-group" style="margin-top: 32rpx;">
+        <text class="label">VR看房链接</text>
+        <input class="input" placeholder="粘贴VR全景链接 (可选)" data-field="vrUrl" value="{{formData.vrUrl}}" bindinput="onInput" />
       </view>
 
     </view>

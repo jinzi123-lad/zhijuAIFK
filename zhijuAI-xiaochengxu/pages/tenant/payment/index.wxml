@@ -1,0 +1,87 @@
+<view class="page-container">
+  <navbar title="我的账单" />
+
+  <!-- Tab切换 -->
+  <view class="tabs">
+    <view class="tab {{currentTab === 'pending' ? 'active' : ''}}" bindtap="switchTab" data-tab="pending">待缴费</view>
+    <view class="tab {{currentTab === 'paid' ? 'active' : ''}}" bindtap="switchTab" data-tab="paid">已缴费</view>
+  </view>
+
+  <view wx:if="{{loading}}" class="loading">加载中...</view>
+
+  <view class="bill-list" wx:if="{{!loading}}">
+    <view class="bill-card" wx:for="{{bills}}" wx:key="id"
+      wx:if="{{(currentTab === 'pending' && item.status === 'pending') || (currentTab === 'paid' && (item.status === 'paid' || item.status === 'confirmed'))}}">
+      
+      <view class="card-header">
+        <view class="type-icon">{{item.type === 'rent' ? '🏠' : '💡'}}</view>
+        <view class="bill-info">
+          <text class="type-text">{{item.typeText}}</text>
+          <text class="property-name">{{item.propertyTitle}}</text>
+        </view>
+        <view class="amount">¥{{item.amount}}</view>
+      </view>
+
+      <view class="card-body">
+        <view class="info-row">
+          <text class="label">{{item.status === 'pending' ? '应缴日期' : '缴费日期'}}</text>
+          <text class="value {{item.isOverdue ? 'overdue' : ''}}">
+            {{item.status === 'pending' ? item.dueDate : item.paidDate}}
+            <text wx:if="{{item.isOverdue}}" class="overdue-tag">已逾期</text>
+          </text>
+        </view>
+        <view class="info-row">
+          <text class="label">状态</text>
+          <text class="value status-{{item.status}}">{{item.statusText}}</text>
+        </view>
+      </view>
+
+      <view class="card-footer" wx:if="{{item.status === 'pending'}}">
+        <view class="pay-btn" catchtap="openPayModal" data-id="{{item.id}}">去缴费</view>
+      </view>
+    </view>
+
+    <view wx:if="{{bills.length === 0}}" class="empty">
+      <text class="empty-icon">💰</text>
+      <text class="empty-text">暂无账单</text>
+    </view>
+  </view>
+
+  <!-- 支付弹窗 -->
+  <view class="modal-mask" wx:if="{{showPayModal}}" bindtap="closePayModal">
+    <view class="modal-content" catchtap="">
+      <view class="modal-header">
+        <text class="modal-title">缴费</text>
+        <text class="close-btn" bindtap="closePayModal">✕</text>
+      </view>
+      
+      <view class="modal-body" wx:if="{{selectedBill}}">
+        <view class="pay-amount">
+          <text class="label">应缴金额</text>
+          <text class="amount">¥{{selectedBill.amount}}</text>
+        </view>
+
+        <view class="qrcode-section">
+          <text class="section-title">扫码支付</text>
+          <image class="qrcode-image" src="{{paymentQrcode}}" mode="aspectFit" bindlongpress="saveQrcode" />
+          <text class="qrcode-tip">长按保存收款码</text>
+        </view>
+
+        <view class="proof-section">
+          <text class="section-title">上传支付凭证</text>
+          <view class="proof-upload" bindtap="chooseProofImage">
+            <image wx:if="{{proofImage}}" src="{{proofImage}}" class="proof-image" mode="aspectFill" />
+            <view wx:else class="upload-placeholder">
+              <text class="upload-icon">📷</text>
+              <text class="upload-text">点击上传截图</text>
+            </view>
+          </view>
+        </view>
+      </view>
+
+      <view class="modal-footer">
+        <button class="submit-btn" bindtap="submitPayment">提交缴费凭证</button>
+      </view>
+    </view>
+  </view>
+</view>

@@ -1,0 +1,85 @@
+<view class="page-container">
+  <navbar title="团队管理" />
+
+  <view wx:if="{{loading}}" class="loading">加载中...</view>
+
+  <view class="member-list" wx:if="{{!loading}}">
+    <view class="member-card" wx:for="{{members}}" wx:key="id">
+      <view class="member-avatar">{{item.name[0]}}</view>
+      <view class="member-info">
+        <view class="name-row">
+          <text class="name">{{item.name}}</text>
+          <text class="role-badge role-{{item.role}}">{{item.roleName}}</text>
+        </view>
+        <text class="phone">{{item.phone}}</text>
+        <text wx:if="{{item.status === 'pending'}}" class="pending-tip">待接受邀请</text>
+      </view>
+      <view class="member-actions">
+        <view class="action-btn" catchtap="openRoleModal" data-id="{{item.id}}">编辑</view>
+        <view class="action-btn danger" catchtap="removeMember" data-id="{{item.id}}">移除</view>
+      </view>
+    </view>
+
+    <view wx:if="{{members.length === 0}}" class="empty">
+      <text class="empty-icon">👥</text>
+      <text class="empty-text">暂无团队成员</text>
+      <text class="empty-hint">添加管家、销售、财务等协助管理</text>
+    </view>
+  </view>
+
+  <!-- 添加按钮 -->
+  <view class="fab-btn" bindtap="openAddModal">+ 添加成员</view>
+
+  <!-- 添加成员弹窗 -->
+  <view class="modal-mask" wx:if="{{showAddModal}}" bindtap="closeAddModal">
+    <view class="modal-content" catchtap="">
+      <view class="modal-header">
+        <text class="modal-title">添加团队成员</text>
+        <text class="close-btn" bindtap="closeAddModal">✕</text>
+      </view>
+      <view class="modal-body">
+        <view class="section">
+          <text class="section-title">成员手机号</text>
+          <input class="phone-input" placeholder="输入成员手机号" type="number" maxlength="11" bindinput="onPhoneInput" value="{{newMemberPhone}}" />
+        </view>
+        <view class="section">
+          <text class="section-title">选择角色</text>
+          <view class="role-list">
+            <view class="role-item {{newMemberRole === item.id ? 'active' : ''}}"
+              wx:for="{{roles}}" wx:key="id"
+              bindtap="selectRole" data-role="{{item.id}}">
+              <text class="role-name">{{item.name}}</text>
+              <text class="role-desc">{{item.desc}}</text>
+            </view>
+          </view>
+        </view>
+      </view>
+      <view class="modal-footer">
+        <button class="submit-btn" bindtap="sendInvite">发送邀请</button>
+      </view>
+    </view>
+  </view>
+
+  <!-- 编辑角色弹窗 -->
+  <view class="modal-mask" wx:if="{{showRoleModal}}" bindtap="closeRoleModal">
+    <view class="modal-content" catchtap="">
+      <view class="modal-header">
+        <text class="modal-title">编辑 {{selectedMember.name}} 的角色</text>
+        <text class="close-btn" bindtap="closeRoleModal">✕</text>
+      </view>
+      <view class="modal-body">
+        <view class="role-list">
+          <view class="role-item {{selectedMember.role === item.id ? 'active' : ''}}"
+            wx:for="{{roles}}" wx:key="id"
+            bindtap="selectRole" data-role="{{item.id}}">
+            <text class="role-name">{{item.name}}</text>
+            <text class="role-desc">{{item.desc}}</text>
+          </view>
+        </view>
+      </view>
+      <view class="modal-footer">
+        <button class="submit-btn" bindtap="saveRole">保存</button>
+      </view>
+    </view>
+  </view>
+</view>

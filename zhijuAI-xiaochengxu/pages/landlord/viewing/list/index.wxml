@@ -1,0 +1,46 @@
+<view class="page-container">
+  <navbar title="预约管理" />
+
+  <!-- Tab切换 -->
+  <view class="tabs">
+    <view class="tab {{currentTab === 'pending' ? 'active' : ''}}" bindtap="switchTab" data-tab="pending">待处理</view>
+    <view class="tab {{currentTab === 'confirmed' ? 'active' : ''}}" bindtap="switchTab" data-tab="confirmed">已确认</view>
+    <view class="tab {{currentTab === 'completed' ? 'active' : ''}}" bindtap="switchTab" data-tab="completed">已完成</view>
+    <view class="tab {{currentTab === 'cancelled' ? 'active' : ''}}" bindtap="switchTab" data-tab="cancelled">已取消</view>
+  </view>
+
+  <!-- 预约列表 -->
+  <view class="appointment-list">
+    <view class="appointment-card" wx:for="{{appointments}}" wx:key="id" wx:if="{{item.status === currentTab}}">
+      <view class="card-header">
+        <text class="property-name">{{item.propertyTitle}}</text>
+        <text class="status-tag status-{{item.status}}">
+          {{item.status === 'pending' ? '待处理' : item.status === 'confirmed' ? '已确认' : item.status === 'completed' ? '已完成' : '已取消'}}
+        </text>
+      </view>
+      
+      <view class="card-body" bindtap="goToDetail" data-id="{{item.id}}">
+        <view class="info-row">
+          <text class="label">👤 租客</text>
+          <text class="value">{{item.tenantName}} {{item.tenantPhone}}</text>
+        </view>
+        <view class="info-row">
+          <text class="label">📅 时间</text>
+          <text class="value">{{item.date}} {{item.time}}</text>
+        </view>
+        <view class="info-row" wx:if="{{item.notes}}">
+          <text class="label">📝 备注</text>
+          <text class="value">{{item.notes}}</text>
+        </view>
+      </view>
+
+      <view class="card-footer" wx:if="{{item.status === 'pending'}}">
+        <view class="btn btn-cancel" bindtap="goToDetail" data-id="{{item.id}}">改期/取消</view>
+        <view class="btn btn-confirm" catchtap="confirmAppointment" data-id="{{item.id}}">确认</view>
+      </view>
+    </view>
+
+    <view wx:if="{{loading}}" class="loading">加载中...</view>
+    <view wx:if="{{!loading && appointments.length === 0}}" class="empty">暂无预约</view>
+  </view>
+</view>

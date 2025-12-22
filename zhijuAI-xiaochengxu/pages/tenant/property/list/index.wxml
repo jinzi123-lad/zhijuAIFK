@@ -1,0 +1,34 @@
+<view class="page-container">
+  <navbar title="找房" showBack="{{false}}" />
+  
+  <!-- 搜索栏 -->
+  <view class="search-bar">
+    <view class="search-input">
+      <text class="iconfont">🔍</text>
+      <input placeholder="搜索小区、地址" />
+    </view>
+    <view class="filter-btn">筛选</view>
+  </view>
+
+  <!-- 筛选标签 -->
+  <view class="filter-tags">
+    <view class="tag {{filters.district !== '全部' ? 'active' : ''}}">{{filters.district}}</view>
+    <view class="tag {{filters.priceRange !== '全部' ? 'active' : ''}}">{{filters.priceRange}}</view>
+    <view class="tag {{filters.layout !== '全部' ? 'active' : ''}}">{{filters.layout}}</view>
+  </view>
+
+  <!-- 房源列表 -->
+  <view class="property-list">
+    <view class="property-card" wx:for="{{properties}}" wx:key="id" bindtap="goToDetail" data-id="{{item.id}}">
+      <image class="property-image" src="{{item.imageUrl || '/images/placeholder.png'}}" mode="aspectFill" />
+      <view class="property-info">
+        <view class="property-title">{{item.title}}</view>
+        <view class="property-meta">{{item.layout}} · {{item.area}}㎡ · {{item.location}}</view>
+        <view class="property-price">¥{{item.price}}<text class="unit">/月</text></view>
+      </view>
+    </view>
+  </view>
+
+  <view wx:if="{{loading}}" class="loading">加载中...</view>
+  <view wx:if="{{!loading && properties.length === 0}}" class="empty">暂无房源</view>
+</view>

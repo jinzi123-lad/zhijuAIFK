@@ -1,0 +1,41 @@
+<view class="page-container">
+  <navbar title="我的预约" />
+
+  <view wx:if="{{loading}}" class="loading">加载中...</view>
+
+  <view class="appointment-list" wx:if="{{!loading}}">
+    <view class="appointment-card" wx:for="{{appointments}}" wx:key="id">
+      <view class="card-content" bindtap="goToProperty" data-property-id="{{item.propertyId}}">
+        <image class="property-image" src="{{item.propertyImage || '/images/placeholder.png'}}" mode="aspectFill" />
+        <view class="info">
+          <view class="title">{{item.propertyTitle}}</view>
+          <view class="meta">
+            <text class="date">📅 {{item.date}} {{item.time}}</text>
+          </view>
+          <view class="landlord">房东：{{item.landlordName}}</view>
+        </view>
+        <view class="status-tag status-{{item.status}}">{{item.statusText}}</view>
+      </view>
+
+      <!-- 改期提示 -->
+      <view class="reschedule-notice" wx:if="{{item.status === 'rescheduled'}}">
+        <text class="notice-text">房东建议改为：{{item.rescheduleDate}} {{item.rescheduleTime}}</text>
+        <view class="notice-actions">
+          <view class="notice-btn refuse" catchtap="cancelAppointment" data-id="{{item.id}}">拒绝</view>
+          <view class="notice-btn agree" catchtap="agreeReschedule" data-id="{{item.id}}">同意</view>
+        </view>
+      </view>
+
+      <!-- 待确认可取消 -->
+      <view class="card-actions" wx:if="{{item.status === 'pending'}}">
+        <view class="action-btn" catchtap="cancelAppointment" data-id="{{item.id}}">取消预约</view>
+      </view>
+    </view>
+
+    <view wx:if="{{appointments.length === 0}}" class="empty">
+      <text class="empty-icon">📅</text>
+      <text class="empty-text">暂无预约</text>
+      <navigator url="/pages/tenant/property/list/index" class="empty-btn">去找房</navigator>
+    </view>
+  </view>
+</view>

@@ -1,4 +1,6 @@
 const { supabase } = require('../../../../../utils/supabase');
+const { CASCADING_REGIONS } = require('../../../../../utils/constants');
+
 const BACKEND_URL = 'https://zhiju-backend.vercel.app';
 
 Page({
@@ -50,7 +52,12 @@ Page({
         depositOptions: ['押一付一', '押一付三', '押二付一', '年付', '面议'],
         paymentMethodOptions: ['月付', '季付', '半年付', '年付'],
         nearbyOptions: ['地铁', '公交', '商场', '超市', '医院', '学校', '公园', '健身房'],
-        tagOptions: ['近地铁', '精装修', '随时看房', '首次出租', '独立卫生间', '有阳台', '可养宠', '民水民电']
+        tagOptions: ['近地铁', '精装修', '随时看房', '首次出租', '独立卫生间', '有阳台', '可养宠', '民水民电'],
+
+        // Province/City/District Options
+        provinceOptions: Object.keys(CASCADING_REGIONS),
+        cityOptions: Object.keys(CASCADING_REGIONS['上海'] || {}),
+        districtOptions: CASCADING_REGIONS['上海']?.['上海'] || []
     },
 
     onLoad() {
@@ -58,6 +65,51 @@ Page({
         const menuButton = wx.getMenuButtonBoundingClientRect()
         const navBarHeight = (menuButton.top - systemInfo.statusBarHeight) * 2 + menuButton.height
         this.setData({ navHeight: systemInfo.statusBarHeight + navBarHeight + 12 })
+
+        // Initialize province/city/district options
+        const province = this.data.formData.province || '上海'
+        const cityMap = CASCADING_REGIONS[province] || {}
+        const cityOptions = Object.keys(cityMap)
+        const city = cityOptions[0] || ''
+        const districtOptions = cityMap[city] || []
+        this.setData({
+            provinceOptions: Object.keys(CASCADING_REGIONS),
+            cityOptions,
+            districtOptions,
+            ['formData.city']: city
+        })
+    },
+
+    // --- Province/City/District Cascading ---
+    bindProvinceChange(e) {
+        const province = this.data.provinceOptions[e.detail.value]
+        const cityMap = CASCADING_REGIONS[province] || {}
+        const cityOptions = Object.keys(cityMap)
+        const city = cityOptions[0] || ''
+        const districtOptions = cityMap[city] || []
+        this.setData({
+            ['formData.province']: province,
+            ['formData.city']: city,
+            ['formData.district']: districtOptions[0] || '',
+            cityOptions,
+            districtOptions
+        })
+    },
+
+    bindCityChange(e) {
+        const city = this.data.cityOptions[e.detail.value]
+        const province = this.data.formData.province
+        const districtOptions = CASCADING_REGIONS[province]?.[city] || []
+        this.setData({
+            ['formData.city']: city,
+            ['formData.district']: districtOptions[0] || '',
+            districtOptions
+        })
+    },
+
+    bindDistrictChange(e) {
+        const district = this.data.districtOptions[e.detail.value]
+        this.setData({ ['formData.district']: district })
     },
 
     // --- Unit Management ---

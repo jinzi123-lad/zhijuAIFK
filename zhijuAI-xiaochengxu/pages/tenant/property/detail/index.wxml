@@ -1,0 +1,103 @@
+<view class="page-container">
+  <navbar title="房源详情" />
+
+  <view wx:if="{{loading}}" class="loading">加载中...</view>
+  
+  <block wx:if="{{!loading && property}}">
+    <!-- 图片轮播 -->
+    <swiper class="property-swiper" indicator-dots autoplay circular>
+      <swiper-item wx:for="{{property.images}}" wx:key="index">
+        <image src="{{item}}" mode="aspectFill" class="swiper-image" />
+      </swiper-item>
+      <swiper-item wx:if="{{property.images.length === 0}}">
+        <image src="/images/placeholder.png" mode="aspectFill" class="swiper-image" />
+      </swiper-item>
+    </swiper>
+
+    <!-- 基本信息 -->
+    <view class="info-card">
+      <view class="title-row">
+        <text class="property-title">{{property.title}}</text>
+        <view wx:if="{{property.certified}}" class="badge certified">已备案</view>
+      </view>
+      <view class="price-row">
+        <text class="price">¥{{property.price}}</text>
+        <text class="unit">/月</text>
+        <text class="deposit">押金 ¥{{property.deposit}}</text>
+      </view>
+      <view class="meta-row">
+        <text class="meta-item">{{property.layout}}</text>
+        <text class="divider">|</text>
+        <text class="meta-item">{{property.area}}㎡</text>
+        <text class="divider">|</text>
+        <text class="meta-item">{{property.floor}}</text>
+      </view>
+      <view class="address-row">
+        <text class="icon">📍</text>
+        <text class="address">{{property.location}} {{property.address}}</text>
+      </view>
+    </view>
+
+    <!-- 配套设施 -->
+    <view class="section-card">
+      <view class="section-title">配套设施</view>
+      <view class="facilities">
+        <view class="facility-tag" wx:for="{{property.facilities}}" wx:key="index">{{item}}</view>
+      </view>
+    </view>
+
+    <!-- 房源介绍 -->
+    <view class="section-card">
+      <view class="section-title">房源介绍</view>
+      <view class="description">{{property.description}}</view>
+    </view>
+
+    <!-- 房东信息 -->
+    <view class="section-card landlord-card">
+      <view class="landlord-info">
+        <view class="avatar">👤</view>
+        <view class="landlord-detail">
+          <text class="name">{{property.landlord.name}}</text>
+          <view wx:if="{{property.landlord.verified}}" class="verified-badge">已实名认证</view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 底部操作栏 -->
+    <view class="bottom-bar">
+      <view class="action-btn secondary">收藏</view>
+      <view class="action-btn primary" bindtap="openAppointment">预约看房</view>
+    </view>
+  </block>
+
+  <!-- 预约弹窗 -->
+  <view class="modal-mask" wx:if="{{showAppointmentModal}}" bindtap="closeAppointment">
+    <view class="modal-content" catchtap="">
+      <view class="modal-header">
+        <text class="modal-title">预约看房</text>
+        <text class="close-btn" bindtap="closeAppointment">✕</text>
+      </view>
+      <view class="modal-body">
+        <view class="form-item">
+          <text class="label">选择日期</text>
+          <picker mode="date" start="{{today}}" bindchange="onDateChange">
+            <view class="picker-value">{{appointmentDate || '请选择日期'}}</view>
+          </picker>
+        </view>
+        <view class="form-item">
+          <text class="label">选择时段</text>
+          <picker range="{{['上午', '下午', '晚上']}}" bindchange="onTimeChange">
+            <view class="picker-value">{{appointmentTime || '请选择时段'}}</view>
+          </picker>
+        </view>
+        <view class="form-item">
+          <text class="label">备注（可选）</text>
+          <textarea placeholder="如：希望能看厨房" bindinput="onNotesInput" />
+        </view>
+      </view>
+      <view class="modal-footer">
+        <button class="submit-btn" bindtap="submitAppointment">确认预约</button>
+      </view>
+    </view>
+  </view>
+</view>

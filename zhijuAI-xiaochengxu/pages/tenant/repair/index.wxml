@@ -1,0 +1,86 @@
+<view class="page-container">
+  <navbar title="我的报修" />
+
+  <view wx:if="{{loading}}" class="loading">加载中...</view>
+
+  <view class="repair-list" wx:if="{{!loading}}">
+    <view class="repair-card" wx:for="{{repairs}}" wx:key="id" bindtap="goToDetail" data-id="{{item.id}}">
+      <view class="card-header">
+        <view class="category-icon">{{item.category === 'plumbing' ? '🚿' : item.category === 'electrical' ? '💡' : item.category === 'appliance' ? '📺' : item.category === 'structure' ? '🚪' : '🔧'}}</view>
+        <view class="repair-info">
+          <text class="title">{{item.title}}</text>
+          <text class="meta">{{item.categoryName}} · {{item.createdAt}}</text>
+        </view>
+        <text class="status-tag status-{{item.status}}">{{item.statusText}}</text>
+      </view>
+
+      <!-- 待确认操作 -->
+      <view class="card-footer" wx:if="{{item.status === 'completed'}}">
+        <view class="confirm-btn" catchtap="confirmComplete" data-id="{{item.id}}">确认完成</view>
+      </view>
+    </view>
+
+    <view wx:if="{{repairs.length === 0}}" class="empty">
+      <text class="empty-icon">🔧</text>
+      <text class="empty-text">暂无报修记录</text>
+    </view>
+  </view>
+
+  <!-- 新建按钮 -->
+  <view class="fab-btn" bindtap="openCreateModal">+ 新增报修</view>
+
+  <!-- 新建报修弹窗 -->
+  <view class="modal-mask" wx:if="{{showCreateModal}}" bindtap="closeCreateModal">
+    <view class="modal-content" catchtap="">
+      <view class="modal-header">
+        <text class="modal-title">新增报修</text>
+        <text class="close-btn" bindtap="closeCreateModal">✕</text>
+      </view>
+      
+      <view class="modal-body">
+        <!-- 分类选择 -->
+        <view class="section">
+          <text class="section-title">问题类型</text>
+          <view class="category-grid">
+            <view class="category-item {{newRepair.category === item.id ? 'active' : ''}}"
+              wx:for="{{categories}}" wx:key="id"
+              bindtap="selectCategory" data-category="{{item.id}}">
+              <text class="category-icon">{{item.icon}}</text>
+              <text class="category-name">{{item.name}}</text>
+            </view>
+          </view>
+        </view>
+
+        <!-- 问题描述 -->
+        <view class="section">
+          <text class="section-title">问题描述</text>
+          <input class="input-box" placeholder="简要描述问题（如：厨房水龙头漏水）" bindinput="onTitleInput" value="{{newRepair.title}}" />
+        </view>
+
+        <view class="section">
+          <text class="section-title">详细说明（可选）</text>
+          <textarea class="textarea-box" placeholder="详细描述问题情况..." bindinput="onDescriptionInput" value="{{newRepair.description}}" />
+        </view>
+
+        <!-- 上传图片 -->
+        <view class="section">
+          <text class="section-title">上传照片</text>
+          <view class="image-grid">
+            <view class="image-item" wx:for="{{newRepair.images}}" wx:key="index">
+              <image src="{{item}}" mode="aspectFill" class="uploaded-image" />
+              <view class="remove-btn" catchtap="removeImage" data-index="{{index}}">✕</view>
+            </view>
+            <view class="add-image" wx:if="{{newRepair.images.length < 9}}" bindtap="chooseImages">
+              <text class="add-icon">📷</text>
+              <text class="add-text">添加照片</text>
+            </view>
+          </view>
+        </view>
+      </view>
+
+      <view class="modal-footer">
+        <button class="submit-btn" bindtap="submitRepair">提交报修</button>
+      </view>
+    </view>
+  </view>
+</view>

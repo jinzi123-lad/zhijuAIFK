@@ -1,0 +1,83 @@
+<view class="page-container">
+  <navbar title="签署合同" />
+
+  <view wx:if="{{loading}}" class="loading">加载中...</view>
+
+  <block wx:if="{{!loading && contract}}">
+    <!-- 合同预览卡片 -->
+    <view class="contract-preview">
+      <view class="contract-header">
+        <text class="contract-title">住房租赁合同</text>
+        <text class="contract-id">合同编号：{{contract.id}}</text>
+      </view>
+
+      <!-- 合同内容 -->
+      <view class="contract-content">
+        <view class="contract-item" wx:for="{{contract.content}}" wx:key="title">
+          <text class="item-label">{{item.title}}</text>
+          <text class="item-value">{{item.value}}</text>
+        </view>
+      </view>
+
+      <!-- 合同条款 -->
+      <view class="contract-terms">
+        <view class="terms-title">合同条款</view>
+        <scroll-view scroll-y class="terms-scroll">
+          <text class="terms-text">{{contract.terms}}</text>
+        </scroll-view>
+      </view>
+
+      <!-- 签名区域 -->
+      <view class="signature-area">
+        <view class="signature-item">
+          <text class="signature-label">甲方（房东）签名</text>
+          <image wx:if="{{contract.landlordSignature}}" src="{{contract.landlordSignature}}" class="signature-img" mode="aspectFit" />
+          <text wx:else class="no-signature">待签名</text>
+        </view>
+        <view class="signature-item">
+          <text class="signature-label">乙方（租客）签名</text>
+          <image wx:if="{{signatureData}}" src="{{signatureData}}" class="signature-img" mode="aspectFit" />
+          <text wx:else class="no-signature">待签名</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 同意条款 -->
+    <view class="agree-row" bindtap="toggleAgreed">
+      <view class="checkbox {{agreed ? 'checked' : ''}}">
+        <text wx:if="{{agreed}}">✓</text>
+      </view>
+      <text class="agree-text">我已阅读并同意以上合同条款</text>
+    </view>
+
+    <!-- 操作按钮 -->
+    <view class="action-bar">
+      <button class="sign-btn {{signatureData ? 'signed' : ''}}" bindtap="openSignature" disabled="{{signatureData}}">
+        {{signatureData ? '已签名 ✓' : '点击签名'}}
+      </button>
+      <button class="submit-btn" bindtap="submitSign" disabled="{{!signatureData || submitting}}">
+        {{submitting ? '提交中...' : '确认签约'}}
+      </button>
+    </view>
+  </block>
+
+  <!-- 签名弹窗 -->
+  <view class="modal-mask" wx:if="{{showSignature}}" bindtap="closeSignature">
+    <view class="signature-modal" catchtap="">
+      <view class="modal-header">
+        <text class="modal-title">手写签名</text>
+        <text class="close-btn" bindtap="closeSignature">✕</text>
+      </view>
+      <view class="canvas-container">
+        <canvas canvas-id="signatureCanvas" class="signature-canvas"
+          bindtouchstart="onSignatureStart"
+          bindtouchmove="onSignatureMove" />
+        <text class="canvas-tip">请在此区域手写签名</text>
+      </view>
+      <view class="modal-footer">
+        <button class="btn-clear" bindtap="clearSignature">清除</button>
+        <button class="btn-confirm" bindtap="confirmSignature">确认签名</button>
+      </view>
+    </view>
+  </view>
+</view>

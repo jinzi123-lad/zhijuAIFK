@@ -1,0 +1,124 @@
+<view class="page-container">
+  <navbar title="预约详情" />
+
+  <view wx:if="{{loading}}" class="loading">加载中...</view>
+
+  <block wx:if="{{!loading && appointment}}">
+    <!-- 状态卡片 -->
+    <view class="status-card status-{{appointment.status}}">
+      <text class="status-icon">
+        {{appointment.status === 'pending' ? '⏳' : appointment.status === 'confirmed' ? '✅' : appointment.status === 'cancelled' ? '❌' : '📅'}}
+      </text>
+      <text class="status-text">
+        {{appointment.status === 'pending' ? '待确认' : appointment.status === 'confirmed' ? '已确认' : appointment.status === 'cancelled' ? '已取消' : '待处理'}}
+      </text>
+    </view>
+
+    <!-- 房源信息 -->
+    <view class="info-card">
+      <view class="card-title">🏠 房源信息</view>
+      <view class="info-row">
+        <text class="label">房源</text>
+        <text class="value">{{appointment.propertyTitle}}</text>
+      </view>
+      <view class="info-row">
+        <text class="label">地址</text>
+        <text class="value">{{appointment.propertyAddress}}</text>
+      </view>
+    </view>
+
+    <!-- 租客信息 -->
+    <view class="info-card">
+      <view class="card-title">👤 租客信息</view>
+      <view class="tenant-row">
+        <view class="tenant-avatar">{{appointment.tenantName[0]}}</view>
+        <view class="tenant-info">
+          <text class="tenant-name">{{appointment.tenantName}}</text>
+          <text class="tenant-phone">{{appointment.tenantPhone}}</text>
+        </view>
+        <view class="call-btn" bindtap="callTenant">📞</view>
+      </view>
+    </view>
+
+    <!-- 预约信息 -->
+    <view class="info-card">
+      <view class="card-title">📅 预约信息</view>
+      <view class="info-row">
+        <text class="label">日期</text>
+        <text class="value highlight">{{appointment.date}}</text>
+      </view>
+      <view class="info-row">
+        <text class="label">时段</text>
+        <text class="value highlight">{{appointment.time}}</text>
+      </view>
+      <view class="info-row" wx:if="{{appointment.notes}}">
+        <text class="label">备注</text>
+        <text class="value">{{appointment.notes}}</text>
+      </view>
+      <view class="info-row">
+        <text class="label">提交时间</text>
+        <text class="value muted">{{appointment.createdAt}}</text>
+      </view>
+    </view>
+
+    <!-- 操作按钮 -->
+    <view class="action-bar" wx:if="{{appointment.status === 'pending'}}">
+      <view class="action-btn cancel" bindtap="openCancel">取消预约</view>
+      <view class="action-btn reschedule" bindtap="openReschedule">改期</view>
+      <view class="action-btn confirm" bindtap="confirmAppointment">确认</view>
+    </view>
+  </block>
+
+  <!-- 改期弹窗 -->
+  <view class="modal-mask" wx:if="{{showRescheduleModal}}" bindtap="closeReschedule">
+    <view class="modal-content" catchtap="">
+      <view class="modal-header">
+        <text class="modal-title">改期看房</text>
+        <text class="close-btn" bindtap="closeReschedule">✕</text>
+      </view>
+      <view class="modal-body">
+        <view class="form-item">
+          <text class="label">新日期</text>
+          <picker mode="date" bindchange="onRescheduleDateChange">
+            <view class="picker-value">{{rescheduleDate || '请选择日期'}}</view>
+          </picker>
+        </view>
+        <view class="form-item">
+          <text class="label">新时段</text>
+          <picker range="{{['上午', '下午', '晚上']}}" bindchange="onRescheduleTimeChange">
+            <view class="picker-value">{{rescheduleTime || '请选择时段'}}</view>
+          </picker>
+        </view>
+        <view class="form-item">
+          <text class="label">原因（可选）</text>
+          <textarea placeholder="如：明天有事" bindinput="onRescheduleReasonInput" />
+        </view>
+      </view>
+      <view class="modal-footer">
+        <button class="submit-btn" bindtap="submitReschedule">发送改期请求</button>
+      </view>
+    </view>
+  </view>
+
+  <!-- 取消弹窗 -->
+  <view class="modal-mask" wx:if="{{showCancelModal}}" bindtap="closeCancel">
+    <view class="modal-content" catchtap="">
+      <view class="modal-header">
+        <text class="modal-title">取消预约</text>
+        <text class="close-btn" bindtap="closeCancel">✕</text>
+      </view>
+      <view class="modal-body">
+        <view class="reason-title">请选择取消原因：</view>
+        <view class="reason-options">
+          <view class="reason-option {{cancelReason === '房源已租出' ? 'selected' : ''}}" bindtap="selectCancelReason" data-reason="房源已租出">房源已租出</view>
+          <view class="reason-option {{cancelReason === '暂不出租' ? 'selected' : ''}}" bindtap="selectCancelReason" data-reason="暂不出租">暂不出租</view>
+          <view class="reason-option {{cancelReason === '时间冲突' ? 'selected' : ''}}" bindtap="selectCancelReason" data-reason="时间冲突">时间冲突</view>
+          <view class="reason-option {{cancelReason === '其他原因' ? 'selected' : ''}}" bindtap="selectCancelReason" data-reason="其他原因">其他原因</view>
+        </view>
+      </view>
+      <view class="modal-footer">
+        <button class="submit-btn cancel-btn" bindtap="submitCancel">确认取消</button>
+      </view>
+    </view>
+  </view>
+</view>

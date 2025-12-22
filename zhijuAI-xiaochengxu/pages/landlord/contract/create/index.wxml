@@ -1,0 +1,105 @@
+<view class="page-container">
+  <navbar title="发起签约" />
+
+  <view wx:if="{{loading}}" class="loading">加载中...</view>
+
+  <block wx:if="{{!loading}}">
+    <!-- 选择房源 -->
+    <view class="section">
+      <view class="section-title">选择房源</view>
+      <picker mode="selector" range="{{properties}}" range-key="title" bindchange="onPropertySelect">
+        <view class="picker-box">
+          <text wx:if="{{selectedProperty}}">{{selectedProperty.title}}</text>
+          <text wx:else class="placeholder">请选择要签约的房源</text>
+          <text class="arrow">›</text>
+        </view>
+      </picker>
+      <view wx:if="{{selectedProperty}}" class="property-preview">
+        <text class="address">{{selectedProperty.address}}</text>
+      </view>
+    </view>
+
+    <!-- 选择租客 -->
+    <view class="section">
+      <view class="section-title">租客信息</view>
+      <view class="input-box">
+        <input placeholder="输入租客手机号查找" type="number" maxlength="11" bindinput="onTenantPhoneInput" />
+      </view>
+      <view wx:if="{{selectedTenant}}" class="tenant-preview">
+        <view class="tenant-avatar">{{selectedTenant.name[0]}}</view>
+        <view class="tenant-info">
+          <text class="name">{{selectedTenant.name}}</text>
+          <text class="phone">{{selectedTenant.phone}}</text>
+        </view>
+        <view wx:if="{{selectedTenant.verified}}" class="verified-badge">已认证</view>
+      </view>
+    </view>
+
+    <!-- 租期 -->
+    <view class="section">
+      <view class="section-title">租期</view>
+      <view class="duration-options">
+        <view class="duration-option {{selectedDuration === item ? 'active' : ''}}"
+          wx:for="{{durationOptions}}" wx:key="index"
+          bindtap="selectDuration" data-duration="{{item}}">{{item}}</view>
+      </view>
+      <view class="date-row">
+        <view class="date-item">
+          <text class="label">起租日</text>
+          <picker mode="date" bindchange="onStartDateChange">
+            <view class="date-value">{{contractData.startDate || '选择日期'}}</view>
+          </picker>
+        </view>
+        <text class="date-divider">至</text>
+        <view class="date-item">
+          <text class="label">到期日</text>
+          <view class="date-value">{{contractData.endDate || '自动计算'}}</view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 费用 -->
+    <view class="section">
+      <view class="section-title">费用信息</view>
+      <view class="form-row">
+        <text class="label">月租金</text>
+        <view class="input-with-unit">
+          <input type="digit" value="{{contractData.rentAmount}}" bindinput="onRentInput" />
+          <text class="unit">元/月</text>
+        </view>
+      </view>
+      <view class="form-row">
+        <text class="label">押金</text>
+        <view class="input-with-unit">
+          <input type="digit" value="{{contractData.depositAmount}}" bindinput="onDepositInput" />
+          <text class="unit">元</text>
+        </view>
+      </view>
+      <view class="form-row">
+        <text class="label">缴费日</text>
+        <picker mode="selector" range="{{['1','5','10','15','20','25']}}" bindchange="onPaymentDayChange">
+          <view class="picker-value">每月{{contractData.paymentDay}}日</view>
+        </picker>
+      </view>
+    </view>
+
+    <!-- 合同模板 -->
+    <view class="section">
+      <view class="section-title">合同模板</view>
+      <picker mode="selector" range="{{templates}}" range-key="name" bindchange="onTemplateSelect">
+        <view class="picker-box">
+          <text>{{templates[0].name}}</text>
+          <text class="arrow">›</text>
+        </view>
+      </picker>
+    </view>
+
+    <!-- 提交按钮 -->
+    <view class="submit-area">
+      <button class="submit-btn" disabled="{{submitting}}" bindtap="submitContract">
+        {{submitting ? '发送中...' : '发送签约邀请'}}
+      </button>
+      <text class="tip">发送后，租客将收到签约通知</text>
+    </view>
+  </block>
+</view>
