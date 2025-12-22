@@ -124,6 +124,7 @@ const DataScreen: React.FC<DataScreenProps> = ({ properties, onViewProperty }) =
           const radius = circleLayerRef.current ? circleLayerRef.current.getRadius() : 0;
 
           const matched = properties.filter(p => {
+            if (!p.coordinates) return false;
             const pLoc = L.latLng(p.coordinates.lat, p.coordinates.lng);
             return map.distance(center, pLoc) <= radius;
           });
@@ -212,6 +213,7 @@ const DataScreen: React.FC<DataScreenProps> = ({ properties, onViewProperty }) =
     markersRef.current = [];
 
     filteredProperties.forEach(p => {
+      if (!p.coordinates) return; // Skip invalid coordinates
       const color = '#6366f1';
       const iconHtml = `
         <div style="position: relative; display: flex; align-items: center; justify-content: center; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.3));">
@@ -342,7 +344,7 @@ const DataScreen: React.FC<DataScreenProps> = ({ properties, onViewProperty }) =
 
     // Use returned destination location from AI (which should reflect our input coords if provided)
     const finalDest = destinationLocation;
-    const boundsPoints: any[] = matched.map(p => [p.coordinates.lat, p.coordinates.lng]);
+    const boundsPoints: any[] = matched.filter(p => p.coordinates).map(p => [p.coordinates.lat, p.coordinates.lng]);
 
     if (finalDest && finalDest.lat && finalDest.lng) {
       const destIconHtml = `
@@ -356,6 +358,7 @@ const DataScreen: React.FC<DataScreenProps> = ({ properties, onViewProperty }) =
       boundsPoints.push([finalDest.lat, finalDest.lng]);
 
       matched.forEach(p => {
+        if (!p.coordinates) return;
         // Visual Enhancement: Use a gradient-like dashed line or distinct style
         const routeLine = L.polyline([[p.coordinates.lat, p.coordinates.lng], [finalDest.lat, finalDest.lng]], {
           color: '#8b5cf6', // Violet color matching the theme
@@ -399,8 +402,8 @@ const DataScreen: React.FC<DataScreenProps> = ({ properties, onViewProperty }) =
   const handleOpenGaodeMap = () => {
     if (!selectedProperty) return;
 
-    const pLat = selectedProperty.coordinates.lat;
-    const pLng = selectedProperty.coordinates.lng;
+    const pLat = selectedProperty.coordinates?.lat || 39.9042;
+    const pLng = selectedProperty.coordinates?.lng || 116.4074;
     const pName = selectedProperty.address;
 
     let url = '';

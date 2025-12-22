@@ -356,6 +356,8 @@ const BigScreenDashboard: React.FC<BigScreenDashboardProps> = ({ properties, ord
         markersRef.current = [];
 
         displayProps.forEach((p) => {
+            if (!p.coordinates) return; // Skip invalid coordinates
+
             const iconHtml = `
             <div class="relative flex items-center justify-center w-4 h-4">
                 <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75"></span>
