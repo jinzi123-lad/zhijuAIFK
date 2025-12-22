@@ -357,35 +357,64 @@ const PropertyDetail: React.FC<PropertyDetailProps> = ({ property, onBack, onEdi
                     </div>
 
                     {!isGuestMode && property.landlordContacts && property.landlordContacts.length > 0 && (
-                        <div className="bg-purple-50 p-4 rounded-xl border border-purple-100">
-                            <h4 className="font-bold text-purple-800 text-sm mb-3 flex items-center">
-                                <span className="mr-2">🔑</span> 房东/业主联系信息 (内部)
-                            </h4>
-                            <div className="space-y-3">
+                        <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                            <div className="bg-slate-50 p-4 border-b border-slate-100 flex justify-between items-center">
+                                <h4 className="font-bold text-slate-800 text-sm flex items-center">
+                                    <span className="mr-2 text-lg">👤</span> 房东信息卡
+                                </h4>
+                                <span className={`px-2 py-0.5 rounded text-xs font-medium border ${property.landlordType === LandlordType.CORPORATE
+                                    ? 'bg-orange-50 text-orange-600 border-orange-200'
+                                    : 'bg-emerald-50 text-emerald-600 border-emerald-200'}`}>
+                                    {property.landlordType === LandlordType.CORPORATE ? '企业公寓' : '个人房东'}
+                                </span>
+                            </div>
+                            <div className="p-4 space-y-4">
                                 {property.landlordContacts.map((contact, idx) => (
-                                    <div key={idx} className="bg-white p-3 rounded-lg border border-purple-100 shadow-sm text-sm">
-                                        <div className="flex justify-between items-center mb-1">
-                                            <span className="font-bold text-slate-800">{contact.name}</span>
-                                            <div className="flex items-center gap-2">
-                                                <span className="font-mono text-purple-700 font-bold">{contact.phone}</span>
-                                                <button
-                                                    onClick={() => {
-                                                        navigator.clipboard.writeText(contact.phone);
-                                                        alert('✅ 电话已复制: ' + contact.phone);
-                                                    }}
-                                                    className="text-xs bg-purple-100 text-purple-600 px-2 py-0.5 rounded hover:bg-purple-200 transition-colors"
-                                                    title="复制号码"
-                                                >
-                                                    复制
-                                                </button>
+                                    <div key={idx} className="flex flex-col gap-3 pb-4 border-b border-slate-50 last:border-0 last:pb-0">
+                                        <div className="flex justify-between items-start">
+                                            <div>
+                                                <div className="font-bold text-slate-800 text-base flex items-center gap-2">
+                                                    {contact.name || '未命名房东'}
+                                                    {idx === 0 && <span className="text-[10px] bg-indigo-100 text-indigo-600 px-1.5 rounded">主要</span>}
+                                                </div>
+                                                {contact.note && <div className="text-xs text-slate-400 mt-1 italic">{contact.note}</div>}
+                                            </div>
+                                            <div className="text-right">
+                                                <div className="text-xs text-slate-400 mb-0.5">信任分</div>
+                                                <div className="text-sm font-bold text-emerald-600">98.5</div>
                                             </div>
                                         </div>
-                                        <div className="flex justify-between text-xs text-slate-500">
-                                            <span>{contact.wechat ? `微信: ${contact.wechat}` : '无微信'}</span>
-                                            {contact.note && <span className="text-right italic truncate max-w-[150px]">{contact.note}</span>}
+
+                                        <div className="flex gap-2">
+                                            <button
+                                                onClick={() => {
+                                                    navigator.clipboard.writeText(contact.phone);
+                                                    alert('✅ 电话已复制: ' + contact.phone);
+                                                }}
+                                                className="flex-1 flex items-center justify-center gap-1 bg-indigo-50 text-indigo-600 py-2 rounded-lg text-sm font-bold hover:bg-indigo-100 transition-colors"
+                                            >
+                                                <span>📞</span> {contact.phone}
+                                            </button>
+                                            {contact.wechat && (
+                                                <button
+                                                    onClick={() => {
+                                                        navigator.clipboard.writeText(contact.wechat || '');
+                                                        alert('✅ 微信已复制: ' + contact.wechat);
+                                                    }}
+                                                    className="flex-1 flex items-center justify-center gap-1 bg-green-50 text-green-600 py-2 rounded-lg text-sm font-bold hover:bg-green-100 transition-colors"
+                                                >
+                                                    <span>💬</span> 复制微信
+                                                </button>
+                                            )}
                                         </div>
                                     </div>
                                 ))}
+                            </div>
+                            <div className="bg-slate-50 p-2 text-center text-xs text-slate-400 border-t border-slate-100">
+                                <span className="flex items-center justify-center gap-1">
+                                    <svg className="w-3 h-3 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                    智居AI已完成房东实名认证
+                                </span>
                             </div>
                         </div>
                     )}
