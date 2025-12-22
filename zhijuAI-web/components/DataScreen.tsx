@@ -37,8 +37,8 @@ const DataScreen: React.FC<DataScreenProps> = ({ properties, onViewProperty }) =
   const [drawRadius, setDrawRadius] = useState(0);
 
   // --- 3. Filters ---
-  const [filterProvince, setFilterProvince] = useState('全部');
-  const [filterCity, setFilterCity] = useState('全部');
+  const [filterProvince, setFilterProvince] = useState('北京');
+  const [filterCity, setFilterCity] = useState('北京');
   const [filterDistrict, setFilterDistrict] = useState('全部');
   const [filterCategory, setFilterCategory] = useState('全部');
   const [filterPrice, setFilterPrice] = useState('全部');
