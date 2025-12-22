@@ -11,6 +11,8 @@ Page({
         formData: {
             title: '',
             community: '',
+            category: '住宅', // New: Property Category
+
             // detailed location
             province: '上海',
             city: '上海',
@@ -30,29 +32,47 @@ Page({
             // Full Parity Fields
             paymentMethod: '',
             moveInDate: '',
+            leaseTerms: [], // New: ['1个月', '1年']
+            commissions: {}, // New: { '1年': '50%' }
 
             fees: {
                 water: '',
                 electricity: '',
                 gas: '',
                 propertyMgmt: '',
-                internet: ''
+                internet: '',
+                parking: '',      // New
+                serviceFee: ''    // New
             },
 
-            facilities: [], // e.g. ['Wifi', 'AC']
+            wallCondition: '',    // New
+            utilitiesStatus: '',  // New
+
+            facilities: [], // Room params e.g. ['Wifi', 'AC']
+            nearbyFacilities: [], // Nearby e.g. ['Subway']
 
             images: [], // Remote URLs
-            videoUrl: '',
-            floorPlanUrl: '' // added
+            videoUrl: '', // unused, kept for schema
+            videos: [],   // New: Array of video URLs
+            floorPlanUrl: '',
+
+            landlordContacts: [{ name: '', phone: '' }] // New: Contacts
         },
 
         // Options (Synced with Web)
+        categoryOptions: ['住宅', '城市公寓', '城中村公寓', '别墅', '工厂', '写字楼', '商铺', '其他'],
         layoutOptions: ['1室0厅1卫', '1室1厅1卫', '2室1厅1卫', '2室2厅1卫', '3室1厅1卫', '3室2厅2卫', '其他'],
         depositOptions: ['押一付一', '押一付三', '押二付一', '年付', '面议'],
         paymentMethodOptions: ['月付', '季付', '半年付', '年付'],
         moveInDateOptions: ['随时入住', '两周内', '一个月内', '协商'],
+
+        leaseTermOptions: ['1个月', '3个月', '6个月', '1年', '2年'], // Web: LEASE_TERM_OPTIONS
+
         tagOptions: ['近地铁', '精装修', '随时看房', '首次出租', '独立卫生间', '有阳台', '可养宠', '民水民电'],
-        facilityOptions: ['宽带', '空调', '热水器', '洗衣机', '冰箱', '电视', '沙发', '衣柜', '床', '暖气']
+        facilityOptions: ['宽带', '空调', '热水器', '洗衣机', '冰箱', '电视', '沙发', '衣柜', '床', '暖气'],
+        nearbyOptions: ['地铁', '公交', '商场', '超市', '医院', '学校', '公园', '健身房'], // Web: DETAILED_OPTIONS.nearbyFacilities
+        wallOptions: ['新装修', '良好', '普通', '需翻修'],
+        utilityOptions: ['民水民电', '商水商电', '民水商电', '包水电']
     },
 
     onLoad() {
@@ -162,33 +182,88 @@ Page({
     },
 
     // --- Pickers ---
+    bindCategoryChange(e) { this.setData({ ['formData.category']: this.data.categoryOptions[e.detail.value] }) },
     bindLayoutChange(e) { this.setData({ ['formData.layout']: this.data.layoutOptions[e.detail.value] }) },
     bindDepositChange(e) { this.setData({ ['formData.deposit']: this.data.depositOptions[e.detail.value] }) },
     bindPaymentChange(e) { this.setData({ ['formData.paymentMethod']: this.data.paymentMethodOptions[e.detail.value] }) },
     bindMoveInChange(e) { this.setData({ ['formData.moveInDate']: this.data.moveInDateOptions[e.detail.value] }) },
 
+    bindWallChange(e) { this.setData({ ['formData.wallCondition']: this.data.wallOptions[e.detail.value] }) },
+    bindUtilityChange(e) { this.setData({ ['formData.utilitiesStatus']: this.data.utilityOptions[e.detail.value] }) },
+
     // --- Toggles ---
     toggleTag(e) {
         const tag = e.currentTarget.dataset.tag
-        let tags = this.data.formData.tags
-        if (tags.includes(tag)) {
-            tags = tags.filter(t => t !== tag)
-        } else {
-            if (tags.length >= 5) return wx.showToast({ title: '最多选5个标签', icon: 'none' })
-            tags.push(tag)
+        let list = this.data.formData.tags
+        if (list.includes(tag)) list = list.filter(t => t !== tag)
+        else {
+            if (list.length >= 5) return wx.showToast({ title: '最多选5个', icon: 'none' })
+            list.push(tag)
         }
-        this.setData({ ['formData.tags']: tags })
+        this.setData({ ['formData.tags']: list })
     },
 
     toggleFacility(e) {
         const item = e.currentTarget.dataset.item
         let list = this.data.formData.facilities
-        if (list.includes(item)) {
-            list = list.filter(t => t !== item)
-        } else {
-            list.push(item)
-        }
+        if (list.includes(item)) list = list.filter(t => t !== item)
+        else list.push(item)
         this.setData({ ['formData.facilities']: list })
+    },
+
+    toggleNearby(e) {
+        const item = e.currentTarget.dataset.item
+        let list = this.data.formData.nearbyFacilities
+        if (list.includes(item)) list = list.filter(t => t !== item)
+        else list.push(item)
+        this.setData({ ['formData.nearbyFacilities']: list })
+    },
+
+    // --- Lease Terms & Commissions ---
+    toggleLeaseTerm(e) {
+        const term = e.currentTarget.dataset.term;
+        let terms = this.data.formData.leaseTerms;
+        let commissions = this.data.formData.commissions;
+
+        if (terms.includes(term)) {
+            terms = terms.filter(t => t !== term);
+            // Optional: delete commissions[term];
+        } else {
+            terms.push(term);
+        }
+        this.setData({
+            ['formData.leaseTerms']: terms,
+            ['formData.commissions']: commissions
+        });
+    },
+
+    onCommissionInput(e) {
+        const term = e.currentTarget.dataset.term;
+        const value = e.detail.value;
+        this.setData({
+            [`formData.commissions.${term}`]: value
+        });
+    },
+
+    // --- Contacts ---
+    updateContact(e) {
+        const idx = e.currentTarget.dataset.index;
+        const field = e.currentTarget.dataset.field;
+        const val = e.detail.value;
+        const contacts = this.data.formData.landlordContacts;
+        contacts[idx][field] = val;
+        this.setData({ ['formData.landlordContacts']: contacts });
+    },
+    addContact() {
+        const contacts = this.data.formData.landlordContacts;
+        contacts.push({ name: '', phone: '' });
+        this.setData({ ['formData.landlordContacts']: contacts });
+    },
+    removeContact(e) {
+        const idx = e.currentTarget.dataset.index;
+        const contacts = this.data.formData.landlordContacts;
+        contacts.splice(idx, 1);
+        this.setData({ ['formData.landlordContacts']: contacts });
     },
 
     // --- Image Upload (Supabase) ---
@@ -213,6 +288,34 @@ Page({
         const images = this.data.formData.images
         images.splice(index, 1)
         this.setData({ ['formData.images']: images })
+    },
+
+    // --- Video Upload ---
+    chooseVideo() {
+        wx.chooseMedia({
+            count: 1,
+            mediaType: ['video'],
+            sourceType: ['album', 'camera'],
+            maxDuration: 60,
+            camera: 'back',
+            success: async (res) => {
+                wx.showLoading({ title: '上传视频...' });
+                // Reuse uploadFiles but might need mimetype adjustment ideally
+                const uploadedUrls = await this.uploadFiles([res.tempFiles[0].tempFilePath]);
+                if (uploadedUrls.length > 0) {
+                    this.setData({
+                        ['formData.videos']: this.data.formData.videos.concat(uploadedUrls)
+                    });
+                }
+                wx.hideLoading();
+            }
+        })
+    },
+    removeVideo(e) {
+        const index = e.currentTarget.dataset.index
+        const list = this.data.formData.videos
+        list.splice(index, 1)
+        this.setData({ ['formData.videos']: list })
     },
 
     // --- Generic Upload Helper ---
@@ -250,9 +353,11 @@ Page({
 
     // --- Submit ---
     async onSubmit() {
-        const { title, community, province, city, district, address, buildingNum, unitNum, floorNum,
-            layout, area, rent, deposit, desc, tags, images,
-            paymentMethod, moveInDate, fees, facilities } = this.data.formData;
+        const { title, community, category, province, city, district, address, buildingNum, unitNum, floorNum,
+            layout, area, rent, deposit, desc, tags, images, videos, floorPlanUrl,
+            paymentMethod, moveInDate, leaseTerms, commissions,
+            fees, facilities, nearbyFacilities, wallCondition, utilitiesStatus, landlordContacts }
+            = this.data.formData;
 
         if (!title || !area || !rent) {
             return wx.showToast({ title: '请填写标题、面积和租金', icon: 'none' });
@@ -265,15 +370,16 @@ Page({
 
         const payload = {
             title: title || `${community} ${layout}`,
+            category: category,
 
             // Location
             location: `${province}${city}${district}`,
-            address: fullAddress, // Merged for display
+            address: fullAddress,
 
             // Basic
             area: parseFloat(area) || 0,
             rent_amount: parseFloat(rent) || 0,
-            price: parseFloat(rent) || 0, // Sync field
+            price: parseFloat(rent) || 0,
             layout: layout,
 
             // Config
@@ -286,6 +392,7 @@ Page({
             // Images
             image_url: images.length > 0 ? images[0] : '',
             image_urls: images,
+            video_urls: videos, // New field
 
             // Detailed JSONB fields (matching Web App.tsx details structure)
             details: {
@@ -294,8 +401,14 @@ Page({
                 buildingNum,
                 unitNum,
                 floorNum,
-                fees,
-                nearbyFacilities: facilities
+                fees, // { water, elec... }
+                leaseTerms, // ['1年']
+                commissions, // { '1年': '50%' }
+                facilities, // Room facilities
+                nearbyFacilities, // Nearby
+                wallCondition,
+                utilitiesStatus,
+                contacts: landlordContacts
             },
 
             landlord_id: getApp().globalData.landlordId || 'unknown'

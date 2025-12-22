@@ -284,5 +284,32 @@
 .desc-textarea { width: 100%; height: 240rpx; background: #f8fafc; border-radius: 16rpx; padding: 24rpx; font-size: 28rpx; box-sizing: border-box; }
 
 /* Group Title */
-.form-group-title { font-size: 26rpx; font-weight: bold; color: #475569; margin-bottom: 16rpx; margin-top: 10rpx;}
+
+/* Commission & Lease Terms */
+.lease-terms-group { display: flex; flex-direction: column; gap: 16rpx; }
+.lease-term-row { display: flex; align-items: center; gap: 20rpx; padding: 12rpx; border-radius: 12rpx; border: 1px solid transparent; transition: all 0.2s; }
+.lease-term-row.active-row { background: #fff7ed; border-color: #ffedd5; }
+
+.term-btn { padding: 12rpx 24rpx; background: #fff; border: 1px solid #cbd5e1; border-radius: 12rpx; font-size: 24rpx; color: #64748b; font-weight: bold; width: 140rpx; text-align: center; }
+.term-btn.active-btn { background: #f97316; color: white; border-color: #ea580c; }
+
+.commission-input-wrapper { flex: 1; display: flex; align-items: center; gap: 12rpx; animation: fadeIn 0.3s ease; }
+.comm-label { font-size: 24rpx; color: #64748b; font-weight: bold; }
+.comm-input { flex: 1; height: 64rpx; background: #fff; border: 1px solid #fed7aa; border-radius: 8rpx; padding: 0 16rpx; font-size: 24rpx; color: #f97316; }
+
+/* Video List */
+.video-list { display: flex; flex-direction: column; gap: 16rpx; }
+.video-item { display: flex; align-items: center; padding: 16rpx; background: #f8fafc; border-radius: 12rpx; border: 1px solid #e2e8f0; }
+.video-icon { width: 60rpx; height: 60rpx; background: #e0e7ff; border-radius: 8rpx; display: flex; align-items: center; justify-content: center; font-size: 32rpx; margin-right: 16rpx; }
+.video-name { flex: 1; font-size: 26rpx; color: #334155; }
+.delete-text { color: #ef4444; font-size: 24rpx; padding: 10rpx; }
+.add-video-btn { padding: 24rpx; border: 2rpx dashed #cbd5e1; border-radius: 12rpx; display: flex; align-items: center; justify-content: center; color: #94a3b8; font-size: 26rpx; margin-top: 10rpx; }
+
+/* Contacts */
+.contact-row { display: flex; gap: 16rpx; margin-bottom: 16rpx; align-items: center; }
+.contact-input { flex: 1; margin-bottom: 0 !important; }
+.remove-contact { color: #ef4444; padding: 10rpx; font-size: 32rpx; }
+.add-contact-link { color: #4f46e5; font-size: 26rpx; font-weight: bold; text-align: center; padding: 16rpx; }
+
+@keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
 

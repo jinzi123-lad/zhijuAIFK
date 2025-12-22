@@ -1,0 +1,74 @@
+<view class="container">
+  <nav-bar title="{{isEdit ? '编辑房间' : '添加房间'}}" showBack="{{true}}" background="#fff"></nav-bar>
+
+  <scroll-view scroll-y class="form-scroll" style="padding-top: {{navHeight}}px;">
+    
+    <view class="form-section glass-card">
+      <view class="section-title">房间信息</view>
+      
+      <view class="form-item">
+        <text class="label">房号 <text class="required">*</text></text>
+        <input class="input" placeholder="如: 101" data-field="roomNo" value="{{formData.roomNo}}" bindinput="onInput" />
+      </view>
+
+       <view class="form-row">
+        <view class="form-item half">
+          <text class="label">户型</text>
+          <picker bindchange="bindLayoutChange" value="{{0}}" range="{{layoutOptions}}">
+            <view class="picker-display">{{formData.layout}} <text class="arrow">></text></view>
+          </picker>
+        </view>
+        <view class="form-item half">
+          <text class="label">面积 (㎡)</text>
+          <input class="input" type="digit" placeholder="85" data-field="area" value="{{formData.area}}" bindinput="onInput" />
+        </view>
+      </view>
+
+      <view class="form-row">
+           <view class="form-item half">
+                <text class="label">月租金 (元) <text class="required">*</text></text>
+                <input class="input price-input" type="digit" placeholder="0" data-field="rent" value="{{formData.rent}}" bindinput="onInput" />
+            </view>
+            <view class="form-item half">
+                <text class="label">当前状态</text>
+                <view class="status-toggles">
+                    <view class="status-btn {{formData.status === 'vacant' ? 'active-green' : ''}}" bindtap="toggleStatus" data-status="vacant">空置</view>
+                    <view class="status-btn {{formData.status === 'rented' ? 'active-gray' : ''}}" bindtap="toggleStatus" data-status="rented">已租</view>
+                </view>
+            </view>
+      </view>
+    </view>
+
+    <view class="form-section glass-card">
+        <view class="section-title">配置与照片</view>
+        
+        <view class="tag-selector">
+            <block wx:for="{{facilityOptions}}" wx:key="*this">
+                <view class="tag-option {{utils.includes(formData.facilities, item) ? 'active' : ''}}" bindtap="toggleFacility" data-item="{{item}}">{{item}}</view>
+            </block>
+        </view>
+
+        <view class="image-grid" style="margin-top: 32rpx;">
+            <block wx:for="{{formData.images}}" wx:key="*this">
+                <view class="image-item">
+                    <image src="{{item}}" mode="aspectFill" class="thumb"></image>
+                    <view class="delete-btn" catchtap="removeImage" data-index="{{index}}">×</view>
+                </view>
+            </block>
+            <view class="image-item add-btn" bindtap="chooseImage" wx:if="{{formData.images.length < 9}}">
+                <text class="plus">+</text>
+            </view>
+        </view>
+    </view>
+  </scroll-view>
+
+  <view class="bottom-bar glass-card">
+    <button class="submit-btn" bindtap="onSave">保存房间</button>
+  </view>
+</view>
+
+<wxs module="utils">
+module.exports.includes = function(arr, item) {
+  return arr && arr.indexOf(item) > -1
+}
+</wxs>
