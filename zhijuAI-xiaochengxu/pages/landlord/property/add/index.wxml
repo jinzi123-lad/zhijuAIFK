@@ -13,7 +13,7 @@
     <!-- Option 1: Single Property -->
     <view class="type-card single" hover-class="type-card-active" bindtap="selectType" data-type="single">
       <view class="decor-circle"></view>
-      <view class="icon-box single">🏠</view>
+      <view class="icon-box single"><icon name="home" color="#2563eb" size="48"></icon></view>
       <view class="content-box">
         <view class="card-title">分散式房源</view>
         <view class="card-desc">适用于小区住宅、商铺等单体独栋房源，地址独立。</view>

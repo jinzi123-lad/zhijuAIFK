@@ -1,78 +1,97 @@
-const { supabase } = require('../../../utils/supabase');
-const app = getApp();
+// 房东-我的页面
+const app = getApp()
+const { supabase } = require('../../../utils/supabase')
 
 Page({
     data: {
-        formData: {
+        userInfo: {
             name: '',
-            phone: '',
-            wechat: ''
+            phone: ''
         },
-        loading: true
+        verification: {
+            status: 'none'
+        }
     },
 
     onLoad() {
-        this.fetchProfile();
+        this.loadUserInfo()
     },
 
-    async fetchProfile() {
-        const landlordId = app.globalData.landlordId;
-        const { data, error } = await supabase
-            .from('landlord_profiles')
-            .select('*')
-            .eq('landlord_id', landlordId)
-            .single();
-
-        if (data) {
-            this.setData({
-                formData: {
-                    name: data.name || '',
-                    phone: data.phone || '',
-                    wechat: data.wechat || ''
-                }
-            });
-        }
-        this.setData({ loading: false });
+    onShow() {
+        this.loadUserInfo()
     },
 
-    onInput(e) {
-        const field = e.currentTarget.dataset.field;
+    async loadUserInfo() {
+        const landlordId = wx.getStorageSync('landlord_id')
+        const userName = wx.getStorageSync('user_name')
+        const userPhone = wx.getStorageSync('user_phone')
+
         this.setData({
-            [`formData.${field}`]: e.detail.value
-        });
+            userInfo: {
+                name: userName || '房东用户',
+                phone: userPhone || ''
+            }
+        })
+
+        // 加载认证状态
+        if (landlordId) {
+            try {
+                const { data } = await supabase
+                    .from('user_verifications')
+                    .select('status')
+                    .eq('user_id', landlordId)
+                    .eq('user_type', 'landlord')
+                    .order('created_at', { ascending: false })
+                    .limit(1)
+                    .exec()
+
+                if (data && data.length > 0) {
+                    this.setData({ verification: data[0] })
+                }
+            } catch (err) {
+                console.error('加载认证状态失败', err)
+            }
+        }
     },
 
-    async onSave() {
-        const { name, phone, wechat } = this.data.formData;
-        if (!name || !phone) {
-            return wx.showToast({ title: '姓名和电话必填', icon: 'none' });
+    // 编辑资料
+    editProfile() {
+        wx.navigateTo({ url: '/pages/landlord/profile/edit/index' })
+    },
+
+    // 导航
+    goTo(e) {
+        const path = e.currentTarget.dataset.path
+        if (path) {
+            wx.navigateTo({ url: path })
         }
+    },
 
-        const landlordId = app.globalData.landlordId;
-        const payload = {
-            landlord_id: landlordId,
-            name,
-            phone,
-            wechat,
-            updated_at: new Date().toISOString()
-        };
+    // 切换身份
+    switchRole() {
+        wx.showModal({
+            title: '切换身份',
+            content: '确定要切换到租客身份吗？',
+            success: (res) => {
+                if (res.confirm) {
+                    wx.setStorageSync('currentRole', 'TENANT')
+                    wx.reLaunch({ url: '/pages/tenant/home/index' })
+                }
+            }
+        })
+    },
 
-        wx.showLoading({ title: '保存中...' });
-
-        // Upsert by landlord_id
-        const { error } = await supabase
-            .from('landlord_profiles')
-            .upsert(payload, { onConflict: 'landlord_id' })
-            .exec();
-
-        wx.hideLoading();
-
-        if (error) {
-            console.error('Save profile failed', error);
-            wx.showToast({ title: '保存失败', icon: 'none' });
-        } else {
-            wx.showToast({ title: '保存成功', icon: 'success' });
-            setTimeout(() => wx.navigateBack(), 1000);
-        }
+    // 退出登录
+    logout() {
+        wx.showModal({
+            title: '退出登录',
+            content: '确定要退出登录吗？',
+            success: (res) => {
+                if (res.confirm) {
+                    wx.clearStorageSync()
+                    wx.reLaunch({ url: '/pages/index/index' })
+                }
+            }
+        })
     }
 })

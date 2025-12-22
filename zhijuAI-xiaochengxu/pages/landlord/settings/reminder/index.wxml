@@ -1,2 +1,96 @@
-<!--pages/landlord/settings/reminder/index.wxml-->
-<text>pages/landlord/settings/reminder/index.wxml</text>
+<!--房东-催租提醒设置页面-->
+<view class="container">
+  <view class="mesh-gradient"></view>
+  <navbar title="催租提醒" showBack="{{true}}"></navbar>
+
+  <view class="main-body">
+    <!-- 自动提醒开关 -->
+    <view class="setting-section glass-card">
+      <view class="section-header">
+        <view class="section-title">
+          <view class="title-icon-box">
+            <icon name="bell" color="#2563eb" size="36"></icon>
+          </view>
+          <text class="title-text">自动催租提醒</text>
+        </view>
+        <switch class="switch" checked="{{settings.autoRemind}}" bindchange="toggleAutoRemind" color="#2563eb"/>
+      </view>
+      <text class="section-desc">开启后，系统将在设定时间自动向租客发送缴费提醒</text>
+    </view>
+
+    <!-- 提醒时间设置 -->
+    <view class="setting-section glass-card" wx:if="{{settings.autoRemind}}">
+      <view class="section-title-full">
+        <view class="title-icon-box">
+          <icon name="calendar" color="#10b981" size="36"></icon>
+        </view>
+        <text class="title-text">提醒时间</text>
+      </view>
+      
+      <view class="option-list">
+        <view class="option-item {{settings.remindDays === 3 ? 'active' : ''}}" bindtap="setRemindDays" data-days="3">
+          <text class="option-label">提前3天</text>
+          <view class="option-check" wx:if="{{settings.remindDays === 3}}">
+            <icon name="check" color="#fff" size="24"></icon>
+          </view>
+        </view>
+        <view class="option-item {{settings.remindDays === 5 ? 'active' : ''}}" bindtap="setRemindDays" data-days="5">
+          <text class="option-label">提前5天</text>
+          <view class="option-check" wx:if="{{settings.remindDays === 5}}">
+            <icon name="check" color="#fff" size="24"></icon>
+          </view>
+        </view>
+        <view class="option-item {{settings.remindDays === 7 ? 'active' : ''}}" bindtap="setRemindDays" data-days="7">
+          <text class="option-label">提前7天</text>
+          <view class="option-check" wx:if="{{settings.remindDays === 7}}">
+            <icon name="check" color="#fff" size="24"></icon>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 逾期提醒 -->
+    <view class="setting-section glass-card">
+      <view class="section-header">
+        <view class="section-title">
+          <view class="title-icon-box">
+            <icon name="alert" color="#ef4444" size="36"></icon>
+          </view>
+          <text class="title-text">逾期再次提醒</text>
+        </view>
+        <switch class="switch" checked="{{settings.overdueRemind}}" bindchange="toggleOverdueRemind" color="#ef4444"/>
+      </view>
+      <text class="section-desc">租金逾期后，每天自动发送催缴通知</text>
+    </view>
+
+    <!-- 提醒方式 -->
+    <view class="setting-section glass-card">
+      <view class="section-title-full">
+        <view class="title-icon-box">
+          <icon name="smartphone" color="#7c3aed" size="36"></icon>
+        </view>
+        <text class="title-text">提醒方式</text>
+      </view>
+      
+      <view class="checkbox-list">
+        <view class="checkbox-item" bindtap="toggleMethod" data-method="miniprogram">
+          <view class="checkbox {{settings.methods.miniprogram ? 'checked' : ''}}">
+            <icon wx:if="{{settings.methods.miniprogram}}" name="check" color="#fff" size="24"></icon>
+          </view>
+          <text class="checkbox-label">小程序通知</text>
+        </view>
+        <view class="checkbox-item" bindtap="toggleMethod" data-method="sms">
+          <view class="checkbox {{settings.methods.sms ? 'checked' : ''}}">
+            <icon wx:if="{{settings.methods.sms}}" name="check" color="#fff" size="24"></icon>
+          </view>
+          <text class="checkbox-label">短信提醒</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 保存按钮 -->
+    <button class="save-btn" bindtap="saveSettings" disabled="{{saving}}">
+      {{saving ? '保存中...' : '保存设置'}}
+    </button>
+  </view>
+</view>

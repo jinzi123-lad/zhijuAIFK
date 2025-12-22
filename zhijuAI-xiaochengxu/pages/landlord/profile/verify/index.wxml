@@ -1,2 +1,103 @@
-<!--pages/landlord/profile/verify/index.wxml-->
-<text>pages/landlord/profile/verify/index.wxml</text>
+<!--房东-实名认证页面-->
+<view class="container">
+  <view class="mesh-gradient"></view>
+  <navbar title="实名认证" showBack="{{true}}"></navbar>
+
+  <view class="main-body">
+    <!-- 加载中 -->
+    <view class="loading" wx:if="{{loading}}">加载中...</view>
+
+    <block wx:if="{{!loading}}">
+      <!-- 认证状态卡片 -->
+      <view class="status-card glass-card {{verification.status}}">
+        <view class="status-icon-box">
+          <icon wx:if="{{verification.status === 'none'}}" name="idCard" color="#64748b" size="48"></icon>
+          <icon wx:if="{{verification.status === 'pending'}}" name="loader" color="#f59e0b" size="48"></icon>
+          <icon wx:if="{{verification.status === 'approved'}}" name="checkCircle" color="#10b981" size="48"></icon>
+          <icon wx:if="{{verification.status === 'rejected'}}" name="xCircle" color="#ef4444" size="48"></icon>
+        </view>
+        <view class="status-info">
+          <text class="status-title">
+            <text wx:if="{{verification.status === 'none'}}">未认证</text>
+            <text wx:if="{{verification.status === 'pending'}}">审核中</text>
+            <text wx:if="{{verification.status === 'approved'}}">已认证</text>
+            <text wx:if="{{verification.status === 'rejected'}}">认证失败</text>
+          </text>
+          <text class="status-desc">
+            <text wx:if="{{verification.status === 'none'}}">完成实名认证，提升账户可信度</text>
+            <text wx:if="{{verification.status === 'pending'}}">您的认证资料正在审核中，请耐心等待</text>
+            <text wx:if="{{verification.status === 'approved'}}">您已完成实名认证</text>
+            <text wx:if="{{verification.status === 'rejected'}}">{{verification.reject_reason || '请重新提交认证资料'}}</text>
+          </text>
+        </view>
+      </view>
+
+      <!-- 认证表单 - 未认证或被驳回时显示 -->
+      <block wx:if="{{verification.status === 'none' || verification.status === 'rejected'}}">
+        <view class="form-section glass-card">
+          <view class="form-title">个人信息</view>
+          
+          <view class="form-group">
+            <text class="form-label">真实姓名 <text class="required">*</text></text>
+            <input class="form-input" placeholder="请输入身份证上的姓名" value="{{realName}}" bindinput="onNameInput" />
+          </view>
+          
+          <view class="form-group">
+            <text class="form-label">身份证号 <text class="required">*</text></text>
+            <input class="form-input" placeholder="请输入18位身份证号码" maxlength="18" value="{{idNumber}}" bindinput="onIdNumberInput" />
+          </view>
+        </view>
+
+        <!-- 证件照片 -->
+        <view class="form-section glass-card">
+          <view class="form-title">证件照片</view>
+          
+          <view class="id-upload-row">
+            <view class="id-upload-item">
+              <view class="upload-box {{idCardFront ? 'has-image' : ''}}" bindtap="uploadFront">
+                <image wx:if="{{idCardFront}}" class="id-image" src="{{idCardFront}}" mode="aspectFill"></image>
+                <view wx:if="{{!idCardFront}}" class="upload-placeholder">
+                  <icon name="camera" color="#64748b" size="48"></icon>
+                  <text class="upload-text">人像面</text>
+                </view>
+              </view>
+              <text class="upload-label">身份证正面</text>
+            </view>
+            
+            <view class="id-upload-item">
+              <view class="upload-box {{idCardBack ? 'has-image' : ''}}" bindtap="uploadBack">
+                <image wx:if="{{idCardBack}}" class="id-image" src="{{idCardBack}}" mode="aspectFill"></image>
+                <view wx:if="{{!idCardBack}}" class="upload-placeholder">
+                  <icon name="camera" color="#64748b" size="48"></icon>
+                  <text class="upload-text">国徽面</text>
+                </view>
+              </view>
+              <text class="upload-label">身份证背面</text>
+            </view>
+          </view>
+        </view>
+
+        <!-- 提交按钮 -->
+        <button class="submit-btn" bindtap="submitVerification" disabled="{{submitting}}">
+          {{submitting ? '提交中...' : '提交认证'}}
+        </button>
+      </block>
+
+      <!-- 认证成功展示 -->
+      <view class="verified-info glass-card" wx:if="{{verification.status === 'approved'}}">
+        <view class="info-row">
+          <text class="info-label">真实姓名</text>
+          <text class="info-value">{{verification.real_name}}</text>
+        </view>
+        <view class="info-row">
+          <text class="info-label">身份证号</text>
+          <text class="info-value">{{verification.id_number ? verification.id_number.slice(0,6) + '********' + verification.id_number.slice(-4) : ''}}</text>
+        </view>
+        <view class="info-row">
+          <text class="info-label">认证时间</text>
+          <text class="info-value">{{verification.verified_at || verification.updated_at || ''}}</text>
+        </view>
+      </view>
+    </block>
+  </view>
+</view>

@@ -1,87 +1,156 @@
-// pages/landlord/contract/index.js
-const mockContracts = [
-    {
-        id: 1,
-        propertyTitle: "阳光花园 302室",
-        tenantName: "张三",
-        dateRange: "1/15 - 2025/1/14",
-        rent: '4,500',
-        deposit: '9,000',
-        status: "active",
-        statusLabel: "生效中",
-        statusBadgeClass: "badge-active",
-        docCount: 3
-    },
-    {
-        id: 2,
-        propertyTitle: "碧水豪庭 A座1501",
-        tenantName: "李四",
-        dateRange: "3/1 - 2025/2/28",
-        rent: '5,200',
-        deposit: '10,400',
-        status: "active",
-        statusLabel: "生效中",
-        statusBadgeClass: "badge-active",
-        docCount: 1
-    },
-    {
-        id: 3,
-        propertyTitle: "翠湖雅苑 12栋201",
-        tenantName: "王五",
-        dateRange: "12/10 - 2024/12/9",
-        rent: '3,800',
-        deposit: '7,600',
-        status: "expired",
-        statusLabel: "已到期",
-        statusBadgeClass: "badge-expired",
-        docCount: 0
-    }
-];
+// 房东-合同列表页
+const app = getApp()
+const { supabase } = require('../../../utils/supabase')
 
 Page({
     data: {
         searchQuery: '',
         selectedStatus: 'all',
-        allContracts: mockContracts,
-        filteredContracts: [],
+        contracts: [],
+        loading: true,
         stats: {
-            total: 4,
-            active: 2,
+            total: 0,
+            active: 0,
             expiring: 0,
-            expired: 1
+            expired: 0
         }
     },
 
     onLoad() {
-        this.filterData();
+        this.loadContracts()
+    },
+
+    onShow() {
+        this.loadContracts()
+    },
+
+    onPullDownRefresh() {
+        this.loadContracts().then(() => {
+            wx.stopPullDownRefresh()
+        })
+    },
+
+    async loadContracts() {
+        const landlordId = wx.getStorageSync('landlord_id')
+        if (!landlordId) {
+            this.setData({ loading: false })
+            return
+        }
+
+        this.setData({ loading: true })
+        try {
+            const { data, error } = await supabase
+                .from('contracts')
+                .select('*')
+                .eq('landlord_id', landlordId)
+                .order('created_at', { ascending: false })
+                .exec()
+
+            if (error) {
+                console.error('加载合同失败', error)
+                this.setData({ loading: false })
+                return
+            }
+
+            // 计算30天内到期的合同
+            const now = new Date()
+            const thirtyDaysLater = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000)
+
+            const contracts = (data || []).map(c => {
+                let statusLabel = '待签约'
+                let statusBadgeClass = 'badge-pending'
+
+                if (c.status === 'active' || c.status === 'signed') {
+                    statusLabel = '生效中'
+                    statusBadgeClass = 'badge-active'
+                } else if (c.status === 'expired' || c.status === 'terminated') {
+                    statusLabel = '已到期'
+                    statusBadgeClass = 'badge-expired'
+                } else if (c.status === 'pending_tenant') {
+                    statusLabel = '待租客签约'
+                    statusBadgeClass = 'badge-pending'
+                }
+
+                // 检查是否即将到期
+                if (c.end_date) {
+                    const endDate = new Date(c.end_date)
+                    if (endDate <= thirtyDaysLater && endDate > now && (c.status === 'active' || c.status === 'signed')) {
+                        statusLabel = '即将到期'
+                        statusBadgeClass = 'badge-expiring'
+                    }
+                }
+
+                return {
+                    ...c,
+                    statusLabel,
+                    statusBadgeClass,
+                    dateRange: `${c.start_date} - ${c.end_date}`
+                }
+            })
+
+            // 计算统计
+            const stats = {
+                total: contracts.length,
+                active: contracts.filter(c => c.status === 'active' || c.status === 'signed').length,
+                expiring: contracts.filter(c => c.statusLabel === '即将到期').length,
+                expired: contracts.filter(c => c.status === 'expired' || c.status === 'terminated').length
+            }
+
+            this.setData({ contracts, stats, loading: false })
+            this.filterData()
+        } catch (err) {
+            console.error('加载合同失败', err)
+            wx.showToast({ title: '加载失败', icon: 'none' })
+            this.setData({ loading: false })
+        }
     },
 
     setStatus(e) {
-        this.setData({ selectedStatus: e.currentTarget.dataset.status }, () => {
-            this.filterData();
-        });
+        this.setData({ selectedStatus: e.currentTarget.dataset.status })
+        this.filterData()
     },
 
     onSearch(e) {
-        this.setData({ searchQuery: e.detail.value }, () => {
-            this.filterData();
-        });
+        this.setData({ searchQuery: e.detail.value })
+        this.filterData()
     },
 
     filterData() {
-        const { allContracts, selectedStatus, searchQuery } = this.data;
-        const filtered = allContracts.filter(c => {
-            const matchSearch = c.propertyTitle.includes(searchQuery) || c.tenantName.includes(searchQuery);
-            if (!matchSearch) return false;
+        const { contracts, selectedStatus, searchQuery } = this.data
+        let filtered = contracts
 
-            if (selectedStatus === 'all') return true;
-            return c.status === selectedStatus;
-        });
+        // 状态筛选
+        if (selectedStatus !== 'all') {
+            if (selectedStatus === 'active') {
+                filtered = filtered.filter(c => c.status === 'active' || c.status === 'signed')
+            } else if (selectedStatus === 'expiring') {
+                filtered = filtered.filter(c => c.statusLabel === '即将到期')
+            } else if (selectedStatus === 'expired') {
+                filtered = filtered.filter(c => c.status === 'expired' || c.status === 'terminated')
+            }
+        }
 
-        this.setData({ filteredContracts: filtered });
+        // 搜索筛选
+        if (searchQuery) {
+            filtered = filtered.filter(c =>
+                (c.property_address || '').includes(searchQuery) ||
+                (c.tenant_name || '').includes(searchQuery)
+            )
+        }
+
+        this.setData({ filteredContracts: filtered })
+    },
+
+    goToDetail(e) {
+        const id = e.currentTarget.dataset.id
+        wx.navigateTo({ url: `/pages/landlord/contract/detail/index?id=${id}` })
     },
 
     onAddContract() {
-        wx.showToast({ title: '新建合同', icon: 'none' });
+        wx.navigateTo({ url: '/pages/landlord/contract/create/index' })
+    },
+
+    goToTemplate() {
+        wx.navigateTo({ url: '/pages/landlord/contract/template/index' })
     }
 })

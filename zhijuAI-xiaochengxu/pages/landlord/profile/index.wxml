@@ -1,29 +1,126 @@
+<!--房东-我的页面-->
 <view class="container">
   <view class="mesh-gradient"></view>
-  <navbar title="个人资料" showBack="{{true}}"></navbar>
+  <navbar title="我的" showBack="{{false}}"></navbar>
 
-  <view class="main-body px-4 pt-4">
-    <view class="glass-card p-6 rounded-2xl mb-6">
-        <view class="form-group mb-4">
-            <text class="label block text-sm font-bold text-slate-700 mb-2">姓名 <text class="text-red-500">*</text></text>
-            <input class="input-field w-full p-3 bg-white/50 rounded-xl border border-white" placeholder="请输入您的称呼" value="{{formData.name}}" bindinput="onInput" data-field="name"/>
+  <view class="main-body">
+    <!-- 用户信息卡片 -->
+    <view class="profile-card glass-card">
+      <view class="avatar-section">
+        <view class="avatar">
+          <text class="avatar-text">{{userInfo.name ? userInfo.name[0] : '房'}}</text>
         </view>
-
-        <view class="form-group mb-4">
-            <text class="label block text-sm font-bold text-slate-700 mb-2">联系电话 <text class="text-red-500">*</text></text>
-            <input class="input-field w-full p-3 bg-white/50 rounded-xl border border-white" type="number" placeholder="销售将通过此号码联系您" value="{{formData.phone}}" bindinput="onInput" data-field="phone"/>
+        <view class="user-info">
+          <text class="user-name">{{userInfo.name || '房东用户'}}</text>
+          <text class="user-phone">{{userInfo.phone || '未设置手机号'}}</text>
+          <view class="verify-badge {{verification.status === 'approved' ? 'verified' : ''}}">
+            {{verification.status === 'approved' ? '已认证' : '未认证'}}
+          </view>
         </view>
-
-        <view class="form-group mb-4">
-            <text class="label block text-sm font-bold text-slate-700 mb-2">微信号 (选填)</text>
-            <input class="input-field w-full p-3 bg-white/50 rounded-xl border border-white" placeholder="便于微信沟通" value="{{formData.wechat}}" bindinput="onInput" data-field="wechat"/>
-        </view>
+      </view>
+      <view class="edit-btn" bindtap="editProfile">
+        <text>编辑资料</text>
+        <icon name="chevronRight" color="#ccc" size="32"></icon>
+      </view>
     </view>
 
-    <view class="text-xs text-muted text-center mb-6 px-4">
-        * 完善资料后，您的房源将能被系统中的销售顾问看到并推荐给租客。
+    <!-- 常用功能 -->
+    <view class="menu-section glass-card">
+      <view class="menu-title">常用功能</view>
+      <view class="menu-item" bindtap="goTo" data-path="/pages/landlord/viewing/list/index">
+        <view class="menu-icon-box">
+          <icon name="calendar" color="#2563eb" size="40"></icon>
+        </view>
+        <text class="menu-label">预约管理</text>
+        <icon name="chevronRight" color="#ccc" size="32"></icon>
+      </view>
+      <view class="menu-item" bindtap="goTo" data-path="/pages/landlord/team/index">
+        <view class="menu-icon-box">
+          <icon name="users" color="#7c3aed" size="40"></icon>
+        </view>
+        <text class="menu-label">团队管理</text>
+        <icon name="chevronRight" color="#ccc" size="32"></icon>
+      </view>
+      <view class="menu-item" bindtap="goTo" data-path="/pages/landlord/finance/index">
+        <view class="menu-icon-box">
+          <icon name="dollar" color="#10b981" size="40"></icon>
+        </view>
+        <text class="menu-label">财务报表</text>
+        <icon name="chevronRight" color="#ccc" size="32"></icon>
+      </view>
     </view>
 
-    <button class="w-full bg-primary text-white py-3 rounded-xl font-bold shadow-lg shadow-primary-20 icon-hover-bounce" bindtap="onSave">保存资料</button>
+    <!-- 系统设置 -->
+    <view class="menu-section glass-card">
+      <view class="menu-title">系统设置</view>
+      <view class="menu-item" bindtap="goTo" data-path="/pages/landlord/settings/payment/index">
+        <view class="menu-icon-box">
+          <icon name="creditCard" color="#f59e0b" size="40"></icon>
+        </view>
+        <text class="menu-label">收款码设置</text>
+        <icon name="chevronRight" color="#ccc" size="32"></icon>
+      </view>
+      <view class="menu-item" bindtap="goTo" data-path="/pages/landlord/settings/reminder/index">
+        <view class="menu-icon-box">
+          <icon name="clock" color="#ef4444" size="40"></icon>
+        </view>
+        <text class="menu-label">催租提醒</text>
+        <icon name="chevronRight" color="#ccc" size="32"></icon>
+      </view>
+      <view class="menu-item" bindtap="goTo" data-path="/pages/landlord/settings/index">
+        <view class="menu-icon-box">
+          <icon name="settings" color="#64748b" size="40"></icon>
+        </view>
+        <text class="menu-label">更多设置</text>
+        <icon name="chevronRight" color="#ccc" size="32"></icon>
+      </view>
+    </view>
+
+    <!-- 认证与安全 -->
+    <view class="menu-section glass-card">
+      <view class="menu-title">认证与安全</view>
+      <view class="menu-item" bindtap="goTo" data-path="/pages/landlord/profile/verify/index">
+        <view class="menu-icon-box">
+          <icon name="idCard" color="#2563eb" size="40"></icon>
+        </view>
+        <text class="menu-label">实名认证</text>
+        <view class="menu-tag {{verification.status === 'approved' ? 'success' : 'warning'}}">
+          {{verification.status === 'approved' ? '已认证' : '去认证'}}
+        </view>
+        <icon name="chevronRight" color="#ccc" size="32"></icon>
+      </view>
+      <view class="menu-item" bindtap="goTo" data-path="/pages/landlord/profile/certification/index">
+        <view class="menu-icon-box">
+          <icon name="building" color="#06b6d4" size="40"></icon>
+        </view>
+        <text class="menu-label">房产备案</text>
+        <icon name="chevronRight" color="#ccc" size="32"></icon>
+      </view>
+    </view>
+
+    <!-- 其他 -->
+    <view class="menu-section glass-card">
+      <view class="menu-item" bindtap="switchRole">
+        <view class="menu-icon-box">
+          <icon name="refresh" color="#8b5cf6" size="40"></icon>
+        </view>
+        <text class="menu-label">切换到租客</text>
+        <icon name="chevronRight" color="#ccc" size="32"></icon>
+      </view>
+      <view class="menu-item" bindtap="logout">
+        <view class="menu-icon-box">
+          <icon name="logOut" color="#ef4444" size="40"></icon>
+        </view>
+        <text class="menu-label logout-text">退出登录</text>
+        <icon name="chevronRight" color="#ccc" size="32"></icon>
+      </view>
+    </view>
+
+    <view class="version-info">
+      <text>智居AI v1.0.0</text>
+    </view>
   </view>
 </view>
+
+<!-- 底部导航 -->
+<landlord-tabbar selected="profile"></landlord-tabbar>

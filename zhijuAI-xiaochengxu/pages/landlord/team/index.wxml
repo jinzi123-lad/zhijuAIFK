@@ -1,60 +1,126 @@
-<view class="page-container">
-  <navbar title="团队管理" />
+<!--房东-团队管理页面-->
+<view class="container">
+  <view class="mesh-gradient"></view>
+  <navbar title="团队管理" showBack="{{true}}"></navbar>
 
-  <view wx:if="{{loading}}" class="loading">加载中...</view>
-
-  <view class="member-list" wx:if="{{!loading}}">
-    <view class="member-card" wx:for="{{members}}" wx:key="id">
-      <view class="member-avatar">{{item.name[0]}}</view>
-      <view class="member-info">
-        <view class="name-row">
-          <text class="name">{{item.name}}</text>
-          <text class="role-badge role-{{item.role}}">{{item.roleName}}</text>
-        </view>
-        <text class="phone">{{item.phone}}</text>
-        <text wx:if="{{item.status === 'pending'}}" class="pending-tip">待接受邀请</text>
+  <view class="main-body">
+    <!-- 统计卡片 -->
+    <view class="stats-card glass-card">
+      <view class="stat-item">
+        <text class="stat-num">{{members.length}}</text>
+        <text class="stat-label">团队成员</text>
       </view>
-      <view class="member-actions">
-        <view class="action-btn" catchtap="openRoleModal" data-id="{{item.id}}">编辑</view>
-        <view class="action-btn danger" catchtap="removeMember" data-id="{{item.id}}">移除</view>
+      <view class="stat-item">
+        <text class="stat-num success">{{activeCount}}</text>
+        <text class="stat-label">已激活</text>
+      </view>
+      <view class="stat-item">
+        <text class="stat-num warning">{{pendingCount}}</text>
+        <text class="stat-label">待接受</text>
       </view>
     </view>
 
-    <view wx:if="{{members.length === 0}}" class="empty">
-      <text class="empty-icon">👥</text>
-      <text class="empty-text">暂无团队成员</text>
-      <text class="empty-hint">添加管家、销售、财务等协助管理</text>
+    <!-- 加载中 -->
+    <view class="loading-container" wx:if="{{loading}}">
+      <view class="loading-spinner"></view>
+      <text>加载中...</text>
+    </view>
+
+    <!-- 成员列表 -->
+    <view class="member-list" wx:if="{{!loading}}">
+      <view class="member-card glass-card" wx:for="{{members}}" wx:key="id">
+        <view class="member-left">
+          <view class="member-avatar {{item.status === 'pending' ? 'pending' : ''}}">
+            {{item.member_name ? item.member_name[0] : '?'}}
+          </view>
+          <view class="member-info">
+            <view class="name-row">
+              <text class="member-name">{{item.member_name || '未知成员'}}</text>
+              <view class="role-badge role-{{item.role}}">{{item.roleName}}</view>
+            </view>
+            <text class="member-phone">{{item.member_phone}}</text>
+            <view class="member-status" wx:if="{{item.status === 'pending'}}">
+              <icon name="loader" color="#f59e0b" size="24"></icon>
+              <text class="status-text">待接受邀请</text>
+            </view>
+            <view class="member-status active" wx:if="{{item.status === 'active'}}">
+              <icon name="check" color="#10b981" size="24"></icon>
+              <text class="status-text">已激活</text>
+            </view>
+          </view>
+        </view>
+        <view class="member-actions">
+          <view class="action-btn edit" catchtap="openRoleModal" data-id="{{item.id}}">
+            <text>编辑</text>
+          </view>
+          <view class="action-btn remove" catchtap="removeMember" data-id="{{item.id}}">
+            <text>移除</text>
+          </view>
+        </view>
+      </view>
+
+      <!-- 空状态 -->
+      <view class="empty-state" wx:if="{{members.length === 0}}">
+        <icon name="users" color="#64748b" size="80"></icon>
+        <text class="empty-title">暂无团队成员</text>
+        <text class="empty-desc">添加管家、销售、财务等人员协助您管理房源</text>
+        <view class="empty-btn" bindtap="openAddModal">立即添加</view>
+      </view>
     </view>
   </view>
 
   <!-- 添加按钮 -->
-  <view class="fab-btn" bindtap="openAddModal">+ 添加成员</view>
+  <view class="fab-btn" bindtap="openAddModal">
+    <icon name="plus" color="#fff" size="36"></icon>
+    <text class="fab-text">添加成员</text>
+  </view>
 
   <!-- 添加成员弹窗 -->
   <view class="modal-mask" wx:if="{{showAddModal}}" bindtap="closeAddModal">
-    <view class="modal-content" catchtap="">
+    <view class="modal-content glass-card" catchtap="stopPropagation">
       <view class="modal-header">
         <text class="modal-title">添加团队成员</text>
-        <text class="close-btn" bindtap="closeAddModal">✕</text>
-      </view>
-      <view class="modal-body">
-        <view class="section">
-          <text class="section-title">成员手机号</text>
-          <input class="phone-input" placeholder="输入成员手机号" type="number" maxlength="11" bindinput="onPhoneInput" value="{{newMemberPhone}}" />
+        <view class="close-btn" bindtap="closeAddModal">
+          <icon name="x" color="#999" size="32"></icon>
         </view>
-        <view class="section">
-          <text class="section-title">选择角色</text>
+      </view>
+      
+      <view class="modal-body">
+        <view class="form-section">
+          <text class="form-label">成员手机号</text>
+          <input class="form-input" placeholder="请输入手机号" type="number" maxlength="11" 
+            bindinput="onPhoneInput" value="{{newMemberPhone}}" />
+        </view>
+        
+        <view class="form-section">
+          <text class="form-label">成员姓名（选填）</text>
+          <input class="form-input" placeholder="请输入姓名" 
+            bindinput="onNameInput" value="{{newMemberName}}" />
+        </view>
+        
+        <view class="form-section">
+          <text class="form-label">选择角色</text>
           <view class="role-list">
             <view class="role-item {{newMemberRole === item.id ? 'active' : ''}}"
               wx:for="{{roles}}" wx:key="id"
               bindtap="selectRole" data-role="{{item.id}}">
-              <text class="role-name">{{item.name}}</text>
+              <view class="role-header">
+                <view class="role-icon-box">
+                  <icon name="{{item.iconName}}" color="{{item.iconColor}}" size="40"></icon>
+                </view>
+                <text class="role-name">{{item.name}}</text>
+                <view class="role-check" wx:if="{{newMemberRole === item.id}}">
+                  <icon name="check" color="#fff" size="24"></icon>
+                </view>
+              </view>
               <text class="role-desc">{{item.desc}}</text>
             </view>
           </view>
         </view>
       </view>
+      
       <view class="modal-footer">
+        <button class="cancel-btn" bindtap="closeAddModal">取消</button>
         <button class="submit-btn" bindtap="sendInvite">发送邀请</button>
       </view>
     </view>
@@ -62,22 +128,35 @@
 
   <!-- 编辑角色弹窗 -->
   <view class="modal-mask" wx:if="{{showRoleModal}}" bindtap="closeRoleModal">
-    <view class="modal-content" catchtap="">
+    <view class="modal-content glass-card" catchtap="stopPropagation">
       <view class="modal-header">
-        <text class="modal-title">编辑 {{selectedMember.name}} 的角色</text>
-        <text class="close-btn" bindtap="closeRoleModal">✕</text>
+        <text class="modal-title">编辑 {{selectedMember.member_name}} 的角色</text>
+        <view class="close-btn" bindtap="closeRoleModal">
+          <icon name="x" color="#999" size="32"></icon>
+        </view>
       </view>
+      
       <view class="modal-body">
         <view class="role-list">
-          <view class="role-item {{selectedMember.role === item.id ? 'active' : ''}}"
+          <view class="role-item {{selectedMember && selectedMember.role === item.id ? 'active' : ''}}"
             wx:for="{{roles}}" wx:key="id"
             bindtap="selectRole" data-role="{{item.id}}">
-            <text class="role-name">{{item.name}}</text>
+            <view class="role-header">
+              <view class="role-icon-box">
+                <icon name="{{item.iconName}}" color="{{item.iconColor}}" size="40"></icon>
+              </view>
+              <text class="role-name">{{item.name}}</text>
+              <view class="role-check" wx:if="{{selectedMember && selectedMember.role === item.id}}">
+                <icon name="check" color="#fff" size="24"></icon>
+              </view>
+            </view>
             <text class="role-desc">{{item.desc}}</text>
           </view>
         </view>
       </view>
+      
       <view class="modal-footer">
+        <button class="cancel-btn" bindtap="closeRoleModal">取消</button>
         <button class="submit-btn" bindtap="saveRole">保存</button>
       </view>
     </view>

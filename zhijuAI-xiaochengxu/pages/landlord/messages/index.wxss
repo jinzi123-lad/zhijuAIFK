@@ -1,0 +1,137 @@
+.messages-page {
+  padding: 20rpx;
+  padding-bottom: 180rpx;
+  min-height: 100vh;
+  background: #f5f7fa;
+}
+
+.tabs-container {
+  display: flex;
+  align-items: center;
+  background: #fff;
+  border-radius: 16rpx;
+  padding: 16rpx;
+  margin-bottom: 20rpx;
+}
+
+.tab-item {
+  padding: 12rpx 24rpx;
+  font-size: 28rpx;
+  color: #666;
+  border-radius: 24rpx;
+}
+
+.tab-item.active {
+  background: #2563eb;
+  color: #fff;
+}
+
+.mark-all {
+  margin-left: auto;
+  font-size: 24rpx;
+  color: #2563eb;
+}
+
+.unread-tip {
+  background: #fef3c7;
+  color: #d97706;
+  padding: 16rpx 24rpx;
+  border-radius: 12rpx;
+  font-size: 26rpx;
+  margin-bottom: 20rpx;
+}
+
+.message-list {
+  background: #fff;
+  border-radius: 16rpx;
+  overflow: hidden;
+}
+
+.message-item {
+  display: flex;
+  align-items: center;
+  padding: 24rpx;
+  border-bottom: 1rpx solid #f0f0f0;
+}
+
+.message-item.unread {
+  background: #fafafa;
+}
+
+.msg-icon {
+  font-size: 40rpx;
+  margin-right: 20rpx;
+}
+
+.msg-content {
+  flex: 1;
+}
+
+.msg-title {
+  font-size: 30rpx;
+  font-weight: 500;
+  color: #1a1a1a;
+  display: flex;
+  align-items: center;
+  gap: 10rpx;
+}
+
+.unread-dot {
+  width: 12rpx;
+  height: 12rpx;
+  background: #ef4444;
+  border-radius: 50%;
+}
+
+.msg-desc {
+  font-size: 26rpx;
+  color: #666;
+  margin-top: 8rpx;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.msg-time {
+  font-size: 22rpx;
+  color: #999;
+  margin-top: 8rpx;
+}
+
+.msg-arrow {
+  font-size: 36rpx;
+  color: #ccc;
+}
+
+.loading-container,
+.empty-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 100rpx 0;
+  color: #999;
+}
+
+.loading-spinner {
+  width: 60rpx;
+  height: 60rpx;
+  border: 4rpx solid #e0e0e0;
+  border-top-color: #2563eb;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 20rpx;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.empty-icon {
+  font-size: 80rpx;
+  margin-bottom: 20rpx;
+}
+
+.empty-text {
+  font-size: 28rpx;
+}

@@ -1,0 +1,63 @@
+<!--房东-消息中心页面-->
+<navbar title="消息中心" showBack="{{false}}" background="#FFFFFF"></navbar>
+
+<view class="messages-page">
+  <!-- 顶部Tab -->
+  <view class="tabs-container">
+    <view 
+      wx:for="{{tabs}}" 
+      wx:key="key" 
+      class="tab-item {{currentTab === item.key ? 'active' : ''}}"
+      bindtap="switchTab" 
+      data-tab="{{item.key}}"
+    >
+      {{item.label}}
+    </view>
+    <view class="mark-all" bindtap="markAllRead" wx:if="{{unreadCount > 0}}">
+      全部已读
+    </view>
+  </view>
+
+  <!-- 未读提示 -->
+  <view class="unread-tip" wx:if="{{unreadCount > 0}}">
+    <text>您有 {{unreadCount}} 条未读消息</text>
+  </view>
+
+  <!-- 消息列表 -->
+  <view class="message-list" wx:if="{{!loading}}">
+    <block wx:for="{{messages}}" wx:key="id">
+      <view 
+        wx:if="{{currentTab === 'all' || item.type === currentTab}}"
+        class="message-item {{!item.is_read ? 'unread' : ''}}" 
+        bindtap="goToDetail" 
+        data-id="{{item.id}}"
+      >
+        <view class="msg-icon">{{item.typeIcon}}</view>
+        <view class="msg-content">
+          <view class="msg-title">
+            {{item.title}}
+            <view class="unread-dot" wx:if="{{!item.is_read}}"></view>
+          </view>
+          <view class="msg-desc">{{item.content}}</view>
+          <view class="msg-time">{{item.timeText}}</view>
+        </view>
+        <view class="msg-arrow">›</view>
+      </view>
+    </block>
+  </view>
+
+  <!-- 加载中 -->
+  <view class="loading-container" wx:if="{{loading}}">
+    <view class="loading-spinner"></view>
+    <text>加载中...</text>
+  </view>
+
+  <!-- 空状态 -->
+  <view class="empty-container" wx:if="{{!loading && messages.length === 0}}">
+    <text class="empty-icon">📭</text>
+    <text class="empty-text">暂无消息</text>
+  </view>
+</view>
+
+<!-- 底部导航 -->
+<landlord-tabbar selected="messages"></landlord-tabbar>

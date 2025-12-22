@@ -7,6 +7,9 @@
      <view class="search-bar glass-card mb-4 flex-row">
         <icon name="search" color="#94a3b8" size="36"></icon>
         <input class="search-input" placeholder="搜索房源或租客..." placeholder-class="ph-color" value="{{searchQuery}}" bindinput="onSearch"/>
+        <view class="template-btn" bindtap="goToTemplate">
+          <text>模板</text>
+        </view>
     </view>
 
     <!-- Stats Matrix -->

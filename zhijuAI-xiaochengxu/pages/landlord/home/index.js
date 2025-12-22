@@ -16,7 +16,7 @@ Page({
             { iconName: 'calendar', iconColor: '#F38181', label: "查房预约", bgClass: "bg-red-light", path: "/pages/landlord/inspection/index" },
             { iconName: 'chart', iconColor: '#6C5CE7', label: "收入趋势", bgClass: "bg-purple-light", path: "/pages/landlord/revenue/index" },
             { iconName: 'bar', iconColor: '#FF6B9D', label: "经营分析", bgClass: "bg-pink-light", path: "/pages/landlord/analytics/index" },
-            { iconName: 'settings', iconColor: '#A29BFE', label: "系统设置", bgClass: "bg-indigo-light", path: "/pages/landlord/settings/index" },
+            { iconName: 'users', iconColor: '#A29BFE', label: "团队管理", bgClass: "bg-indigo-light", path: "/pages/landlord/team/index" },
         ],
         todos: [
             {

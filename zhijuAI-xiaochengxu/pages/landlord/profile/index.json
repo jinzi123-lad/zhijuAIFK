@@ -1,5 +1,7 @@
 {
     "usingComponents": {
-        "navbar": "/components/navbar/index"
+        "navbar": "/components/navbar/index",
+        "landlord-tabbar": "/components/landlord-tabbar/index",
+        "icon": "/components/icon/index"
     }
 }

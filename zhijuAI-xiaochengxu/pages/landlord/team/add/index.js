@@ -1,66 +1,80 @@
-// pages/landlord/team/add/index.js
+// 房东-添加团队成员页面
+const app = getApp()
+const { supabase } = require('../../../../utils/supabase')
+
 Page({
-
-  /**
-   * 页面的初始数据
-   */
   data: {
-
+    memberPhone: '',
+    memberName: '',
+    selectedRole: 'manager',
+    roles: [
+      { id: 'manager', name: '管家', desc: '管理房源、处理预约和报修' },
+      { id: 'sales', name: '销售', desc: '查看房源、处理预约、发起合同' },
+      { id: 'finance', name: '财务', desc: '查看收支、确认收款' },
+      { id: 'maintenance', name: '维修', desc: '处理分配的工单' }
+    ],
+    submitting: false
   },
 
-  /**
-   * 生命周期函数--监听页面加载
-   */
-  onLoad(options) {
+  onLoad() { },
 
+  onPhoneInput(e) {
+    this.setData({ memberPhone: e.detail.value })
   },
 
-  /**
-   * 生命周期函数--监听页面初次渲染完成
-   */
-  onReady() {
-
+  onNameInput(e) {
+    this.setData({ memberName: e.detail.value })
   },
 
-  /**
-   * 生命周期函数--监听页面显示
-   */
-  onShow() {
-
+  selectRole(e) {
+    this.setData({ selectedRole: e.currentTarget.dataset.role })
   },
 
-  /**
-   * 生命周期函数--监听页面隐藏
-   */
-  onHide() {
+  async submit() {
+    const { memberPhone, memberName, selectedRole } = this.data
+    const landlordId = wx.getStorageSync('landlord_id')
 
-  },
+    if (!memberPhone || memberPhone.length !== 11) {
+      wx.showToast({ title: '请输入正确手机号', icon: 'none' })
+      return
+    }
 
-  /**
-   * 生命周期函数--监听页面卸载
-   */
-  onUnload() {
+    this.setData({ submitting: true })
+    wx.showLoading({ title: '发送邀请...' })
 
-  },
+    try {
+      // 检查用户是否存在
+      const { data: existingUser } = await supabase
+        .from('users')
+        .select('id, name')
+        .eq('phone', memberPhone)
+        .exec()
 
-  /**
-   * 页面相关事件处理函数--监听用户下拉动作
-   */
-  onPullDownRefresh() {
+      const finalName = memberName ||
+        (existingUser && existingUser.length > 0 ? existingUser[0].name : `用户${memberPhone.slice(-4)}`)
 
-  },
+      // 创建团队成员记录
+      const { error } = await supabase
+        .from('team_members')
+        .insert([{
+          landlord_id: landlordId,
+          member_phone: memberPhone,
+          member_name: finalName,
+          role: selectedRole,
+          status: 'pending'
+        }])
+        .exec()
 
-  /**
-   * 页面上拉触底事件的处理函数
-   */
-  onReachBottom() {
+      if (error) throw error
 
-  },
-
-  /**
-   * 用户点击右上角分享
-   */
-  onShareAppMessage() {
-
+      wx.hideLoading()
+      wx.showToast({ title: '邀请已发送', icon: 'success' })
+      setTimeout(() => wx.navigateBack(), 1500)
+    } catch (err) {
+      console.error('发送失败', err)
+      wx.hideLoading()
+      wx.showToast({ title: '发送失败', icon: 'none' })
+      this.setData({ submitting: false })
+    }
   }
 })

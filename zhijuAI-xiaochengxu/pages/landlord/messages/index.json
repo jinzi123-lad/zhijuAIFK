@@ -1,0 +1,7 @@
+{
+    "usingComponents": {
+        "navbar": "/components/navbar/index",
+        "landlord-tabbar": "/components/landlord-tabbar/index"
+    },
+    "enablePullDownRefresh": true
+}

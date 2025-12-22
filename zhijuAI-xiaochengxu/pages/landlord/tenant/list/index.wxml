@@ -54,15 +54,15 @@
                         
                         <view class="info-row text-muted mb-1">
                             <!-- Could replicate phone icon with <icon> but text is fine for compactness or use small icons -->
-                            <text class="info-text">📞 {{item.phone}}</text>
+                            <view class="info-text flex-row"><icon name="smartphone" color="#64748b" size="24"></icon><text class="ml-1">{{item.phone}}</text></view>
                         </view>
                         <view class="info-row text-muted mb-2">
-                             <text class="info-text">📍 {{item.property}}</text>
+                             <view class="info-text flex-row"><icon name="home" color="#64748b" size="24"></icon><text class="ml-1">{{item.property}}</text></view>
                         </view>
 
                         <view class="info-footer flex-row space-between">
                             <text class="rent-text text-primary">¥{{item.rent}}/月</text>
-                            <text class="date-text text-muted">📅 到期: {{item.contractEndDate}}</text>
+                            <view class="date-text text-muted flex-row"><icon name="calendar" color="#94a3b8" size="24"></icon><text class="ml-1">到期: {{item.contractEndDate}}</text></view>
                         </view>
                     </view>
 

@@ -21,15 +21,24 @@
       
       <view class="card-body" bindtap="goToDetail" data-id="{{item.id}}">
         <view class="info-row">
-          <text class="label">👤 租客</text>
+          <view class="label-box">
+            <icon name="user" color="#2563eb" size="28"></icon>
+            <text class="label">租客</text>
+          </view>
           <text class="value">{{item.tenantName}} {{item.tenantPhone}}</text>
         </view>
         <view class="info-row">
-          <text class="label">📅 时间</text>
+          <view class="label-box">
+            <icon name="calendar" color="#10b981" size="28"></icon>
+            <text class="label">时间</text>
+          </view>
           <text class="value">{{item.date}} {{item.time}}</text>
         </view>
         <view class="info-row" wx:if="{{item.notes}}">
-          <text class="label">📝 备注</text>
+          <view class="label-box">
+            <icon name="file" color="#f59e0b" size="28"></icon>
+            <text class="label">备注</text>
+          </view>
           <text class="value">{{item.notes}}</text>
         </view>
       </view>

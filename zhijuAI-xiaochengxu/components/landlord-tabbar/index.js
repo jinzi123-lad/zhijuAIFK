@@ -1,34 +1,36 @@
+// 房东端底部导航组件
 Component({
   properties: {
     selected: {
-      type: Number,
-      value: 0
+      type: String,
+      value: 'home'
     }
   },
-  data: {
-    list: [
-      { pagePath: "/pages/landlord/home/index", text: "首页", icon: "home" }, // 0
-      { pagePath: "/pages/landlord/discovery/index", text: "发现", icon: "compass" }, // 1
-      { type: 'add' }, // 2 (Special Center)
-      { pagePath: "/pages/landlord/message/index", text: "消息", icon: "message" }, // 3
-      { pagePath: "/pages/landlord/user/index", text: "我的", icon: "user" } // 4
-    ]
-  },
+  data: {},
   methods: {
     switchTab(e) {
-      const { index } = e.currentTarget.dataset;
-      const url = index === 0 ? "/pages/landlord/home/index" : "/pages/landlord/user/index"; // Mock
+      const { path, key } = e.currentTarget.dataset
 
-      if (index !== this.data.selected) {
-        wx.reLaunch({ url })
+      // 如果点击的是当前选中项，不做任何操作
+      if (key === this.properties.selected) {
+        return
       }
+
+      // 跳转到对应页面
+      wx.reLaunch({ url: path })
     },
+
     onAdd() {
       wx.showActionSheet({
-        itemList: ['添加房源', '记录收支', '新建合同'],
+        itemList: ['添加房源', '发起签约', '新建工单'],
         success: (res) => {
-          if (res.tapIndex === 0) {
-            wx.navigateTo({ url: '/pages/landlord/property/add/index' })
+          const urls = [
+            '/pages/landlord/property/add/index',
+            '/pages/landlord/contract/create/index',
+            '/pages/landlord/maintenance/index'
+          ]
+          if (urls[res.tapIndex]) {
+            wx.navigateTo({ url: urls[res.tapIndex] })
           }
         }
       })

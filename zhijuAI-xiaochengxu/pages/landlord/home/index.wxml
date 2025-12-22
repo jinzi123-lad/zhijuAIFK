@@ -73,5 +73,5 @@
   </view>
   
   <!-- TabBar Component -->
-  <landlord-tabbar selected="{{0}}"></landlord-tabbar>
+  <landlord-tabbar selected="home"></landlord-tabbar>
 </view>

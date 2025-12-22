@@ -43,7 +43,8 @@
     "pages/landlord/settings/reminder/index",
     "pages/landlord/profile/index",
     "pages/landlord/profile/verify/index",
-    "pages/landlord/profile/certification/index"
+    "pages/landlord/profile/certification/index",
+    "pages/landlord/messages/index"
   ],
   "window": {
     "backgroundTextStyle": "light",

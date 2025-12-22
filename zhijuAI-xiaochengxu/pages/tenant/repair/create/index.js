@@ -1,66 +1,119 @@
-// pages/tenant/repair/create/index.js
+// 租客-报修创建页（独立页面版本）
+const app = getApp()
+const { supabase } = require('../../../../utils/supabase')
+
 Page({
-
-  /**
-   * 页面的初始数据
-   */
   data: {
-
+    title: '',
+    description: '',
+    category: 'other',
+    images: [],
+    categories: [
+      { id: 'plumbing', name: '水管/下水', icon: '🚿' },
+      { id: 'electrical', name: '电路/开关', icon: '💡' },
+      { id: 'appliance', name: '家电故障', icon: '📺' },
+      { id: 'structure', name: '门窗/墙面', icon: '🚪' },
+      { id: 'other', name: '其他问题', icon: '🔧' }
+    ],
+    submitting: false
   },
 
-  /**
-   * 生命周期函数--监听页面加载
-   */
   onLoad(options) {
-
+    // 可以从参数获取房源ID
+    if (options.propertyId) {
+      this.setData({ propertyId: options.propertyId })
+    }
   },
 
-  /**
-   * 生命周期函数--监听页面初次渲染完成
-   */
-  onReady() {
-
+  // 选择分类
+  selectCategory(e) {
+    const category = e.currentTarget.dataset.category
+    this.setData({ category })
   },
 
-  /**
-   * 生命周期函数--监听页面显示
-   */
-  onShow() {
-
+  // 输入标题
+  onTitleInput(e) {
+    this.setData({ title: e.detail.value })
   },
 
-  /**
-   * 生命周期函数--监听页面隐藏
-   */
-  onHide() {
-
+  // 输入描述
+  onDescriptionInput(e) {
+    this.setData({ description: e.detail.value })
   },
 
-  /**
-   * 生命周期函数--监听页面卸载
-   */
-  onUnload() {
+  // 选择图片
+  chooseImages() {
+    const { images } = this.data
+    const remaining = 9 - images.length
+    if (remaining <= 0) {
+      wx.showToast({ title: '最多9张图片', icon: 'none' })
+      return
+    }
 
+    wx.chooseImage({
+      count: remaining,
+      sizeType: ['compressed'],
+      sourceType: ['album', 'camera'],
+      success: (res) => {
+        this.setData({
+          images: [...images, ...res.tempFilePaths]
+        })
+      }
+    })
   },
 
-  /**
-   * 页面相关事件处理函数--监听用户下拉动作
-   */
-  onPullDownRefresh() {
-
+  // 删除图片
+  removeImage(e) {
+    const index = e.currentTarget.dataset.index
+    const { images } = this.data
+    images.splice(index, 1)
+    this.setData({ images })
   },
 
-  /**
-   * 页面上拉触底事件的处理函数
-   */
-  onReachBottom() {
+  // 提交
+  async submit() {
+    const { title, description, category, images } = this.data
 
-  },
+    if (!title.trim()) {
+      wx.showToast({ title: '请输入问题描述', icon: 'none' })
+      return
+    }
 
-  /**
-   * 用户点击右上角分享
-   */
-  onShareAppMessage() {
+    const tenantId = wx.getStorageSync('tenant_id') || wx.getStorageSync('user_id')
+    const landlordId = wx.getStorageSync('current_landlord_id')
 
+    this.setData({ submitting: true })
+    wx.showLoading({ title: '提交中...' })
+
+    try {
+      // TODO: 上传图片到Storage
+      const imageUrls = images.join(',')
+
+      const { error } = await supabase
+        .from('repair_orders')
+        .insert([{
+          tenant_id: tenantId,
+          landlord_id: landlordId,
+          title: title,
+          description: description,
+          category: category,
+          images: imageUrls,
+          status: 'pending'
+        }])
+        .exec()
+
+      if (error) throw error
+
+      wx.hideLoading()
+      wx.showToast({ title: '提交成功', icon: 'success' })
+      setTimeout(() => {
+        wx.navigateBack()
+      }, 1500)
+    } catch (err) {
+      console.error('提交失败', err)
+      wx.hideLoading()
+      wx.showToast({ title: '提交失败', icon: 'none' })
+      this.setData({ submitting: false })
+    }
   }
 })

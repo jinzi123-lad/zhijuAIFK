@@ -1,2 +1,102 @@
-<!--pages/landlord/profile/certification/index.wxml-->
-<text>pages/landlord/profile/certification/index.wxml</text>
+<!--房东-房产备案页面-->
+<view class="container">
+  <view class="mesh-gradient"></view>
+  <navbar title="房产备案" showBack="{{true}}"></navbar>
+
+  <view class="main-body">
+    <!-- 提示信息 -->
+    <view class="tip-card glass-card">
+      <view class="tip-icon-box">
+        <icon name="building" color="#2563eb" size="40"></icon>
+      </view>
+      <view class="tip-content">
+        <text class="tip-title">房产备案说明</text>
+        <text class="tip-desc">上传房产证明，通过审核后您的房源将获得"房产已备案"标识，提升租客信任度。</text>
+      </view>
+    </view>
+
+    <!-- 加载中 -->
+    <view class="loading" wx:if="{{loading}}">加载中...</view>
+
+    <block wx:if="{{!loading}}">
+      <!-- 备案列表 -->
+      <view class="cert-list" wx:if="{{certifications.length > 0}}">
+        <view class="cert-item glass-card" wx:for="{{certifications}}" wx:key="id">
+          <view class="cert-header">
+            <view class="cert-info">
+              <text class="cert-address">{{item.property_address}}</text>
+              <text class="cert-owner">产权人：{{item.owner_name || '未填写'}}</text>
+            </view>
+            <view class="cert-status {{item.status}}">{{item.statusText}}</view>
+          </view>
+          
+          <image wx:if="{{item.certificate_image}}" class="cert-image" src="{{item.certificate_image}}" mode="aspectFit" bindtap="previewImage" data-url="{{item.certificate_image}}"></image>
+          
+          <text class="reject-reason" wx:if="{{item.status === 'rejected' && item.reject_reason}}">
+            驳回原因：{{item.reject_reason}}
+          </text>
+        </view>
+      </view>
+
+      <!-- 空状态 -->
+      <view class="empty-state glass-card" wx:if="{{certifications.length === 0}}">
+        <icon name="file" color="#64748b" size="80"></icon>
+        <text class="empty-title">暂无备案记录</text>
+        <text class="empty-desc">点击下方按钮添加房产备案</text>
+      </view>
+    </block>
+
+    <!-- 添加按钮 -->
+    <button class="add-btn" bindtap="openAddModal">
+      <icon name="plus" color="#fff" size="32"></icon>
+      <text>添加房产备案</text>
+    </button>
+  </view>
+
+  <!-- 添加备案弹窗 -->
+  <view class="modal-mask" wx:if="{{showAddModal}}" bindtap="closeAddModal">
+    <view class="modal-content glass-card" catchtap="stopPropagation">
+      <view class="modal-header">
+        <text class="modal-title">添加房产备案</text>
+        <view class="close-btn" bindtap="closeAddModal">
+          <icon name="x" color="#999" size="32"></icon>
+        </view>
+      </view>
+      
+      <view class="modal-body">
+        <view class="form-group">
+          <text class="form-label">房产地址 <text class="required">*</text></text>
+          <input class="form-input" placeholder="请输入房产详细地址" value="{{newCert.propertyAddress}}" bindinput="onAddressInput" />
+        </view>
+        
+        <view class="form-group">
+          <text class="form-label">产权人姓名</text>
+          <input class="form-input" placeholder="请输入产权人姓名" value="{{newCert.ownerName}}" bindinput="onOwnerInput" />
+        </view>
+        
+        <view class="form-group">
+          <text class="form-label">房产证号</text>
+          <input class="form-input" placeholder="请输入房产证编号" value="{{newCert.certificateNo}}" bindinput="onCertNoInput" />
+        </view>
+        
+        <view class="form-group">
+          <text class="form-label">房产证照片 <text class="required">*</text></text>
+          <view class="upload-area" bindtap="uploadCertificate">
+            <image wx:if="{{newCert.certificateImage}}" class="cert-preview-img" src="{{newCert.certificateImage}}" mode="aspectFit"></image>
+            <view wx:if="{{!newCert.certificateImage}}" class="upload-placeholder">
+              <icon name="camera" color="#64748b" size="48"></icon>
+              <text class="upload-text">点击上传房产证</text>
+            </view>
+          </view>
+        </view>
+      </view>
+      
+      <view class="modal-footer">
+        <button class="cancel-btn" bindtap="closeAddModal">取消</button>
+        <button class="submit-btn" bindtap="submitCertification" disabled="{{submitting}}">
+          {{submitting ? '提交中...' : '提交备案'}}
+        </button>
+      </view>
+    </view>
+  </view>
+</view>

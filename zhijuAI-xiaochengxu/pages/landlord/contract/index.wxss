@@ -4,6 +4,14 @@
 
 .search-bar { padding: 24rpx; border-radius: 32rpx; align-items: center; gap: 16rpx; }
 .search-input { flex: 1; font-size: 28rpx; height: 48rpx; }
+.template-btn { 
+    padding: 8rpx 20rpx; 
+    background: #2563eb; 
+    color: #fff; 
+    font-size: 24rpx; 
+    border-radius: 16rpx; 
+    white-space: nowrap;
+}
 
 /* Stats Matrix */
 .stats-matrix {

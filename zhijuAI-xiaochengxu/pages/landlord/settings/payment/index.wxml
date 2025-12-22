@@ -1,2 +1,83 @@
-<!--pages/landlord/settings/payment/index.wxml-->
-<text>pages/landlord/settings/payment/index.wxml</text>
+<!--房东-收款码设置页面-->
+<view class="container">
+  <view class="mesh-gradient"></view>
+  <navbar title="收款码设置" showBack="{{true}}"></navbar>
+
+  <view class="main-body">
+    <!-- 提示卡片 -->
+    <view class="tip-card glass-card">
+      <view class="tip-icon-box">
+        <icon name="lightbulb" color="#2563eb" size="40"></icon>
+      </view>
+      <view class="tip-content">
+        <text class="tip-title">温馨提示</text>
+        <text class="tip-desc">上传您的收款二维码，租客缴费时将展示给对方扫码支付。</text>
+      </view>
+    </view>
+
+    <!-- 微信收款码 -->
+    <view class="qr-section glass-card">
+      <view class="section-header">
+        <view class="qr-type">
+          <view class="qr-icon-box wechat">
+            <icon name="wechat" color="#10b981" size="36"></icon>
+          </view>
+          <text class="qr-label">微信收款码</text>
+        </view>
+        <view class="qr-status {{wechatQrcode ? 'uploaded' : ''}}">
+          {{wechatQrcode ? '已上传' : '未设置'}}
+        </view>
+      </view>
+      
+      <view class="qr-upload-area" wx:if="{{!wechatQrcode}}" bindtap="chooseWechatQrcode">
+        <view class="upload-placeholder">
+          <icon name="camera" color="#64748b" size="64"></icon>
+          <text class="upload-text">点击上传微信收款码</text>
+        </view>
+      </view>
+      
+      <view class="qr-preview" wx:if="{{wechatQrcode}}">
+        <image class="qr-image" src="{{wechatQrcode}}" mode="aspectFit" bindtap="previewQrcode" data-url="{{wechatQrcode}}"></image>
+        <view class="qr-actions">
+          <view class="action-btn" bindtap="chooseWechatQrcode">更换</view>
+          <view class="action-btn danger" bindtap="removeQrcode" data-type="wechat">删除</view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 支付宝收款码 -->
+    <view class="qr-section glass-card">
+      <view class="section-header">
+        <view class="qr-type">
+          <view class="qr-icon-box alipay">
+            <icon name="alipay" color="#2563eb" size="36"></icon>
+          </view>
+          <text class="qr-label">支付宝收款码</text>
+        </view>
+        <view class="qr-status {{alipayQrcode ? 'uploaded' : ''}}">
+          {{alipayQrcode ? '已上传' : '未设置'}}
+        </view>
+      </view>
+      
+      <view class="qr-upload-area" wx:if="{{!alipayQrcode}}" bindtap="chooseAlipayQrcode">
+        <view class="upload-placeholder">
+          <icon name="camera" color="#64748b" size="64"></icon>
+          <text class="upload-text">点击上传支付宝收款码</text>
+        </view>
+      </view>
+      
+      <view class="qr-preview" wx:if="{{alipayQrcode}}">
+        <image class="qr-image" src="{{alipayQrcode}}" mode="aspectFit" bindtap="previewQrcode" data-url="{{alipayQrcode}}"></image>
+        <view class="qr-actions">
+          <view class="action-btn" bindtap="chooseAlipayQrcode">更换</view>
+          <view class="action-btn danger" bindtap="removeQrcode" data-type="alipay">删除</view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 保存按钮 -->
+    <button class="save-btn" bindtap="saveSettings" disabled="{{saving}}">
+      {{saving ? '保存中...' : '保存设置'}}
+    </button>
+  </view>
+</view>

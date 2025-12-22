@@ -54,8 +54,8 @@
                             <view class="badge {{item.typeClass}}">{{item.typeLabel}}</view>
                         </view>
                          <view class="flex-row gap-3 text-xs text-muted">
-                            <text>🕓 {{item.time}}</text>
-                            <text wx:if="{{item.inspector}}">👤 {{item.inspector}}</text>
+                            <view class="flex-row"><icon name="clock" color="#64748b" size="24"></icon><text class="ml-1">{{item.time}}</text></view>
+                            <view wx:if="{{item.inspector}}" class="flex-row"><icon name="user" color="#64748b" size="24"></icon><text class="ml-1">{{item.inspector}}</text></view>
                         </view>
                     </view>
                 </block>
@@ -93,8 +93,8 @@
                             <view class="badge {{item.typeClass}}">{{item.typeLabel}}</view>
                         </view>
                          <view class="flex-row gap-3 text-xs text-muted">
-                            <text>📅 {{item.date}}</text>
-                            <text>🕓 {{item.time}}</text>
+                            <view class="flex-row"><icon name="calendar" color="#64748b" size="24"></icon><text class="ml-1">{{item.date}}</text></view>
+                            <view class="flex-row"><icon name="clock" color="#64748b" size="24"></icon><text class="ml-1">{{item.time}}</text></view>
                         </view>
                          <block wx:if="{{item.notes}}">
                              <view class="note-box bg-warning-10 p-2 rounded-lg mt-2 flex-row">
