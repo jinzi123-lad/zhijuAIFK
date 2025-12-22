@@ -74,23 +74,56 @@ const PropertyDetail: React.FC<PropertyDetailProps> = ({ property, onBack, onEdi
         try {
             const html2canvas = (window as any).html2canvas;
             if (!html2canvas) {
-                alert('Export module loading, please try again in a moment...');
+                alert('Export module loading, please try again...');
                 return;
             }
 
+            // 1. Pre-process images to Base64 to bypass CORS issues in html2canvas
+            const images = cardRef.current.getElementsByTagName('img');
+            const originalSrcs: string[] = [];
+
+            for (let i = 0; i < images.length; i++) {
+                const img = images[i];
+                originalSrcs.push(img.src);
+                try {
+                    const response = await fetch(img.src);
+                    const blob = await response.blob();
+                    const reader = new FileReader();
+                    await new Promise((resolve) => {
+                        reader.onloadend = () => {
+                            img.src = reader.result as string;
+                            resolve(null);
+                        };
+                        reader.readAsDataURL(blob);
+                    });
+                } catch (e) {
+                    console.warn('Failed to convert image to Base64', img.src, e);
+                }
+            }
+
+            // 2. Wait for a moment for layout to settle
+            await new Promise(resolve => setTimeout(resolve, 500));
+
+            // 3. Capture
             const canvas = await html2canvas(cardRef.current, {
                 useCORS: true,
-                scale: 2, // Retain high quality
-                backgroundColor: '#ffffff'
+                scale: 2, // High Res
+                backgroundColor: '#ffffff',
+                logging: false
             });
 
+            // 4. Restore original srcs (optional, but good practice if logic re-uses DOM)
+            for (let i = 0; i < images.length; i++) {
+                images[i].src = originalSrcs[i];
+            }
+
             const link = document.createElement('a');
-            link.download = `智居房产卡-${property.title}.png`;
+            link.download = `智居房产长图-${property.title}.png`;
             link.href = canvas.toDataURL('image/png');
             link.click();
         } catch (error) {
             console.error('Export failed:', error);
-            alert('生成图片失败，请稍后重试');
+            alert('生成长图失败，请检查网络或稍后重试');
         } finally {
             setIsExporting(false);
         }
@@ -565,40 +598,37 @@ const PropertyDetail: React.FC<PropertyDetailProps> = ({ property, onBack, onEdi
                 <div className="fixed inset-0 bg-black/60 z-[70] flex items-center justify-center p-4 animate-fade-in" onClick={() => setIsShareModalOpen(false)}>
                     <div className="bg-white rounded-xl w-[400px] max-w-full p-6" onClick={e => e.stopPropagation()}>
                         <h3 className="text-lg font-bold text-slate-800 mb-4">分享房源</h3>
-                        <div className="space-y-3 mb-6">
-                            {(Object.keys(shareConfig) as Array<keyof PropertyViewConfig>).map(key => (
-                                <label key={key} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg cursor-pointer hover:bg-slate-100">
-                                    <span className="text-sm font-medium text-slate-700">
-                                        {key === 'showPrice' ? '显示价格' :
-                                            key === 'showAddress' ? '显示详细地址' :
-                                                key === 'showMedia' ? '显示图片/视频' :
-                                                    key === 'showDescription' ? '显示描述' : '显示佣金/合作信息'}
-                                    </span>
-                                    <input type="checkbox" checked={shareConfig[key]} onChange={() => toggleShareConfig(key)} className="w-5 h-5 text-indigo-600 rounded focus:ring-indigo-500" />
+                        <div className="space-y-4">
+                            <div className="flex flex-col gap-2">
+                                <label className="flex items-center justify-between p-3 bg-slate-50 rounded-lg cursor-pointer">
+                                    <span className="text-sm font-bold text-slate-700">💰 显示价格信息</span>
+                                    <input type="checkbox" checked={shareConfig.showPrice} onChange={() => toggleShareConfig('showPrice')} className="toggle-checkbox" />
                                 </label>
-                            ))}
+                                <label className="flex items-center justify-between p-3 bg-slate-50 rounded-lg cursor-pointer">
+                                    <span className="text-sm font-bold text-slate-700">📍 显示详细地段</span>
+                                    <input type="checkbox" checked={shareConfig.showAddress} onChange={() => toggleShareConfig('showAddress')} className="toggle-checkbox" />
+                                </label>
+                            </div>
+
+                            <button onClick={handleCopyLink} className="w-full bg-indigo-600 text-white py-3 rounded-xl font-bold hover:bg-indigo-700 transition-all flex items-center justify-center">
+                                {linkCopied ? (
+                                    <><span>✅</span> <span className="ml-2">链接已复制!</span></>
+                                ) : (
+                                    <><span>🔗</span> <span className="ml-2">复制分享链接</span></>
+                                )}
+                            </button>
                         </div>
-                        <button onClick={handleCopyLink} className="w-full bg-indigo-600 text-white py-3 rounded-xl font-bold hover:bg-indigo-700 transition-all active:scale-95 flex items-center justify-center gap-2">
-                            {linkCopied ? (
-                                <>
-                                    <span className="text-xl">✓</span> 已复制链接
-                                </>
-                            ) : (
-                                <>
-                                    <span className="text-xl">🔗</span> 复制分享链接
-                                </>
-                            )}
-                        </button>
                     </div>
                 </div>
             )}
 
             {isLightboxOpen && (
-                <div className="fixed inset-0 bg-black/95 z-[80] flex items-center justify-center animate-fade-in" onClick={closeLightbox} onWheel={handleWheel}>
-                    <div className="absolute top-4 right-4 z-[90] flex gap-4">
-                        <div className="bg-black/50 text-white px-3 py-1 rounded-full text-sm">
-                            {(viewingUnit ? (viewingUnit.imageUrls || [viewingUnit.imageUrl || '']).indexOf(activeImage || '') : allImages.indexOf(activeImage || '')) + 1} / {viewingUnit ? (viewingUnit.imageUrls?.length || 1) : allImages.length}
-                        </div>
+                <div
+                    className="fixed inset-0 bg-black/95 z-[80] flex items-center justify-center overflow-hidden"
+                    onClick={closeLightbox}
+                    onWheel={handleWheel}
+                >
+                    <div className="absolute top-4 right-4 z-[90]">
                         <button onClick={closeLightbox} className="text-white/70 hover:text-white text-4xl leading-none">&times;</button>
                     </div>
 
@@ -696,89 +726,98 @@ const PropertyDetail: React.FC<PropertyDetailProps> = ({ property, onBack, onEdi
                     </div>
                 </div>
             )}
-            {/* --- Hidden Export Card Template --- */}
+
+            {/* --- Hidden Export Long Poster Template --- */}
             <div style={{ position: 'fixed', left: '-9999px', top: 0, zIndex: -1 }}>
-                <div ref={cardRef} className="w-[375px] bg-white overflow-hidden shadow-2xl relative">
-                    {/* Header Image */}
-                    <div className="h-[250px] relative">
+                <div ref={cardRef} className="w-[480px] bg-slate-50 overflow-hidden relative font-sans text-slate-900 pb-12">
+                    {/* 1. Header Cover */}
+                    <div className="relative h-[320px]">
                         <img src={property.imageUrl} className="w-full h-full object-cover" crossOrigin="anonymous" />
-                        <div className="absolute top-4 left-4 flex gap-2">
-                            <span className="px-3 py-1 text-sm font-bold text-white bg-indigo-600 rounded">
-                                {property.type === PropertyType.RENT ? '出租' : '出售'}
-                            </span>
-                            <span className="px-3 py-1 text-sm font-bold text-white bg-slate-900/80 rounded">
-                                {property.category}
-                            </span>
+                        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-6 pt-20">
+                            <div className="flex gap-2 mb-2">
+                                <span className="bg-indigo-600 text-white px-2 py-0.5 text-xs rounded font-bold">{property.category}</span>
+                                {property.tags.slice(0, 2).map(t => <span key={t} className="bg-white/20 text-white px-2 py-0.5 text-xs rounded backdrop-blur-sm">{t}</span>)}
+                            </div>
+                            <h1 className="text-2xl font-bold text-white leading-tight drop-shadow-md">{property.title}</h1>
                         </div>
                     </div>
 
-                    {/* Content Body */}
-                    <div className="p-6">
-                        <h2 className="text-xl font-bold text-slate-900 mb-2 leading-tight">{property.title}</h2>
-                        <div className="flex items-center text-slate-500 text-sm mb-4">
-                            <span className="mr-2">📍 {property.location}</span>
-                            <span>{property.address}</span>
+                    {/* 2. Basic Info Grid (Gold/Premium Style) */}
+                    <div className="px-6 py-6 bg-white rounded-b-3xl shadow-sm mb-4 relative z-10 -mt-4 mx-2">
+                        <div className="flex justify-between items-center text-slate-500 text-sm mb-4 border-b border-slate-100 pb-4">
+                            <span className="flex items-center gap-1">📍 {property.location}</span>
+                            <span className="font-mono text-xs opacity-50">{new Date().toLocaleDateString()} 更新</span>
                         </div>
-
-                        {/* Core Specs Grid */}
-                        <div className="grid grid-cols-3 gap-3 mb-6">
-                            <div className="bg-slate-50 p-2 rounded text-center">
-                                <div className="text-slate-400 text-xs">面积</div>
-                                <div className="text-slate-800 font-bold">{property.area}㎡</div>
+                        <div className="grid grid-cols-3 gap-4 text-center">
+                            <div>
+                                <div className="text-slate-400 text-xs mb-1">建筑面积</div>
+                                <div className="text-lg font-bold text-slate-800">{property.area}㎡</div>
                             </div>
-                            <div className="bg-slate-50 p-2 rounded text-center">
-                                <div className="text-slate-400 text-xs">户型</div>
-                                <div className="text-slate-800 font-bold">{property.layout}</div>
+                            <div className="border-l border-r border-slate-100">
+                                <div className="text-slate-400 text-xs mb-1">户型格局</div>
+                                <div className="text-lg font-bold text-slate-800">{property.layout}</div>
                             </div>
-                            <div className="bg-slate-50 p-2 rounded text-center">
-                                <div className="text-slate-400 text-xs">类型</div>
-                                <div className="text-slate-800 font-bold">{property.category}</div>
+                            <div>
+                                <div className="text-slate-400 text-xs mb-1">当前状态</div>
+                                <div className="text-lg font-bold text-emerald-600">
+                                    {property.status === PropertyStatus.AVAILABLE ? '待租/售' : '已预订'}
+                                </div>
                             </div>
                         </div>
+                    </div>
 
-                        {/* Tags */}
-                        <div className="flex flex-wrap gap-2 mb-6">
-                            {property.tags.slice(0, 5).map(tag => (
-                                <span key={tag} className="px-2 py-1 bg-indigo-50 text-indigo-600 text-xs font-bold rounded">
-                                    {tag}
+                    {/* 3. Image Gallery (Montage) */}
+                    {allImages.length > 0 && (
+                        <div className="px-4 mb-6">
+                            <div className="grid grid-cols-3 gap-2">
+                                {allImages.slice(0, 3).map((img, i) => (
+                                    <div key={i} className="aspect-square rounded-lg overflow-hidden bg-slate-200">
+                                        <img src={img} className="w-full h-full object-cover" crossOrigin="anonymous" />
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* 4. Detailed Description */}
+                    <div className="bg-white mx-4 p-5 rounded-xl shadow-sm mb-4">
+                        <div className="flex items-center gap-2 mb-3">
+                            <span className="w-1 h-4 bg-indigo-600 rounded-full"></span>
+                            <h3 className="font-bold text-slate-800">房源详细介绍</h3>
+                        </div>
+                        <p className="text-slate-600 text-sm leading-7 text-justify whitespace-pre-line">
+                            {property.description || '暂无详细描述，请联系房东咨询更多细节。'}
+                        </p>
+                    </div>
+
+                    {/* 5. Amenities / Highlights */}
+                    <div className="bg-white mx-4 p-5 rounded-xl shadow-sm mb-6">
+                        <div className="flex items-center gap-2 mb-3">
+                            <span className="w-1 h-4 bg-indigo-600 rounded-full"></span>
+                            <h3 className="font-bold text-slate-800">配套与亮点</h3>
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                            {property.tags.map(tag => (
+                                <span key={tag} className="px-3 py-1.5 bg-slate-50 text-slate-600 text-xs rounded-lg border border-slate-100">
+                                    ✅ {tag}
+                                </span>
+                            ))}
+                            {(property.leaseTerms || []).map(term => (
+                                <span key={term} className="px-3 py-1.5 bg-orange-50 text-orange-600 text-xs rounded-lg border border-orange-100">
+                                    📄 {term}
                                 </span>
                             ))}
                         </div>
-
-                        {/* Description Snippet */}
-                        <div className="bg-slate-50 p-4 rounded-xl border-l-4 border-indigo-500 mb-6">
-                            <h3 className="font-bold text-slate-800 text-sm mb-1">房源亮点</h3>
-                            <p className="text-slate-500 text-xs leading-relaxed line-clamp-4">
-                                {property.description || '暂无详细描述'}
-                            </p>
-                        </div>
-
-                        {/* Landlord Info Logic for Card (Without Phone) */}
-                        {property.landlordType === LandlordType.CORPORATE && (
-                            <div className="flex items-center gap-2 mb-6 p-3 bg-orange-50 rounded-lg">
-                                <div className="w-8 h-8 rounded-full bg-orange-200 flex items-center justify-center text-orange-600 text-xs font-bold">企</div>
-                                <div>
-                                    <div className="text-xs font-bold text-slate-800">品牌公寓直租</div>
-                                    <div className="text-[10px] text-slate-500">品质保证 · 服务无忧</div>
-                                </div>
-                            </div>
-                        )}
-
-                        {/* Footer / QR Code Mock */}
-                        <div className="border-t border-slate-100 pt-4 flex items-center justify-between">
-                            <div>
-                                <div className="text-lg font-bold text-slate-900">智居 AI 房产</div>
-                                <div className="text-xs text-slate-400">扫码查看详情 / 预约看房</div>
-                            </div>
-                            <div className="w-16 h-16 bg-slate-200 rounded flex items-center justify-center">
-                                <svg className="w-10 h-10 text-slate-400" viewBox="0 0 24 24" fill="currentColor"><path d="M3 3h6v6H3V3zm2 2v2h2V5H5zm8-2h6v6h-6V3zm2 2v2h2V5h-2zM3 13h6v6H3v-6zm2 2v2h2v-2H5zm13-2h3v2h-3v-2zm-3 0h2v3h2v-3h1v2h-2v1h3v2h-3v2h-3v-2h1v-2h-1v-2zm-3-1v3h3v-3h-3zm1 4v1h1v-1h-1z" /></svg>
-                            </div>
-                        </div>
                     </div>
 
-                    {/* Watermark/Branding */}
-                    <div className="absolute bottom-0 right-0 p-32 opacity-5 pointer-events-none">
-                        <span className="text-6xl font-black text-slate-900 rotate-45 block">ZHIJU</span>
+                    {/* 6. Footer / Call to Action */}
+                    <div className="mt-8 flex flex-col items-center justify-center text-center p-8 bg-slate-900 text-white">
+                        <div className="w-24 h-24 bg-white p-2 rounded-xl mb-4">
+                            {/* Mock QR Code Pattern */}
+                            <svg className="w-full h-full text-slate-900" viewBox="0 0 24 24" fill="currentColor"><path d="M3 3h6v6H3V3zm2 2v2h2V5H5zm8-2h6v6h-6V3zm2 2v2h2V5h-2zM3 13h6v6H3v-6zm2 2v2h2v-2H5zm13-2h3v2h-3v-2zm-3 0h2v3h2v-3h1v2h-2v1h3v2h-3v2h-3v-2h1v-2h-1v-2zm-3-1v3h3v-3h-3zm1 4v1h1v-1h-1z" /></svg>
+                        </div>
+                        <h2 className="text-xl font-bold mb-1">扫码查看房源详情</h2>
+                        <p className="text-slate-400 text-xs tracking-widest uppercase">ZHIJU AI PROPERTY ERP</p>
                     </div>
                 </div>
             </div>
