@@ -37,7 +37,7 @@
        <view class="icon-box icon-hover-scale {{selected === 'profile' ? 'icon-float' : ''}}">
         <icon name="user" color="{{selected === 'profile' ? '#2563eb' : '#64748b'}}" size="54"></icon>
       </view>
-      <text class="tab-text {{selected === 'profile' ? 'text-primary' : 'text-muted'}}">我的</text>
+      <text class="tab-text {{selected === 'profile' ? 'text-primary' : 'text-muted'}}">房东信息</text>
     </view>
   </view>
 </view>

@@ -264,7 +264,25 @@
   box-shadow: 0 8rpx 20rpx rgba(37, 99, 235, 0.3);
 }
 
-.submit-btn:active {
-  opacity: 0.9;
-  transform: scale(0.98);
-}
+
+/* New Parity Styles */
+.required { color: #ef4444; margin-left: 4rpx; }
+
+/* 3-Col Layout */
+.three-col .form-item { flex: 1; margin-bottom: 0; }
+.sm-label { font-size: 24rpx; }
+.sm-input { padding: 0 16rpx; font-size: 26rpx; }
+
+/* Fees Grid */
+.fees-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20rpx; margin-bottom: 24rpx; }
+.fee-item { margin-bottom: 0; }
+.fee-label { font-size: 24rpx; color: #64748b; margin-bottom: 8rpx; display: block; font-weight: 500;}
+.fee-input { width: 100%; height: 72rpx; background: #f8fafc; border-radius: 12rpx; padding: 0 16rpx; font-size: 24rpx; border: 1px solid transparent; }
+.fee-input:focus { background: #fff; border-color: #3b82f6; }
+
+/* Description */
+.desc-textarea { width: 100%; height: 240rpx; background: #f8fafc; border-radius: 16rpx; padding: 24rpx; font-size: 28rpx; box-sizing: border-box; }
+
+/* Group Title */
+.form-group-title { font-size: 26rpx; font-weight: bold; color: #475569; margin-bottom: 16rpx; margin-top: 10rpx;}
+
