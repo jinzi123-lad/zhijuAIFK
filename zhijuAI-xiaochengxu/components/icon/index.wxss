@@ -1,0 +1,4 @@
+/* components/icon/index.wxss */
+.icon-img {
+  display: block;
+}

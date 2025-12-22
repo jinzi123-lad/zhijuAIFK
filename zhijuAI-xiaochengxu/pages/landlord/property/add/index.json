@@ -1,0 +1,7 @@
+{
+    "navigationBarTitleText": "选择房源类型",
+    "navigationStyle": "custom",
+    "usingComponents": {
+        "nav-bar": "/components/navbar/index"
+    }
+}

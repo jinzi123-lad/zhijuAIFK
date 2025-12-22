@@ -1,0 +1,16 @@
+<view class="stats-bar-container">
+  <scroll-view scroll-x="true" class="stats-scroll" show-scrollbar="false">
+    <view class="stats-card glass-card glass-shimmer neutral">
+      <text class="label text-muted">总计</text>
+      <text class="value text-primary">{{stats.total}}</text>
+    </view>
+    <view class="stats-card glass-card glass-shimmer warning">
+      <text class="label text-muted">空置</text>
+      <text class="value text-warning">{{stats.vacant}}</text>
+    </view>
+    <view class="stats-card glass-card glass-shimmer success">
+      <text class="label text-muted">已租</text>
+      <text class="value text-success">{{stats.occupied}}</text>
+    </view>
+  </scroll-view>
+</view>

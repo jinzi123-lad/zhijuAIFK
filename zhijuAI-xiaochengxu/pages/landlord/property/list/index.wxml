@@ -1,0 +1,49 @@
+<view class="container pb-24">
+  <view class="mesh-gradient"></view>
+
+  <navbar title="智居AI-房源管理" showBack="{{true}}"></navbar>
+
+  <view class="main-body px-4 pt-4">
+    <!-- Stats Bar -->
+    <view class="mb-4">
+        <stats-bar stats="{{stats}}"></stats-bar>
+    </view>
+
+    <!-- Filter Tabs -->
+    <view class="mb-4">
+        <filter-tabs currentFilter="{{filter}}" bind:filterChange="onFilterChange"></filter-tabs>
+    </view>
+
+    <!-- Property Groups -->
+    
+    <!-- Centralized Apartments -->
+    <block wx:if="{{apartmentProperties.length > 0}}">
+        <view class="group-title mb-3 text-foreground font-bold">集中式公寓</view>
+        <view class="card-list mb-6">
+            <block wx:for="{{apartmentProperties}}" wx:key="id">
+                <property-card property="{{item}}" bind:click="onPropertyClick" class="mb-3"></property-card>
+            </block>
+        </view>
+    </block>
+
+    <!-- Scattered Properties -->
+    <block wx:if="{{scatteredProperties.length > 0}}">
+        <view class="group-title mb-3 text-foreground font-bold">分散式房源</view>
+        <view class="card-list mb-6">
+             <block wx:for="{{scatteredProperties}}" wx:key="id">
+                <property-card property="{{item}}" bind:click="onPropertyClick" class="mb-3"></property-card>
+            </block>
+        </view>
+    </block>
+    
+    <!-- Empty State -->
+    <block wx:if="{{filteredProperties.length === 0}}">
+        <view class="glass-card rounded-2xl p-12 text-center text-muted">
+            暂无房产数据
+        </view>
+    </block>
+
+  </view>
+
+  <landlord-tabbar selected="property"></landlord-tabbar>
+</view>

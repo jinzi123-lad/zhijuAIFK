@@ -1,0 +1,115 @@
+<view class="container pb-24">
+  <view class="mesh-gradient"></view>
+  <navbar title="查房预约" showBack="{{true}}"></navbar>
+
+  <view class="main-body px-4 pt-4">
+    <!-- View Mode Toggle -->
+    <view class="toggle-row glass-card mb-4 p-1 rounded-full flex-row">
+        <view class="toggle-btn flex-1 centered {{viewMode === 'calendar' ? 'active bg-primary text-white' : 'text-muted'}}" bindtap="setViewMode" data-mode="calendar">日历视图</view>
+        <view class="toggle-btn flex-1 centered {{viewMode === 'list' ? 'active bg-primary text-white' : 'text-muted'}}" bindtap="setViewMode" data-mode="list">列表视图</view>
+    </view>
+
+    <!-- Calendar View -->
+    <block wx:if="{{viewMode === 'calendar'}}">
+        <view class="calendar-card glass-card p-4 mb-4">
+            <view class="cal-header flex-row space-between mb-4">
+                <view bindtap="changeMonth" data-offset="-1">
+                     <icon name="arrowLeft" color="#000000" size="32"></icon>
+                </view>
+                <text class="cal-title font-bold">{{year}}年 {{month}}月</text>
+                <view bindtap="changeMonth" data-offset="1">
+                     <icon name="chevronRight" color="#000000" size="32"></icon>
+                </view>
+            </view>
+            
+            <view class="week-row grid-7 mb-2">
+                <text class="week-day">日</text><text class="week-day">一</text><text class="week-day">二</text><text class="week-day">三</text><text class="week-day">四</text><text class="week-day">五</text><text class="week-day">六</text>
+            </view>
+
+            <view class="days-grid grid-7">
+                <block wx:for="{{calendarDays}}" wx:key="index">
+                    <view class="day-cell aspect-square centered rounded-lg {{item.isToday ? 'bg-primary text-white' : ''}} {{item.hasTask ? 'bg-accent-20' : ''}}" bindtap="selectDay" data-day="{{item.day}}">
+                        <text>{{item.day || ''}}</text>
+                        <block wx:if="{{item.hasTask && !item.isToday}}">
+                             <view class="dot-indicator flex-row">
+                                 <view class="dot bg-primary"></view>
+                             </view>
+                        </block>
+                    </view>
+                </block>
+            </view>
+        </view>
+
+        <!-- Today Task List -->
+        <block wx:if="{{todayInspections.length > 0}}">
+            <text class="section-title mb-2 block font-bold">今日查房</text>
+            <view class="task-list">
+                <block wx:for="{{todayInspections}}" wx:key="id">
+                    <view class="task-card glass-card p-4 mb-3" bindtap="navToDetail" data-id="{{item.id}}">
+                        <view class="flex-row space-between mb-2">
+                            <view>
+                                <text class="task-title block font-bold">{{item.propertyTitle}}</text>
+                                <text class="task-sub text-muted text-xs">租客: {{item.tenant}}</text>
+                            </view>
+                            <view class="badge {{item.typeClass}}">{{item.typeLabel}}</view>
+                        </view>
+                         <view class="flex-row gap-3 text-xs text-muted">
+                            <text>🕓 {{item.time}}</text>
+                            <text wx:if="{{item.inspector}}">👤 {{item.inspector}}</text>
+                        </view>
+                    </view>
+                </block>
+            </view>
+        </block>
+    </block>
+    
+    <!-- List View -->
+    <block wx:else>
+         <!-- Stats -->
+         <view class="stats-grid grid-3 mb-4">
+             <view class="glass-card p-3 rounded-xl centered flex-col">
+                 <text class="text-2xl font-bold text-warning">{{stats.scheduled}}</text>
+                 <text class="text-xs text-muted">待查房</text>
+             </view>
+             <view class="glass-card p-3 rounded-xl centered flex-col">
+                 <text class="text-2xl font-bold text-success">{{stats.completed}}</text>
+                 <text class="text-xs text-muted">已完成</text>
+             </view>
+             <view class="glass-card p-3 rounded-xl centered flex-col">
+                 <text class="text-2xl font-bold text-primary">{{stats.upcoming}}</text>
+                 <text class="text-xs text-muted">即将进行</text>
+             </view>
+         </view>
+
+         <text class="section-title mb-2 block font-bold">即将查房</text>
+         <view class="task-list">
+             <block wx:for="{{upcomingInspections}}" wx:key="id">
+                 <view class="task-card glass-card p-4 mb-3" bindtap="navToDetail" data-id="{{item.id}}">
+                        <view class="flex-row space-between mb-2">
+                            <view>
+                                <text class="task-title block font-bold">{{item.propertyTitle}}</text>
+                                <text class="task-sub text-muted text-xs">租客: {{item.tenant}}</text>
+                            </view>
+                            <view class="badge {{item.typeClass}}">{{item.typeLabel}}</view>
+                        </view>
+                         <view class="flex-row gap-3 text-xs text-muted">
+                            <text>📅 {{item.date}}</text>
+                            <text>🕓 {{item.time}}</text>
+                        </view>
+                         <block wx:if="{{item.notes}}">
+                             <view class="note-box bg-warning-10 p-2 rounded-lg mt-2 flex-row">
+                                 <icon name="alert" color="#f59e0b" size="24"></icon>
+                                 <text class="text-xs text-warning ml-1">{{item.notes}}</text>
+                             </view>
+                         </block>
+                </view>
+             </block>
+         </view>
+    </block>
+
+  </view>
+  
+  <view class="fab-btn bg-primary icon-hover-bounce centered" bindtap="onAddInspection">
+       <icon name="plus" color="#ffffff" size="56"></icon>
+  </view>
+</view>

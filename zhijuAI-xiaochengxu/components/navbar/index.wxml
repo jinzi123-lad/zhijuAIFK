@@ -1,0 +1,18 @@
+<view class="nav-bar" style="height: {{statusBarHeight + navBarHeight}}px; background: {{background}};">
+  <view class="nav-status" style="height: {{statusBarHeight}}px;"></view>
+  <view class="nav-content" style="height: {{navBarHeight}}px;">
+    <!-- Left Action Area -->
+    <view class="nav-left" style="height: {{menuHeight}}px;">
+      <view class="back-btn" wx:if="{{showBack}}" bindtap="goBack">
+        <text class="chevron-left"></text>
+      </view>
+    </view>
+    
+    <!-- Title -->
+    <view class="nav-title" style="line-height: {{menuHeight}}px;">
+      {{title}}
+    </view>
+  </view>
+</view>
+<!-- Placeholder to prevent content overlap -->
+<view class="nav-placeholder" style="height: {{statusBarHeight + navBarHeight}}px;"></view>

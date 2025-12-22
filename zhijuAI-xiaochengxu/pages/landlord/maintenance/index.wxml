@@ -1,0 +1,94 @@
+<view class="container pb-24">
+  <view class="mesh-gradient"></view>
+  <navbar title="维修工单" showBack="{{true}}"></navbar>
+
+  <view class="main-body px-4 pt-4">
+    <!-- Stats Cards -->
+    <view class="grid-4 mb-4">
+       <view class="stats-box glass-card {{selectedStatus === 'all' ? 'ring-primary' : ''}}" bindtap="setStatus" data-status="all">
+           <text class="stats-val">{{stats.total}}</text>
+           <text class="stats-lbl text-muted">全部</text>
+       </view>
+       <view class="stats-box glass-card {{selectedStatus === 'pending' ? 'ring-warning' : ''}}" bindtap="setStatus" data-status="pending">
+           <text class="stats-val text-warning">{{stats.pending}}</text>
+           <text class="stats-lbl text-muted">待处理</text>
+       </view>
+       <view class="stats-box glass-card {{selectedStatus === 'in_progress' ? 'ring-primary' : ''}}" bindtap="setStatus" data-status="in_progress">
+           <text class="stats-val text-primary">{{stats.in_progress}}</text>
+           <text class="stats-lbl text-muted">处理中</text>
+       </view>
+       <view class="stats-box glass-card {{selectedStatus === 'completed' ? 'ring-success' : ''}}" bindtap="setStatus" data-status="completed">
+           <text class="stats-val text-success">{{stats.completed}}</text>
+           <text class="stats-lbl text-muted">已完成</text>
+       </view>
+    </view>
+
+    <!-- Priority Filter -->
+    <scroll-view scroll-x="true" class="mb-4" show-scrollbar="false">
+        <view class="filter-row pb-1">
+            <block wx:for="{{priorities}}" wx:key="*this">
+                 <view class="filter-pill {{selectedPriority === item.key ? 'active bg-primary text-white' : 'glass-card text-muted'}} icon-hover-bounce"
+                    bindtap="setPriority" data-priority="{{item.key}}">
+                    {{item.label}}
+                 </view>
+            </block>
+        </view>
+    </scroll-view>
+
+    <!-- Request List -->
+    <view class="req-list">
+        <block wx:for="{{filteredRequests}}" wx:key="id">
+            <view class="req-card glass-card mb-3" bindtap="navToDetail" data-id="{{item.id}}">
+                <view class="flex-row items-start mb-3">
+                    <view class="icon-sq rounded-xl centered mr-3 {{item.priorityClass}}">
+                         <icon name="{{item.priority === 'urgent' ? 'alert' : 'wrench'}}" color="{{item.iconColor}}" size="40"></icon>
+                    </view>
+                    <view class="flex-1">
+                        <view class="flex-row space-between mb-1">
+                            <text class="req-title font-bold">{{item.title}}</text>
+                            <icon name="chevronRight" color="#94a3b8" size="32"></icon>
+                        </view>
+                        <text class="req-sub text-muted block mb-1">{{item.propertyTitle}}</text>
+                        <text class="req-desc block text-ellips-2">{{item.description}}</text>
+                    </view>
+                </view>
+
+                <view class="tag-row flex-row mb-3">
+                    <view class="tag {{item.priorityClass}} mr-2">{{item.priorityLabel}}</view>
+                    <view class="tag {{item.statusClass}} flex-row items-center mr-2">
+                        <!-- Icon could be added here -->
+                        <text>{{item.statusLabel}}</text>
+                    </view>
+                    <view class="tag bg-muted text-muted">{{item.categoryLabel}}</view>
+                </view>
+
+                <view class="card-footer pt-3 border-t flex-row space-between text-xs text-muted">
+                    <view class="flex-row gap-3">
+                         <view class="flex-row items-center">
+                            <icon name="user" color="#94a3b8" size="24"></icon>
+                            <text class="ml-1">{{item.reportedBy}}</text>
+                         </view>
+                         <view class="flex-row items-center ml-2">
+                            <icon name="clock" color="#94a3b8" size="24"></icon>
+                            <text class="ml-1">{{item.reportedDate}}</text>
+                         </view>
+                    </view>
+                    <block wx:if="{{item.assignedTo}}">
+                        <text class="text-primary">负责人: {{item.assignedTo}}</text>
+                    </block>
+                </view>
+            </view>
+        </block>
+
+         <block wx:if="{{filteredRequests.length === 0}}">
+            <view class="empty-state centered">
+                <text class="text-muted">暂无维修工单</text>
+            </view>
+        </block>
+    </view>
+  </view>
+
+   <view class="fab-btn bg-primary icon-hover-bounce centered" bindtap="onAddRequest">
+       <icon name="plus" color="#ffffff" size="56"></icon>
+  </view>
+</view>

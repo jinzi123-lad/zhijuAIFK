@@ -1,0 +1,7 @@
+{
+    "navigationBarTitleText": "添加租客",
+    "navigationStyle": "custom",
+    "usingComponents": {
+        "navbar": "/components/navbar/index"
+    }
+}

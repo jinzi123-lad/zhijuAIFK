@@ -1,0 +1,57 @@
+<view class="property-card glass-card glass-shimmer" bindtap="onTap">
+  <view class="card-inner">
+    <!-- Thumbnail -->
+    <view class="thumbnail-box">
+      <image class="thumb-img" src="{{property.image || 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267'}}" mode="aspectFill"></image>
+      <!-- Status Badge -->
+      <view class="badge {{property.status === 'occupied' ? 'bg-success' : 'bg-warning'}}">
+        <text class="badge-text">{{property.status === 'occupied' ? '已租' : '空置'}}</text>
+      </view>
+      <!-- Centralized Badge -->
+      <block wx:if="{{property.managementType === 'centralized'}}">
+        <view class="badge-type bg-primary">
+          <text class="badge-text">🏘️ 公寓</text>
+        </view>
+      </block>
+    </view>
+
+    <!-- Content -->
+    <view class="content-box">
+      <!-- House Info if Centralized -->
+      <block wx:if="{{property.managementType === 'centralized'}}">
+        <text class="sub-text">{{property.buildingName}} {{property.floor}}楼 {{property.roomNumber}}</text>
+      </block>
+      
+      <text class="title-text">{{property.title}}</text>
+      <text class="cat-text text-muted">{{propertyCategoryLabels[property.category] || '住宅'}}</text>
+
+      <!-- Tenant Info -->
+      <block wx:if="{{property.status === 'occupied' && property.tenant}}">
+        <view class="row-flex">
+          <text class="icon-small">👤</text>
+          <text class="tenant-name text-muted">{{property.tenant}}</text>
+        </view>
+      </block>
+
+      <!-- Rent -->
+      <view class="rent-row">
+        <text class="rent-amount text-accent">¥{{property.rent}}</text>
+        <text class="rent-unit text-muted">/月</text>
+      </view>
+
+      <!-- Footer Info -->
+      <view class="footer-row text-muted">
+        <block wx:if="{{property.status === 'occupied' && property.contractEndsIn}}">
+          <view class="row-flex">
+            <text class="icon-small">🕒</text>
+            <text class="footer-text">{{property.contractEndsIn}}天后到期</text>
+          </view>
+        </block>
+        <view class="row-flex ml-3">
+          <text class="icon-small">🔧</text>
+          <text class="footer-text">维修: {{property.maintenanceIssues}}</text>
+        </view>
+      </view>
+    </view>
+  </view>
+</view>

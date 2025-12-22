@@ -1,0 +1,135 @@
+/* components/property-card/index.wxss */
+.property-card {
+  border-radius: 32rpx; /* rounded-2xl */
+  padding: 24rpx; /* p-3 */
+  transition: all 0.3s;
+}
+
+.property-card:active {
+  transform: scale(0.98);
+}
+
+.card-inner {
+  display: flex;
+  gap: 24rpx;
+}
+
+/* Thumbnail */
+.thumbnail-box {
+  position: relative;
+  width: 192rpx; /* w-24 */
+  height: 192rpx; /* h-24 */
+  flex-shrink: 0;
+  border-radius: 24rpx; /* rounded-xl */
+  overflow: hidden;
+}
+
+.thumb-img {
+ width: 100%;
+ height: 100%;
+ background-color: #f1f5f9;
+}
+
+.badge {
+  position: absolute;
+  top: 16rpx;
+  left: 16rpx;
+  padding: 4rpx 16rpx;
+  border-radius: 9999px;
+  opacity: 0.9;
+}
+
+.badge-type {
+  position: absolute;
+  top: 16rpx;
+  right: 16rpx;
+  padding: 4rpx 12rpx;
+  border-radius: 9999px;
+  opacity: 0.8;
+}
+
+.badge-text {
+  font-size: 20rpx; /* text-[10px] */
+  font-weight: 500;
+  color: white;
+}
+
+.bg-success { background-color: #10b981; }
+.bg-warning { background-color: #f59e0b; }
+.bg-primary { background-color: #2563eb; }
+
+/* Content */
+.content-box {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.sub-text {
+  font-size: 20rpx;
+  color: #64748b;
+  margin-bottom: 4rpx;
+}
+
+.title-text {
+  font-size: 30rpx; /* slightly smaller than base */
+  font-weight: 600;
+  margin-bottom: 8rpx;
+  color: #0f172a;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.cat-text {
+  font-size: 20rpx;
+  margin-bottom: 8rpx;
+  color: rgba(100, 116, 139, 0.7);
+}
+
+.row-flex {
+  display: flex;
+  align-items: center;
+  gap: 6rpx;
+}
+
+.icon-small {
+  font-size: 24rpx;
+}
+
+.tenant-name {
+  font-size: 24rpx; /* text-xs */
+}
+
+/* Rent */
+.rent-row {
+  margin: 16rpx 0;
+}
+
+.rent-amount {
+  font-size: 36rpx; /* text-lg */
+  font-weight: bold;
+  color: #8b5cf6; /* accent */
+}
+
+.rent-unit {
+  font-size: 24rpx;
+  font-weight: normal;
+  color: #64748b;
+}
+
+/* Footer */
+.footer-row {
+  display: flex;
+  align-items: center;
+  font-size: 22rpx; /* text-[11px] */
+}
+
+.ml-3 { margin-left: 24rpx; }
+
+.glass-card {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+}

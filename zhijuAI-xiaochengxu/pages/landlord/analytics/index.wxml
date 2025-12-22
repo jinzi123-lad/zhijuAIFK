@@ -1,0 +1,72 @@
+<view class="container pb-24">
+  <view class="mesh-gradient"></view>
+  <navbar title="经营分析" showBack="{{true}}"></navbar>
+
+  <view class="main-body px-4 pt-4">
+    <!-- Period Selector -->
+    <view class="flex-row mb-4">
+         <block wx:for="{{periods}}" wx:key="key">
+             <view class="pill {{selectedPeriod === item.key ? 'active bg-primary text-white' : 'glass-card text-muted'}} icon-hover-bounce"
+                   bindtap="setPeriod" data-period="{{item.key}}">
+                   {{item.label}}
+             </view>
+         </block>
+    </view>
+
+    <!-- KPI Grid -->
+    <view class="grid-2 mb-4">
+        <block wx:for="{{kpis}}" wx:key="label">
+            <view class="kpi-card glass-card">
+                <view class="flex-row space-between mb-2">
+                    <text class="text-xs text-muted">{{item.label}}</text>
+                    <icon name="{{item.icon}}" color="{{item.iconColor}}" size="28"></icon>
+                </view>
+                <text class="text-2xl font-bold mb-1">{{item.value}}</text>
+                <view class="flex-row text-xs text-success">
+                    <text>+{{item.growth}}%</text>
+                </view>
+            </view>
+        </block>
+    </view>
+
+    <!-- Distribution Bars -->
+    <view class="section glass-card p-4 mb-4 rounded-xl">
+        <text class="section-title text-sm font-bold mb-3 block">房源类型分布</text>
+        <block wx:for="{{propertyDistribution}}" wx:key="type">
+            <view class="dist-row mb-3">
+                 <view class="flex-row space-between mb-1">
+                     <view class="flex-row">
+                         <text class="text-sm font-bold">{{item.type}}</text>
+                         <text class="text-xs text-muted ml-1">({{item.count}}套)</text>
+                     </view>
+                     <view class="text-right">
+                         <text class="text-sm font-bold text-primary block">¥{{item.revenue}}k</text>
+                         <text class="text-xs text-muted">{{item.percent}}%</text>
+                     </view>
+                 </view>
+                 <view class="progress-bg bg-muted-20 h-2 rounded-full overflow-hidden">
+                     <view class="progress-fill bg-gradient-primary h-full" style="width:{{item.percent}}%;"></view>
+                 </view>
+            </view>
+        </block>
+    </view>
+
+    <!-- Area Distribution (Simplified) -->
+    <view class="section glass-card p-4 rounded-xl">
+         <text class="section-title text-sm font-bold mb-3 block">区域收入分布</text>
+         <view class="grid-2 gap-4">
+             <block wx:for="{{areaDistribution}}" wx:key="area">
+                 <view class="area-item centered flex-col p-2">
+                      <!-- Circular Progress Mock -->
+                      <view class="circle-mock centered mb-2">
+                          <text class="text-sm font-bold text-primary">{{item.percent}}%</text>
+                      </view>
+                      <text class="text-xs font-bold">{{item.area}}</text>
+                      <text class="text-xs text-muted">¥{{item.revenue}}k</text>
+                 </view>
+             </block>
+         </view>
+    </view>
+
+  </view>
+</view>

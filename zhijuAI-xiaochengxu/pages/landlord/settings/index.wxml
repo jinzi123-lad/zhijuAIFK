@@ -1,0 +1,37 @@
+<view class="container pb-24">
+  <view class="mesh-gradient"></view>
+  <navbar title="系统设置" showBack="{{true}}"></navbar>
+
+  <view class="main-body px-4 pt-4">
+    <block wx:for="{{settingsSections}}" wx:key="title">
+        <view class="mb-4">
+            <text class="text-xs text-muted font-bold block mb-2 ml-2">{{item.title}}</text>
+            <view class="glass-card rounded-xl overflow-hidden">
+                <block wx:for="{{item.items}}" wx:key="label" wx:for-item="subItem">
+                    <view class="setting-item flex-row space-between p-4 border-b icon-hover-card" bindtap="navTo" data-path="{{subItem.path}}">
+                         <view class="flex-row gap-3">
+                              <view class="icon-box centered bg-primary-10 rounded-lg">
+                                  <!-- We can map icons later, keep simple for now -->
+                                  <icon name="settings" color="#2563eb" size="24"></icon>
+                              </view>
+                              <text class="text-sm font-bold">{{subItem.label}}</text>
+                         </view>
+                         <view class="flex-row text-muted">
+                             <text class="text-xs mr-2">{{subItem.value || ''}}</text>
+                             <icon name="chevronRight" color="#94a3b8" size="28"></icon>
+                         </view>
+                    </view>
+                </block>
+            </view>
+        </view>
+    </block>
+
+    <view class="glass-card p-4 rounded-xl centered mb-4">
+         <text class="text-xs text-muted">房源管理系统 v1.0.0</text>
+    </view>
+
+    <view class="logout-btn glass-card border-destructive centered p-4 rounded-xl icon-hover-card" bindtap="onLogout">
+        <text class="text-destructive font-bold">退出登录</text>
+    </view>
+  </view>
+</view>

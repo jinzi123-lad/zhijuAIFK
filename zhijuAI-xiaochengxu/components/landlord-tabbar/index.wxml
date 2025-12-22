@@ -1,0 +1,43 @@
+<view class="tab-bar glass-light">
+  <view class="tab-bar-inner">
+    <!-- Home Tab -->
+    <view class="tab-item {{selected === 'home' ? 'active' : ''}}" bindtap="switchTab" data-path="/pages/landlord/home/index" data-key="home">
+      <view class="icon-box icon-hover-scale {{selected === 'home' ? 'icon-float' : ''}}">
+        <icon name="home" color="{{selected === 'home' ? '#2563eb' : '#64748b'}}" size="54"></icon>
+      </view>
+      <text class="tab-text {{selected === 'home' ? 'text-primary' : 'text-muted'}}">首页</text>
+    </view>
+
+    <!-- Property Tab -->
+    <view class="tab-item {{selected === 'property' ? 'active' : ''}}" bindtap="switchTab" data-path="/pages/landlord/property/list/index" data-key="property">
+       <view class="icon-box icon-hover-scale {{selected === 'property' ? 'icon-float' : ''}}">
+        <icon name="property" color="{{selected === 'property' ? '#2563eb' : '#64748b'}}" size="54"></icon>
+      </view>
+      <text class="tab-text {{selected === 'property' ? 'text-primary' : 'text-muted'}}">房源</text>
+    </view>
+
+    <!-- Center Add Button -->
+    <view class="tab-item center-item" bindtap="onAdd">
+      <view class="add-btn bg-gradient-brand icon-hover-bounce">
+        <icon name="plus" color="#ffffff" size="64" class="icon-hover-rotate"></icon>
+      </view>
+    </view>
+
+    <!-- Messages Tab -->
+    <view class="tab-item {{selected === 'messages' ? 'active' : ''}}" bindtap="switchTab" data-path="/pages/landlord/messages/index" data-key="messages">
+       <view class="icon-box icon-hover-scale {{selected === 'messages' ? 'icon-float' : ''}} relative">
+        <icon name="message" color="{{selected === 'messages' ? '#2563eb' : '#64748b'}}" size="54"></icon>
+        <view class="badge icon-pulse"></view>
+      </view>
+      <text class="tab-text {{selected === 'messages' ? 'text-primary' : 'text-muted'}}">消息</text>
+    </view>
+
+    <!-- Profile Tab -->
+    <view class="tab-item {{selected === 'profile' ? 'active' : ''}}" bindtap="switchTab" data-path="/pages/landlord/profile/index" data-key="profile">
+       <view class="icon-box icon-hover-scale {{selected === 'profile' ? 'icon-float' : ''}}">
+        <icon name="user" color="{{selected === 'profile' ? '#2563eb' : '#64748b'}}" size="54"></icon>
+      </view>
+      <text class="tab-text {{selected === 'profile' ? 'text-primary' : 'text-muted'}}">我的</text>
+    </view>
+  </view>
+</view>

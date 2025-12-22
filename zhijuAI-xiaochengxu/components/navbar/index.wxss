@@ -1,0 +1,64 @@
+/* components/navbar/index.wxss */
+.nav-bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  z-index: 1000;
+  /* Glass effect for immersive feel, user wants "Top Bar in" */
+  background: rgba(255, 255, 255, 0.01); /* Basically transparent to show mesh */
+  backdrop-filter: blur(0px); /* Let functionality dictate, maybe slight blur if needed */
+}
+
+.nav-content {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center; /* Center title */
+}
+
+/* Native-like Title */
+.nav-title {
+  font-size: 32rpx; /* Standard native title size approx 16px/17px */
+  font-weight: 700; /* Bold like native */
+  color: #000000;
+  text-align: center;
+  max-width: 400rpx;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Simulated Native Back Button Area */
+.nav-left {
+  position: absolute;
+  left: 10px; /* Standard native padding */
+  bottom: 0px; 
+  display: flex;
+  align-items: center;
+}
+
+/* Native Back Icon (Chevron) */
+.back-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px; /* Touch target */
+  height: 100%;
+}
+
+/* Drawing the Chevron Left using Border */
+.chevron-left {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-top: 2px solid #000000;
+  border-left: 2px solid #000000;
+  transform: rotate(-45deg);
+  margin-left: 4px;
+}
+
+/* Adjust title alignment if needed */
+.nav-placeholder {
+  width: 100%;
+}

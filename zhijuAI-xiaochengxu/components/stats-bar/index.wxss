@@ -1,0 +1,41 @@
+/* components/stats-bar/index.wxss */
+.stats-bar-container {
+  width: 100%;
+}
+
+.stats-scroll {
+  white-space: nowrap;
+  width: 100%;
+}
+
+/* Hide scrollbar trick if needed, mostly via show-scrollbar=false */
+
+.stats-card {
+  display: inline-flex;
+  flex-direction: column;
+  padding: 32rpx 48rpx;
+  border-radius: 32rpx; /* rounded-2xl */
+  margin-right: 24rpx;
+  min-width: 220rpx;
+}
+
+.label {
+  font-size: 24rpx; /* text-xs */
+  margin-bottom: 8rpx;
+}
+
+.value {
+  font-size: 48rpx; /* text-2xl */
+  font-weight: bold;
+}
+
+.text-primary { color: #2563eb; }
+.text-warning { color: #f59e0b; }
+.text-success { color: #10b981; }
+.text-muted { color: #64748b; }
+
+.glass-card {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+}

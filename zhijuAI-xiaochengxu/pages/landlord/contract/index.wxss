@@ -1,0 +1,97 @@
+/** index.wxss **/
+.container { min-height: 100vh; }
+.main-body { padding-top: 180rpx; }
+
+.search-bar { padding: 24rpx; border-radius: 32rpx; align-items: center; gap: 16rpx; }
+.search-input { flex: 1; font-size: 28rpx; height: 48rpx; }
+
+/* Stats Matrix */
+.stats-matrix {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    padding: 16rpx;
+    border-radius: 32rpx;
+}
+
+.matrix-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 16rpx 0;
+    border-radius: 16rpx;
+    transition: all 0.3s;
+}
+
+.matrix-item.active {
+    background-color: rgba(255,255,255,0.5);
+    box-shadow: 0 4rpx 12rpx rgba(0,0,0,0.05);
+}
+
+.matrix-val { font-size: 32rpx; font-weight: bold; margin-bottom: 4rpx; }
+.matrix-lbl { font-size: 22rpx; }
+
+/* Contract Card */
+.contract-card {
+    padding: 32rpx;
+    border-radius: 32rpx;
+}
+
+.card-title { font-size: 30rpx; font-weight: 600; margin-bottom: 4rpx; }
+.card-sub { font-size: 24rpx; }
+
+.status-badge {
+    padding: 4rpx 16rpx;
+    border-radius: 999px;
+    font-size: 22rpx;
+    font-weight: 500;
+}
+
+.badge-active { background: rgba(16, 185, 129, 0.1); color: #10b981; }
+.badge-warning { background: rgba(245, 158, 11, 0.1); color: #f59e0b; }
+.badge-expired { background: rgba(239, 68, 68, 0.1); color: #ef4444; }
+
+.card-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16rpx;
+    margin-top: 24rpx;
+}
+
+.border-t { border-top: 1px solid rgba(255,255,255, 0.3); }
+
+.action-btn {
+    padding: 8rpx 24rpx;
+    border-radius: 12rpx;
+}
+
+.bg-primary-10 { background: rgba(37, 99, 235, 0.1); }
+
+/* Globals */
+.glass-card {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+}
+.flex-row { display: flex; align-items: center; }
+.space-between { justify-content: space-between; }
+.text-muted { color: #64748b; }
+.text-primary { color: #2563eb; }
+.text-success { color: #10b981; }
+.text-warning { color: #f59e0b; }
+.text-destructive { color: #ef4444; }
+.mb-2 { margin-bottom: 16rpx; }
+.mb-3 { margin-bottom: 24rpx; }
+.mb-4 { margin-bottom: 32rpx; }
+.block { display: block; }
+.fab-btn {
+    position: fixed;
+    bottom: 64rpx;
+    right: 48rpx;
+    width: 112rpx;
+    height: 112rpx;
+    border-radius: 50%;
+    box-shadow: 0 10px 25px -5px rgba(37, 99, 235, 0.4);
+    z-index: 100;
+}
+.centered { display: flex; justify-content: center; align-items: center; }
+.ml-1 { margin-left:8rpx; }

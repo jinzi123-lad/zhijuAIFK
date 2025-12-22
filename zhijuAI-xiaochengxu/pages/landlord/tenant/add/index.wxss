@@ -1,0 +1,51 @@
+/* Pages Tenant Add WXSS */
+.container {
+    min-height: 100vh;
+    box-sizing: border-box;
+}
+
+.text-center { text-align: center; }
+.font-bold { font-weight: 600; }
+.text-lg { font-size: 34rpx; }
+.text-sm { font-size: 26rpx; }
+.text-muted { color: #64748b; }
+.block { display: block; }
+.mb-2 { margin-bottom: 16rpx; }
+.mb-4 { margin-bottom: 32rpx; }
+.p-4 { padding: 32rpx; }
+.w-full { width: 100%; }
+.flex-row { display: flex; flex-direction: row; }
+.flex-1 { flex: 1; }
+.gap-4 { gap: 32rpx; }
+
+.glass-card {
+    background: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    box-shadow: 0 4rpx 20rpx rgba(0,0,0,0.05);
+}
+
+.rounded-2xl { border-radius: 32rpx; }
+
+.input-field {
+    background: rgba(255, 255, 255, 0.5);
+    border: 1px solid #e2e8f0;
+    border-radius: 16rpx;
+    padding: 24rpx;
+    font-size: 28rpx;
+    color: #1e293b;
+}
+
+.picker-box {
+    text-align: center;
+}
+
+.submit-btn {
+    background: #0f172a;
+    color: white;
+    border-radius: 20rpx;
+    padding: 24rpx 0;
+    font-size: 30rpx;
+    font-weight: 500;
+}
+.btn-hover { opacity: 0.9; transform: scale(0.99); }

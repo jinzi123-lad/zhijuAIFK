@@ -7,6 +7,7 @@
     "pages/landlord/property/list/index",
     "pages/landlord/property/add/index",
     "pages/landlord/property/form/single/index",
+    "pages/landlord/property/form/building/index",
     "pages/landlord/tenant/list/index",
     "pages/landlord/tenant/add/index",
     "pages/landlord/finance/index",

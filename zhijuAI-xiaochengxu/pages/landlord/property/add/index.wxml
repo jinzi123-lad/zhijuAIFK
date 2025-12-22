@@ -1,0 +1,35 @@
+<view class="container">
+  <view class="mesh-bg">
+    <view class="mesh-blob mesh-blob-1"></view>
+    <view class="mesh-blob mesh-blob-2"></view>
+  </view>
+
+  <nav-bar title="" background="transparent"></nav-bar>
+
+  <view style="margin-top: {{navHeight}}px;">
+    <text class="page-title">选择房源类型</text>
+    <text class="page-subtitle">请根据您的实际管理模式选择</text>
+
+    <!-- Option 1: Single Property -->
+    <view class="type-card single" hover-class="type-card-active" bindtap="selectType" data-type="single">
+      <view class="decor-circle"></view>
+      <view class="icon-box single">🏠</view>
+      <view class="content-box">
+        <view class="card-title">分散式房源</view>
+        <view class="card-desc">适用于小区住宅、商铺等单体独栋房源，地址独立。</view>
+      </view>
+      <view class="arrow">></view>
+    </view>
+
+    <!-- Option 2: Apartment Building -->
+    <view class="type-card building" hover-class="type-card-active" bindtap="selectType" data-type="building">
+       <view class="decor-circle"></view>
+      <view class="icon-box building">🏢</view>
+      <view class="content-box">
+        <view class="card-title">集中式公寓</view>
+        <view class="card-desc">适用于独栋公寓、宿舍、酒店，统一管理楼栋与房间。</view>
+      </view>
+      <view class="arrow">></view>
+    </view>
+  </view>
+</view>

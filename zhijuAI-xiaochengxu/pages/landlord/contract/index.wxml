@@ -1,0 +1,82 @@
+<view class="container pb-24">
+  <view class="mesh-gradient"></view>
+  <navbar title="电子合同" showBack="{{true}}"></navbar>
+
+  <view class="main-body px-4 pt-4">
+    <!-- Search Bar -->
+     <view class="search-bar glass-card mb-4 flex-row">
+        <icon name="search" color="#94a3b8" size="36"></icon>
+        <input class="search-input" placeholder="搜索房源或租客..." placeholder-class="ph-color" value="{{searchQuery}}" bindinput="onSearch"/>
+    </view>
+
+    <!-- Stats Matrix -->
+    <view class="stats-matrix glass-card mb-4">
+        <view class="matrix-item {{selectedStatus === 'all' ? 'active' : ''}}" bindtap="setStatus" data-status="all">
+            <text class="matrix-val text-bold">{{stats.total}}</text>
+            <text class="matrix-lbl text-muted">全部</text>
+        </view>
+        <view class="matrix-item {{selectedStatus === 'active' ? 'active' : ''}}" bindtap="setStatus" data-status="active">
+            <text class="matrix-val text-success">{{stats.active}}</text>
+            <text class="matrix-lbl text-muted">生效中</text>
+        </view>
+        <view class="matrix-item {{selectedStatus === 'expiring' ? 'active' : ''}}" bindtap="setStatus" data-status="expiring">
+            <text class="matrix-val text-warning">{{stats.expiring}}</text>
+            <text class="matrix-lbl text-muted">即将到期</text>
+        </view>
+         <view class="matrix-item {{selectedStatus === 'expired' ? 'active' : ''}}" bindtap="setStatus" data-status="expired">
+            <text class="matrix-val text-destructive">{{stats.expired}}</text>
+            <text class="matrix-lbl text-muted">已到期</text>
+        </view>
+    </view>
+
+    <!-- Contract List -->
+    <view class="contract-list">
+        <block wx:for="{{filteredContracts}}" wx:key="id">
+            <view class="contract-card glass-card mb-3" bindtap="navToContract" data-id="{{item.id}}">
+                <view class="card-header flex-row space-between mb-2">
+                    <view>
+                        <text class="card-title block">{{item.propertyTitle}}</text>
+                        <text class="card-sub text-muted">租客: {{item.tenantName}}</text>
+                    </view>
+                    <view class="status-badge {{item.statusBadgeClass}}">
+                        {{item.statusLabel}}
+                    </view>
+                </view>
+
+                <view class="card-grid mb-2">
+                     <view class="grid-cell">
+                        <text class="text-xs text-muted">合同期限</text>
+                        <text class="text-sm block">{{item.dateRange}}</text>
+                     </view>
+                     <view class="grid-cell">
+                        <text class="text-xs text-muted">租金/押金</text>
+                        <text class="text-sm block">¥{{item.rent}} / ¥{{item.deposit}}</text>
+                     </view>
+                </view>
+
+                <block wx:if="{{item.docCount > 0}}">
+                    <view class="card-footer pt-2 border-t flex-row space-between">
+                         <view class="flex-row text-muted text-xs">
+                             <icon name="file" color="#64748b" size="24"></icon>
+                             <text class="ml-1">{{item.docCount}} 个附件</text>
+                         </view>
+                         <view class="action-btn text-primary text-xs bg-primary-10">查看</view>
+                    </view>
+                </block>
+            </view>
+        </block>
+
+         <block wx:if="{{filteredContracts.length === 0}}">
+            <view class="empty-state centered">
+                <text class="text-muted">暂无合同记录</text>
+            </view>
+        </block>
+    </view>
+
+  </view>
+
+  <!-- Add Contract FAB -->
+   <view class="fab-btn bg-primary icon-hover-bounce centered" bindtap="onAddContract">
+       <icon name="plus" color="#ffffff" size="56"></icon>
+  </view>
+</view>

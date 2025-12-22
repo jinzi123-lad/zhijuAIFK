@@ -1,0 +1,130 @@
+<view class="container">
+  <view class="mesh-bg">
+    <view class="mesh-blob mesh-blob-1"></view>
+    <view class="mesh-blob mesh-blob-2"></view>
+  </view>
+
+  <nav-bar title="录入集中式公寓" showBack="{{true}}" background="rgba(241, 245, 249, 0.9)"></nav-bar>
+
+  <scroll-view scroll-y class="form-scroll" style="padding-top: {{navHeight}}px;">
+    
+    <!-- Step 0: AI Smart Fill -->
+    <view class="form-section glass-card ai-section">
+      <view class="ai-header">
+        <view class="ai-title-group">
+          <text class="ai-icon">✨</text>
+          <text class="ai-title">AI 智能填单助手</text>
+        </view>
+        <view class="ai-tag">粘贴文本自动识别</view>
+      </view>
+      
+      <textarea 
+        class="ai-textarea" 
+        placeholder="粘贴房源描述文本（如：徐汇区两室一厅 89平米 7500元/月 精装修...）" 
+        bindinput="onAiInput"
+        value="{{aiInputText}}"
+        maxlength="500"
+      ></textarea>
+
+      <button class="ai-btn" bindtap="onSmartFill" loading="{{isAiParsing}}">
+        <text>⚡ 立即智能识别</text>
+      </button>
+    </view>
+
+    <!-- Step 1: Basic Info -->
+    <view class="form-section glass-card">
+      <view class="section-title">基础信息</view>
+      
+      <view class="form-item">
+        <text class="label">公寓/门店名称</text>
+        <input class="input" placeholder="例: 泊寓(科技园店)" data-field="community" bindinput="onInput" />
+      </view>
+
+      <view class="form-item">
+        <text class="label">详细地址 (楼栋/门牌)</text>
+        <input class="input" placeholder="例: 8栋 2单元 301" data-field="address" bindinput="onInput" />
+      </view>
+
+      <view class="form-row">
+        <view class="form-item half">
+          <text class="label">楼层</text>
+          <input class="input" type="number" placeholder="例: 3" data-field="floor" bindinput="onInput" />
+        </view>
+        <view class="form-item half">
+          <text class="label">面积 (㎡)</text>
+          <input class="input" type="digit" placeholder="例: 85" data-field="area" bindinput="onInput" />
+        </view>
+      </view>
+
+      <view class="form-item">
+        <text class="label">户型</text>
+        <picker bindchange="bindLayoutChange" value="{{0}}" range="{{layoutOptions}}">
+          <view class="picker-display">
+            {{formData.layout}} <text class="arrow">></text>
+          </view>
+        </picker>
+      </view>
+    </view>
+
+    <!-- Step 2: Rent Info -->
+    <view class="form-section glass-card">
+      <view class="section-title">租约信息</view>
+      
+      <view class="form-row">
+        <view class="form-item half">
+          <text class="label">月租金 (元)</text>
+          <input class="input price-input" type="number" placeholder="0" data-field="rent" bindinput="onInput" />
+        </view>
+        <view class="form-item half">
+           <text class="label">支付方式</text>
+           <picker bindchange="bindDepositChange" value="{{0}}" range="{{depositOptions}}">
+            <view class="picker-display">
+                {{formData.deposit}} <text class="arrow">></text>
+            </view>
+            </picker>
+        </view>
+      </view>
+
+      <view class="form-item">
+        <text class="label">房源亮点 (最多3个)</text>
+        <view class="tag-selector">
+          <block wx:for="{{tagOptions}}" wx:key="*this">
+             <view class="tag-option {{utils.includes(formData.tags, item) ? 'active' : ''}}" 
+                   bindtap="toggleTag" data-tag="{{item}}">
+               {{item}}
+             </view>
+          </block>
+        </view>
+      </view>
+    </view>
+
+    <!-- Step 3: Images -->
+    <view class="form-section glass-card">
+      <view class="section-title">房源照片 ({{formData.images.length}}/9)</view>
+      <view class="image-grid">
+        <block wx:for="{{formData.images}}" wx:key="*this">
+          <view class="image-item">
+            <image src="{{item}}" mode="aspectFill" class="thumb"></image>
+            <view class="delete-btn" catchtap="removeImage" data-index="{{index}}">×</view>
+          </view>
+        </block>
+        <view class="image-item add-btn" bindtap="chooseImage" wx:if="{{formData.images.length < 9}}">
+          <text class="plus">+</text>
+        </view>
+      </view>
+    </view>
+
+    <view style="height: 180rpx;"></view>
+  </scroll-view>
+
+  <!-- Submit Bar -->
+  <view class="bottom-bar glass-card">
+    <button class="submit-btn" bindtap="onSubmit">确认录入</button>
+  </view>
+</view>
+
+<wxs module="utils">
+module.exports.includes = function(arr, item) {
+  return arr.indexOf(item) > -1
+}
+</wxs>

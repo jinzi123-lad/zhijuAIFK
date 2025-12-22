@@ -1,0 +1,10 @@
+<view class="filter-tabs glass-card">
+  <block wx:for="{{tabs}}" wx:key="value">
+    <view 
+      class="tab-item {{currentFilter === item.value ? 'active bg-primary text-white shadow' : 'text-muted'}}"
+      bindtap="onChange" data-value="{{item.value}}"
+    >
+      {{item.label}}
+    </view>
+  </block>
+</view>

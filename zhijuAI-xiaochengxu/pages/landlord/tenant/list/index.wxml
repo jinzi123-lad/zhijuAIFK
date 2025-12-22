@@ -1,0 +1,88 @@
+<view class="container pb-24">
+  <view class="mesh-gradient"></view>
+  <navbar title="智居AI-租客管理" showBack="{{true}}"></navbar>
+
+  <view class="main-body px-4 pt-4">
+    <!-- Stats Cards -->
+    <view class="stats-grid mb-4">
+        <view class="stats-box glass-card centered">
+            <text class="stats-val text-primary">{{stats.total}}</text>
+            <text class="stats-lbl text-muted">总租客</text>
+        </view>
+        <view class="stats-box glass-card centered">
+            <text class="stats-val text-success">{{stats.active}}</text>
+            <text class="stats-lbl text-muted">在租</text>
+        </view>
+        <view class="stats-box glass-card centered">
+            <text class="stats-val text-warning">{{stats.expiring}}</text>
+            <text class="stats-lbl text-muted">即将到期</text>
+        </view>
+    </view>
+
+    <!-- Search Bar -->
+    <view class="search-bar glass-card mb-4 flex-row">
+        <icon name="search" color="#94a3b8" size="36"></icon>
+        <input class="search-input" placeholder="搜索租客姓名、电话或房源" placeholder-class="ph-color" bindinput="onSearchInput" value="{{searchQuery}}"/>
+    </view>
+
+    <!-- Filter Tabs -->
+    <scroll-view scroll-x="true" class="mb-4" show-scrollbar="false">
+        <view class="filter-row">
+            <view class="filter-pill {{filterStatus === 'all' ? 'active bg-primary text-white' : 'glass-card text-muted'}}" bindtap="setFilter" data-status="all">全部</view>
+            <view class="filter-pill {{filterStatus === 'active' ? 'active bg-primary text-white' : 'glass-card text-muted'}}" bindtap="setFilter" data-status="active">在租</view>
+            <view class="filter-pill {{filterStatus === 'expiring' ? 'active bg-primary text-white' : 'glass-card text-muted'}}" bindtap="setFilter" data-status="expiring">即将到期</view>
+        </view>
+    </scroll-view>
+
+    <!-- Tenant List -->
+    <view class="tenant-list">
+        <block wx:for="{{filteredTenants}}" wx:key="id">
+            <view class="tenant-card glass-card mb-3" bindtap="navToDetail" data-id="{{item.id}}">
+                <view class="card-inner flex-row">
+                    <!-- Avatar -->
+                    <view class="avatar-circle bg-primary-20 centered">
+                        <text class="avatar-text text-primary">{{item.name[0]}}</text>
+                    </view>
+
+                    <view class="info-content">
+                        <view class="info-header mb-1 flex-row">
+                            <text class="name-text">{{item.name}}</text>
+                            <block wx:if="{{item.isExpiringSoon}}">
+                                <view class="badge-warning">即将到期</view>
+                            </block>
+                        </view>
+                        
+                        <view class="info-row text-muted mb-1">
+                            <!-- Could replicate phone icon with <icon> but text is fine for compactness or use small icons -->
+                            <text class="info-text">📞 {{item.phone}}</text>
+                        </view>
+                        <view class="info-row text-muted mb-2">
+                             <text class="info-text">📍 {{item.property}}</text>
+                        </view>
+
+                        <view class="info-footer flex-row space-between">
+                            <text class="rent-text text-primary">¥{{item.rent}}/月</text>
+                            <text class="date-text text-muted">📅 到期: {{item.contractEndDate}}</text>
+                        </view>
+                    </view>
+
+                    <view class="arrow-right">
+                         <icon name="chevronRight" color="#94a3b8" size="40"></icon>
+                    </view>
+                </view>
+            </view>
+        </block>
+
+        <block wx:if="{{filteredTenants.length === 0}}">
+            <view class="empty-state centered">
+                <text class="text-muted">暂无租客信息</text>
+            </view>
+        </block>
+    </view>
+  </view>
+
+  <!-- Floating Add Button -->
+  <view class="fab-btn bg-primary icon-hover-bounce centered" bindtap="onAddTenant">
+       <icon name="plus" color="#ffffff" size="56"></icon>
+  </view>
+</view>

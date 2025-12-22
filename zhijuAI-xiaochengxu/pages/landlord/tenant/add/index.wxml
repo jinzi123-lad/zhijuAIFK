@@ -1,0 +1,52 @@
+<view class="container" style="padding-top: {{navHeight}}px;">
+    <view class="mesh-gradient"></view>
+    <navbar title="添加租客"></navbar>
+
+    <view class="p-4">
+        <view class="glass-card rounded-2xl p-4">
+            <!-- Header -->
+            <view class="mb-4 text-center">
+                <text class="text-lg font-bold">基本信息</text>
+            </view>
+
+            <!-- Form -->
+            <view class="form-group mb-4">
+                <text class="label block text-sm text-muted mb-2">姓名</text>
+                <input class="input-field" placeholder="请输入租客姓名" bindinput="onInput" data-field="name" />
+            </view>
+
+            <view class="form-group mb-4">
+                <text class="label block text-sm text-muted mb-2">联系电话</text>
+                <input class="input-field" type="number" placeholder="请输入手机号" bindinput="onInput" data-field="phone" />
+            </view>
+
+            <view class="form-group mb-4">
+                <text class="label block text-sm text-muted mb-2">关联房源 (名称)</text>
+                <input class="input-field" placeholder="如: 阳光小区 101" bindinput="onInput" data-field="propertyName" />
+            </view>
+
+            <view class="form-group mb-4">
+                <text class="label block text-sm text-muted mb-2">月租金 (元)</text>
+                <input class="input-field" type="digit" placeholder="0.00" bindinput="onInput" data-field="rent" />
+            </view>
+            
+            <view class="flex-row gap-4 mb-4">
+                <view class="flex-1">
+                     <text class="label block text-sm text-muted mb-2">起租日期</text>
+                     <picker mode="date" value="{{formData.startDate}}" bindchange="bindStartDateChange">
+                        <view class="picker-box input-field">{{formData.startDate}}</view>
+                     </picker>
+                </view>
+                <view class="flex-1">
+                     <text class="label block text-sm text-muted mb-2">到期日期</text>
+                     <picker mode="date" value="{{formData.endDate}}" bindchange="bindEndDateChange">
+                        <view class="picker-box input-field">{{formData.endDate}}</view>
+                     </picker>
+                </view>
+            </view>
+
+            <!-- Submit Button -->
+            <button class="submit-btn w-full mt-4" hover-class="btn-hover" bindtap="onSubmit">确认添加</button>
+        </view>
+    </view>
+</view>
