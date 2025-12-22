@@ -118,7 +118,7 @@ const PropertyDetail: React.FC<PropertyDetailProps> = ({ property, onBack, onEdi
             }
 
             const link = document.createElement('a');
-            link.download = `智居房产长图-${property.title}.png`;
+            link.download = `${property.title}.png`;
             link.href = canvas.toDataURL('image/png');
             link.click();
         } catch (error) {
@@ -810,19 +810,11 @@ const PropertyDetail: React.FC<PropertyDetailProps> = ({ property, onBack, onEdi
                         </div>
                     </div>
 
-                    {/* 6. Footer / Call to Action */}
-                    <div className="mt-8 flex flex-col items-center justify-center text-center p-8 bg-slate-900 text-white">
-                        <div className="w-24 h-24 bg-white p-2 rounded-xl mb-4">
-                            {/* Mock QR Code Pattern */}
-                            <svg className="w-full h-full text-slate-900" viewBox="0 0 24 24" fill="currentColor"><path d="M3 3h6v6H3V3zm2 2v2h2V5H5zm8-2h6v6h-6V3zm2 2v2h2V5h-2zM3 13h6v6H3v-6zm2 2v2h2v-2H5zm13-2h3v2h-3v-2zm-3 0h2v3h2v-3h1v2h-2v1h3v2h-3v2h-3v-2h1v-2h-1v-2zm-3-1v3h3v-3h-3zm1 4v1h1v-1h-1z" /></svg>
-                        </div>
-                        <h2 className="text-xl font-bold mb-1">扫码查看房源详情</h2>
-                        <p className="text-slate-400 text-xs tracking-widest uppercase">ZHIJU AI PROPERTY ERP</p>
-                    </div>
                 </div>
             </div>
         </div>
     );
 };
+
 
 export default PropertyDetail;
