@@ -12,6 +12,8 @@ interface PropertyDetailProps {
 
 const PropertyDetail: React.FC<PropertyDetailProps> = ({ property, onBack, onEdit, onDelete, onOrderAction, viewConfig }) => {
     const [activeImage, setActiveImage] = useState(property.imageUrl);
+    const cardRef = React.useRef<HTMLDivElement>(null);
+    const [isExporting, setIsExporting] = useState(false);
 
     // Share Modal State
     const [isShareModalOpen, setIsShareModalOpen] = useState(false);
@@ -64,6 +66,34 @@ const PropertyDetail: React.FC<PropertyDetailProps> = ({ property, onBack, onEdi
     const toggleShareConfig = (key: keyof PropertyViewConfig) => {
         setShareConfig(prev => ({ ...prev, [key]: !prev[key] }));
         setLinkCopied(false);
+    };
+
+    const handleExportCard = async () => {
+        if (!cardRef.current) return;
+        setIsExporting(true);
+        try {
+            const html2canvas = (window as any).html2canvas;
+            if (!html2canvas) {
+                alert('Export module loading, please try again in a moment...');
+                return;
+            }
+
+            const canvas = await html2canvas(cardRef.current, {
+                useCORS: true,
+                scale: 2, // Retain high quality
+                backgroundColor: '#ffffff'
+            });
+
+            const link = document.createElement('a');
+            link.download = `智居房产卡-${property.title}.png`;
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+        } catch (error) {
+            console.error('Export failed:', error);
+            alert('生成图片失败，请稍后重试');
+        } finally {
+            setIsExporting(false);
+        }
     };
 
     // Lightbox Handlers
@@ -194,6 +224,18 @@ const PropertyDetail: React.FC<PropertyDetailProps> = ({ property, onBack, onEdi
                             >
                                 <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" /></svg>
                                 一键分享
+                            </button>
+                            <button
+                                onClick={handleExportCard}
+                                disabled={isExporting}
+                                className="flex items-center px-4 py-2 bg-slate-800 text-white rounded-lg hover:bg-slate-700 font-medium transition-colors shadow-sm disabled:opacity-50"
+                            >
+                                {isExporting ? '生成中...' : (
+                                    <>
+                                        <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+                                        生成房源卡
+                                    </>
+                                )}
                             </button>
                             <button
                                 onClick={onEdit}
@@ -654,6 +696,92 @@ const PropertyDetail: React.FC<PropertyDetailProps> = ({ property, onBack, onEdi
                     </div>
                 </div>
             )}
+            {/* --- Hidden Export Card Template --- */}
+            <div style={{ position: 'fixed', left: '-9999px', top: 0, zIndex: -1 }}>
+                <div ref={cardRef} className="w-[375px] bg-white overflow-hidden shadow-2xl relative">
+                    {/* Header Image */}
+                    <div className="h-[250px] relative">
+                        <img src={property.imageUrl} className="w-full h-full object-cover" crossOrigin="anonymous" />
+                        <div className="absolute top-4 left-4 flex gap-2">
+                            <span className="px-3 py-1 text-sm font-bold text-white bg-indigo-600 rounded">
+                                {property.type === PropertyType.RENT ? '出租' : '出售'}
+                            </span>
+                            <span className="px-3 py-1 text-sm font-bold text-white bg-slate-900/80 rounded">
+                                {property.category}
+                            </span>
+                        </div>
+                    </div>
+
+                    {/* Content Body */}
+                    <div className="p-6">
+                        <h2 className="text-xl font-bold text-slate-900 mb-2 leading-tight">{property.title}</h2>
+                        <div className="flex items-center text-slate-500 text-sm mb-4">
+                            <span className="mr-2">📍 {property.location}</span>
+                            <span>{property.address}</span>
+                        </div>
+
+                        {/* Core Specs Grid */}
+                        <div className="grid grid-cols-3 gap-3 mb-6">
+                            <div className="bg-slate-50 p-2 rounded text-center">
+                                <div className="text-slate-400 text-xs">面积</div>
+                                <div className="text-slate-800 font-bold">{property.area}㎡</div>
+                            </div>
+                            <div className="bg-slate-50 p-2 rounded text-center">
+                                <div className="text-slate-400 text-xs">户型</div>
+                                <div className="text-slate-800 font-bold">{property.layout}</div>
+                            </div>
+                            <div className="bg-slate-50 p-2 rounded text-center">
+                                <div className="text-slate-400 text-xs">类型</div>
+                                <div className="text-slate-800 font-bold">{property.category}</div>
+                            </div>
+                        </div>
+
+                        {/* Tags */}
+                        <div className="flex flex-wrap gap-2 mb-6">
+                            {property.tags.slice(0, 5).map(tag => (
+                                <span key={tag} className="px-2 py-1 bg-indigo-50 text-indigo-600 text-xs font-bold rounded">
+                                    {tag}
+                                </span>
+                            ))}
+                        </div>
+
+                        {/* Description Snippet */}
+                        <div className="bg-slate-50 p-4 rounded-xl border-l-4 border-indigo-500 mb-6">
+                            <h3 className="font-bold text-slate-800 text-sm mb-1">房源亮点</h3>
+                            <p className="text-slate-500 text-xs leading-relaxed line-clamp-4">
+                                {property.description || '暂无详细描述'}
+                            </p>
+                        </div>
+
+                        {/* Landlord Info Logic for Card (Without Phone) */}
+                        {property.landlordType === LandlordType.CORPORATE && (
+                            <div className="flex items-center gap-2 mb-6 p-3 bg-orange-50 rounded-lg">
+                                <div className="w-8 h-8 rounded-full bg-orange-200 flex items-center justify-center text-orange-600 text-xs font-bold">企</div>
+                                <div>
+                                    <div className="text-xs font-bold text-slate-800">品牌公寓直租</div>
+                                    <div className="text-[10px] text-slate-500">品质保证 · 服务无忧</div>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Footer / QR Code Mock */}
+                        <div className="border-t border-slate-100 pt-4 flex items-center justify-between">
+                            <div>
+                                <div className="text-lg font-bold text-slate-900">智居 AI 房产</div>
+                                <div className="text-xs text-slate-400">扫码查看详情 / 预约看房</div>
+                            </div>
+                            <div className="w-16 h-16 bg-slate-200 rounded flex items-center justify-center">
+                                <svg className="w-10 h-10 text-slate-400" viewBox="0 0 24 24" fill="currentColor"><path d="M3 3h6v6H3V3zm2 2v2h2V5H5zm8-2h6v6h-6V3zm2 2v2h2V5h-2zM3 13h6v6H3v-6zm2 2v2h2v-2H5zm13-2h3v2h-3v-2zm-3 0h2v3h2v-3h1v2h-2v1h3v2h-3v2h-3v-2h1v-2h-1v-2zm-3-1v3h3v-3h-3zm1 4v1h1v-1h-1z" /></svg>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Watermark/Branding */}
+                    <div className="absolute bottom-0 right-0 p-32 opacity-5 pointer-events-none">
+                        <span className="text-6xl font-black text-slate-900 rotate-45 block">ZHIJU</span>
+                    </div>
+                </div>
+            </div>
         </div>
     );
 };
