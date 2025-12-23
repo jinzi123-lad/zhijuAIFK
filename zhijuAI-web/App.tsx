@@ -2188,7 +2188,16 @@ const App: React.FC = () => {
             )}
 
             {activePage === 'users' && (
-                <AccountManagement supabase={supabase} />
+                <div className="space-y-6">
+                    {/* 原有的员工管理组件 */}
+                    <UserManagement users={users} currentUser={currentUser!} onAddUser={handleAddUser} onUpdateUser={handleUpdateUser} onDeleteUser={handleDeleteUser} />
+
+                    {/* 房东/租客真实数据（来自Supabase） */}
+                    <div className="mt-8 pt-8 border-t border-gray-200">
+                        <h2 className="text-xl font-bold text-gray-800 mb-4">📊 小程序注册账号（实时数据）</h2>
+                        <AccountManagement supabase={supabase} />
+                    </div>
+                </div>
             )}
 
             {activePage === 'system-settings' && (
