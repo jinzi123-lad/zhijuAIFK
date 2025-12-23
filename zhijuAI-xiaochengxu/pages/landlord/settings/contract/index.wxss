@@ -34,9 +34,7 @@
 
 /* 模板列表 */
 .template-list {
-  display: flex;
-  flex-direction: column;
-  gap: 16rpx;
+  display: block;
   width: 100%;
 }
 
@@ -48,7 +46,7 @@
   border-radius: 16rpx;
   width: 100%;
   box-sizing: border-box;
-  margin-bottom: 0;
+  margin-bottom: 16rpx;
 }
 
 .template-left {

@@ -10,12 +10,8 @@
         <text class="section-desc">系统提供的标准合同模板</text>
       </view>
       
-      <view class="template-list">
-        <view 
-          wx:for="{{presetTemplates}}" 
-          wx:key="id" 
-          class="template-item glass-card"
-        >
+      <block wx:for="{{presetTemplates}}" wx:key="id">
+        <view class="template-item glass-card">
           <view class="template-left">
             <view class="template-icon">
               <text class="icon-text">📄</text>
@@ -30,22 +26,27 @@
             <view class="btn-item use" bindtap="useTemplate" data-id="{{item.id}}">使用</view>
           </view>
         </view>
-      </view>
+      </block>
     </view>
 
     <!-- 自定义合同 -->
     <view class="section">
       <view class="section-header">
-        <text class="section-title">我的合同模板</text>
+        <text class="section-title">我的合同模板 ({{customTemplates.length}}份)</text>
         <text class="section-desc">您上传的自定义合同</text>
       </view>
       
-      <view wx:if="{{customTemplates.length > 0}}" class="template-list">
-        <view 
-          wx:for="{{customTemplates}}" 
-          wx:key="index" 
-          class="template-item glass-card mb-3"
-        >
+      <!-- 调试：显示每个模板名称 -->
+      <view style="background:#ffe; padding:20rpx; margin-bottom:20rpx; border-radius:12rpx;">
+        <text style="font-size:24rpx; color:#666;">调试信息：共 {{customTemplates.length}} 份\n</text>
+        <block wx:for="{{customTemplates}}" wx:key="index">
+          <text style="font-size:22rpx; display:block;">{{index+1}}. {{item.name}}\n</text>
+        </block>
+      </view>
+      
+      <!-- 正式列表 -->
+      <block wx:for="{{customTemplates}}" wx:key="index">
+        <view class="template-item glass-card" style="margin-bottom:16rpx;">
           <view class="template-left">
             <view class="template-icon custom">
               <text class="icon-text">📁</text>
@@ -60,9 +61,9 @@
             <view class="btn-item delete" bindtap="deleteTemplate" data-id="{{item.id}}">删除</view>
           </view>
         </view>
-      </view>
-
-      <view wx:else class="empty-box glass-card">
+      </block>
+      
+      <view wx:if="{{customTemplates.length === 0}}" class="empty-box glass-card">
         <text class="empty-icon">📂</text>
         <text class="empty-text">暂无自定义合同</text>
       </view>
