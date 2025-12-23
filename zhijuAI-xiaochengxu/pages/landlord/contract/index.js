@@ -149,5 +149,10 @@ Page({
 
     goToTemplate() {
         wx.navigateTo({ url: '/pages/landlord/contract/template/index' })
+    },
+
+    // 别名方法
+    navToContract(e) {
+        this.goToDetail(e)
     }
 })

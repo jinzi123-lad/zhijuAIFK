@@ -1,0 +1,8 @@
+{
+    "usingComponents": {
+        "icon": "/components/icon/index"
+    },
+    "navigationStyle": "custom",
+    "pageOrientation": "landscape",
+    "disableScroll": true
+}

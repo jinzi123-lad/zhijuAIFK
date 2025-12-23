@@ -1,0 +1,27 @@
+<view class="page" catchtouchmove="preventMove">
+  <!-- 签名画布 -->
+  <view class="canvas-box">
+    <canvas 
+      type="2d"
+      id="signCanvas"
+      class="canvas"
+      bindtouchstart="touchStart"
+      bindtouchmove="touchMove"
+      bindtouchend="touchEnd"
+    ></canvas>
+    <text class="hint" wx:if="{{!hasDrawn}}">请在此签名</text>
+  </view>
+  
+  <!-- 底部栏 -->
+  <view class="bar">
+    <view class="bar-btn" bindtap="goBack">
+      <text class="bar-btn-text">取消</text>
+    </view>
+    <view class="bar-btn" bindtap="clearCanvas">
+      <text class="bar-btn-text">清除</text>
+    </view>
+    <view class="bar-btn primary" bindtap="confirmSign">
+      <text class="bar-btn-text white">确认签名</text>
+    </view>
+  </view>
+</view>

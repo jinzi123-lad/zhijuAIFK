@@ -1,0 +1,80 @@
+page {
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  background: #1e293b;
+}
+
+.page {
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  flex-direction: row;
+  background: #1e293b;
+  overflow: hidden;
+}
+
+/* 签名画布区 */
+.canvas-box {
+  flex: 1;
+  margin: 24rpx;
+  margin-right: 0;
+  position: relative;
+  background: #ffffff;
+  border-radius: 16rpx;
+  overflow: hidden;
+}
+
+.canvas {
+  width: 100%;
+  height: 100%;
+}
+
+.hint {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 60rpx;
+  color: #e2e8f0;
+  pointer-events: none;
+  letter-spacing: 8rpx;
+}
+
+/* 底部工具栏 */
+.bar {
+  width: 200rpx;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 32rpx;
+  padding: 24rpx;
+}
+
+.bar-btn {
+  width: 100%;
+  height: 100rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255,255,255,0.1);
+  border-radius: 16rpx;
+}
+
+.bar-btn.primary {
+  background: #2563eb;
+}
+
+.bar-btn-text {
+  font-size: 28rpx;
+  color: #94a3b8;
+}
+
+.bar-btn-text.white {
+  color: #fff;
+}
+
+.bar-btn:active {
+  opacity: 0.7;
+}

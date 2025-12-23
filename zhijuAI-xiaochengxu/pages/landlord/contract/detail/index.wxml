@@ -1,2 +1,202 @@
-<!--pages/landlord/contract/detail/index.wxml-->
-<text>pages/landlord/contract/detail/index.wxml</text>
+<view class="container">
+  <view class="mesh-gradient"></view>
+  <navbar title="合同详情" showBack="{{true}}"></navbar>
+
+  <!-- 加载中 -->
+  <view wx:if="{{loading}}" class="loading-container">
+    <view class="loading-spinner"></view>
+    <text class="loading-text">加载中...</text>
+  </view>
+
+  <!-- 合同内容 -->
+  <scroll-view wx:else scroll-y class="main-body">
+    <!-- 状态卡片 -->
+    <view class="status-card glass-card">
+      <view class="status-icon {{contract.status}}">
+        <icon wx:if="{{contract.status === 'active' || contract.status === 'signed'}}" name="check" color="#fff" size="48"></icon>
+        <icon wx:elif="{{contract.status === 'pending_tenant' || contract.status === 'pending_landlord'}}" name="clock" color="#fff" size="48"></icon>
+        <icon wx:elif="{{contract.status === 'terminated'}}" name="x" color="#fff" size="48"></icon>
+        <icon wx:else name="alert" color="#fff" size="48"></icon>
+      </view>
+      <view class="status-info">
+        <text class="status-text">{{contract.statusText}}</text>
+        <text class="contract-no">合同编号：{{contract.id}}</text>
+      </view>
+    </view>
+
+    <!-- 租客信息 -->
+    <view class="section">
+      <view class="section-header">
+        <icon name="user" color="#2563eb" size="36"></icon>
+        <text class="section-title">租客信息</text>
+      </view>
+      <view class="info-card glass-card">
+        <view class="tenant-row" bindtap="callTenant">
+          <view class="tenant-avatar">
+            <text>{{contract.tenant_name[0] || '租'}}</text>
+          </view>
+          <view class="tenant-info">
+            <text class="tenant-name">{{contract.tenant_name || '未知'}}</text>
+            <text class="tenant-phone">{{contract.tenant_phone || '暂无联系方式'}}</text>
+          </view>
+          <view class="call-btn">
+            <icon name="phone" color="#fff" size="28"></icon>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 房源信息 -->
+    <view class="section">
+      <view class="section-header">
+        <icon name="home" color="#10b981" size="36"></icon>
+        <text class="section-title">房源信息</text>
+      </view>
+      <view class="info-card glass-card">
+        <view class="info-row">
+          <text class="info-label">房源名称</text>
+          <text class="info-value">{{contract.property_title || '—'}}</text>
+        </view>
+        <view class="info-row">
+          <text class="info-label">地址</text>
+          <text class="info-value">{{contract.property_address || '—'}}</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 租期信息 -->
+    <view class="section">
+      <view class="section-header">
+        <icon name="calendar" color="#f59e0b" size="36"></icon>
+        <text class="section-title">租期信息</text>
+      </view>
+      <view class="info-card glass-card">
+        <view class="info-row">
+          <text class="info-label">起租日期</text>
+          <text class="info-value">{{contract.start_date}}</text>
+        </view>
+        <view class="info-row">
+          <text class="info-label">到期日期</text>
+          <text class="info-value">{{contract.end_date}}</text>
+        </view>
+        <view class="info-row">
+          <text class="info-label">租期</text>
+          <text class="info-value">{{contract.lease_months || '—'}}个月</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 费用信息 -->
+    <view class="section">
+      <view class="section-header">
+        <icon name="dollar" color="#ef4444" size="36"></icon>
+        <text class="section-title">费用信息</text>
+      </view>
+      <view class="info-card glass-card">
+        <view class="fee-row">
+          <view class="fee-item">
+            <text class="fee-label">月租金</text>
+            <text class="fee-value primary">¥{{contract.rent_amount}}</text>
+          </view>
+          <view class="fee-item">
+            <text class="fee-label">押金</text>
+            <text class="fee-value">¥{{contract.deposit_amount || 0}}</text>
+          </view>
+        </view>
+        <view class="info-row">
+          <text class="info-label">缴费日</text>
+          <text class="info-value">每月{{contract.payment_day || 5}}日</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 签名状态 -->
+    <view class="section">
+      <view class="section-header">
+        <icon name="pen" color="#8b5cf6" size="36"></icon>
+        <text class="section-title">签名状态</text>
+      </view>
+      <view class="info-card glass-card">
+        <view class="sign-row">
+          <view class="sign-item">
+            <view class="sign-header">
+              <text class="sign-role">房东签名</text>
+              <view class="sign-status {{contract.landlord_signature ? 'signed' : 'pending'}}">
+                {{contract.landlord_signature ? '已签' : '未签'}}
+              </view>
+            </view>
+            <view class="sign-area" wx:if="{{contract.landlord_signature}}" bindtap="previewSignature" data-url="{{contract.landlord_signature}}">
+              <image src="{{contract.landlord_signature}}" mode="aspectFit" class="sign-image"></image>
+            </view>
+            <view class="sign-area empty" wx:else bindtap="signContract">
+              <text>点击签名</text>
+            </view>
+            <text class="sign-time" wx:if="{{contract.landlord_signed_at}}">{{contract.landlord_signed_at}}</text>
+          </view>
+          
+          <view class="sign-item">
+            <view class="sign-header">
+              <text class="sign-role">租客签名</text>
+              <view class="sign-status {{contract.tenant_signature ? 'signed' : 'pending'}}">
+                {{contract.tenant_signature ? '已签' : '未签'}}
+              </view>
+            </view>
+            <view class="sign-area" wx:if="{{contract.tenant_signature}}" bindtap="previewSignature" data-url="{{contract.tenant_signature}}">
+              <image src="{{contract.tenant_signature}}" mode="aspectFit" class="sign-image"></image>
+            </view>
+            <view class="sign-area empty" wx:else>
+              <text>等待签名</text>
+            </view>
+            <text class="sign-time" wx:if="{{contract.tenant_signed_at}}">{{contract.tenant_signed_at}}</text>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 操作按钮 -->
+    <view class="action-section" wx:if="{{contract.status !== 'terminated' && contract.status !== 'expired'}}">
+      <view class="action-btn danger" bindtap="terminateContract">
+        <icon name="x" color="#fff" size="32"></icon>
+        <text>终止合同</text>
+      </view>
+    </view>
+
+    <view style="height: 60rpx;"></view>
+  </scroll-view>
+
+  <!-- 签名弹窗 -->
+  <view class="sign-modal {{showSignModal ? 'show' : ''}}" catchtap="closeSignModal">
+    <view class="sign-modal-content glass-card" catchtap="stopPropagation">
+      <view class="sign-modal-header">
+        <text class="sign-modal-title">房东签名</text>
+        <view class="sign-modal-close" bindtap="closeSignModal">
+          <icon name="x" color="#64748b" size="36"></icon>
+        </view>
+      </view>
+      
+      <view class="sign-canvas-wrapper">
+        <view class="sign-canvas-container">
+          <canvas 
+            canvas-id="signCanvas" 
+            class="sign-canvas"
+            bindtouchstart="touchStart"
+            bindtouchmove="touchMove"
+            bindtouchend="touchEnd"
+          ></canvas>
+          <view class="sign-hint">请在此处签名</view>
+        </view>
+      </view>
+      
+      <view class="sign-modal-btns">
+        <view class="sign-btn secondary" bindtap="clearCanvas">
+          <icon name="refresh" color="#64748b" size="28"></icon>
+          <text>清除重写</text>
+        </view>
+        <view class="sign-btn primary" bindtap="confirmSign">
+          <icon name="check" color="#fff" size="28"></icon>
+          <text>确认签名</text>
+        </view>
+      </view>
+    </view>
+  </view>
+</view>

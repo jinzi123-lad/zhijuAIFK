@@ -1,1 +1,453 @@
-/* pages/landlord/contract/detail/index.wxss */
+/* 合同详情页样式 */
+.container {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.mesh-gradient {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 400rpx;
+  background: linear-gradient(135deg, rgba(37, 99, 235, 0.3) 0%, rgba(139, 92, 246, 0.2) 100%);
+  z-index: 0;
+}
+
+.main-body {
+  padding: 180rpx 32rpx 0;
+  position: relative;
+  z-index: 1;
+  height: calc(100vh - 180rpx);
+}
+
+/* 加载状态 */
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 60vh;
+}
+
+.loading-spinner {
+  width: 60rpx;
+  height: 60rpx;
+  border: 4rpx solid rgba(37, 99, 235, 0.2);
+  border-top-color: #2563eb;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.loading-text {
+  margin-top: 20rpx;
+  color: #64748b;
+  font-size: 28rpx;
+}
+
+/* 状态卡片 */
+.status-card {
+  padding: 40rpx;
+  border-radius: 32rpx;
+  display: flex;
+  align-items: center;
+  gap: 32rpx;
+  margin-bottom: 32rpx;
+}
+
+.status-icon {
+  width: 100rpx;
+  height: 100rpx;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.status-icon.active, .status-icon.signed {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+}
+
+.status-icon.pending_tenant, .status-icon.pending_landlord {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+}
+
+.status-icon.terminated {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+}
+
+.status-icon.expired {
+  background: linear-gradient(135deg, #94a3b8 0%, #64748b 100%);
+}
+
+.status-info {
+  flex: 1;
+}
+
+.status-text {
+  display: block;
+  font-size: 36rpx;
+  font-weight: bold;
+  color: #1e293b;
+  margin-bottom: 8rpx;
+}
+
+.contract-no {
+  font-size: 24rpx;
+  color: #64748b;
+}
+
+/* 区块样式 */
+.section {
+  margin-bottom: 32rpx;
+}
+
+.section-header {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  margin-bottom: 16rpx;
+  padding-left: 8rpx;
+}
+
+.section-title {
+  font-size: 32rpx;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+/* 信息卡片 */
+.info-card {
+  padding: 32rpx;
+  border-radius: 24rpx;
+}
+
+.info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16rpx 0;
+  border-bottom: 1rpx solid rgba(0, 0, 0, 0.05);
+}
+
+.info-row:last-child {
+  border-bottom: none;
+}
+
+.info-label {
+  font-size: 28rpx;
+  color: #64748b;
+}
+
+.info-value {
+  font-size: 28rpx;
+  color: #1e293b;
+  font-weight: 500;
+}
+
+/* 租客信息 */
+.tenant-row {
+  display: flex;
+  align-items: center;
+  gap: 24rpx;
+}
+
+.tenant-avatar {
+  width: 80rpx;
+  height: 80rpx;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 32rpx;
+  font-weight: bold;
+}
+
+.tenant-info {
+  flex: 1;
+}
+
+.tenant-name {
+  display: block;
+  font-size: 32rpx;
+  font-weight: 600;
+  color: #1e293b;
+  margin-bottom: 8rpx;
+}
+
+.tenant-phone {
+  font-size: 26rpx;
+  color: #64748b;
+}
+
+.call-btn {
+  width: 72rpx;
+  height: 72rpx;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4rpx 12rpx rgba(16, 185, 129, 0.3);
+}
+
+/* 费用行 */
+.fee-row {
+  display: flex;
+  gap: 32rpx;
+  padding-bottom: 24rpx;
+  margin-bottom: 16rpx;
+  border-bottom: 1rpx solid rgba(0, 0, 0, 0.05);
+}
+
+.fee-item {
+  flex: 1;
+  text-align: center;
+}
+
+.fee-label {
+  display: block;
+  font-size: 24rpx;
+  color: #64748b;
+  margin-bottom: 8rpx;
+}
+
+.fee-value {
+  font-size: 36rpx;
+  font-weight: bold;
+  color: #1e293b;
+}
+
+.fee-value.primary {
+  color: #2563eb;
+}
+
+/* 签名区域 */
+.sign-row {
+  display: flex;
+  gap: 24rpx;
+}
+
+.sign-item {
+  flex: 1;
+}
+
+.sign-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16rpx;
+}
+
+.sign-role {
+  font-size: 26rpx;
+  font-weight: 500;
+  color: #1e293b;
+}
+
+.sign-status {
+  padding: 6rpx 16rpx;
+  border-radius: 12rpx;
+  font-size: 22rpx;
+  font-weight: 500;
+}
+
+.sign-status.signed {
+  background: rgba(16, 185, 129, 0.15);
+  color: #10b981;
+}
+
+.sign-status.pending {
+  background: rgba(245, 158, 11, 0.15);
+  color: #f59e0b;
+}
+
+.sign-area {
+  height: 160rpx;
+  border-radius: 16rpx;
+  background: #f8fafc;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2rpx dashed #e2e8f0;
+}
+
+.sign-area.empty {
+  color: #94a3b8;
+  font-size: 24rpx;
+}
+
+.sign-image {
+  width: 100%;
+  height: 100%;
+  border-radius: 16rpx;
+}
+
+.sign-time {
+  display: block;
+  text-align: center;
+  font-size: 22rpx;
+  color: #94a3b8;
+  margin-top: 12rpx;
+}
+
+/* 操作按钮 */
+.action-section {
+  margin-top: 32rpx;
+}
+
+.action-btn {
+  height: 96rpx;
+  border-radius: 48rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12rpx;
+  font-size: 30rpx;
+  font-weight: 600;
+  color: #fff;
+  box-shadow: 0 8rpx 24rpx rgba(0, 0, 0, 0.15);
+}
+
+.action-btn.primary {
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+}
+
+.action-btn.danger {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+}
+
+.action-btn:active {
+  transform: scale(0.98);
+  opacity: 0.9;
+}
+
+/* 玻璃卡片 */
+.glass-card {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(20px);
+  border: 1rpx solid rgba(255, 255, 255, 0.6);
+}
+
+/* 签名弹窗 */
+.sign-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.3s;
+}
+
+.sign-modal.show {
+  opacity: 1;
+  visibility: visible;
+}
+
+.sign-modal-content {
+  width: 90%;
+  max-width: 650rpx;
+  border-radius: 32rpx;
+  padding: 32rpx;
+  transform: scale(0.9);
+  transition: transform 0.3s;
+}
+
+.sign-modal.show .sign-modal-content {
+  transform: scale(1);
+}
+
+.sign-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24rpx;
+}
+
+.sign-modal-title {
+  font-size: 36rpx;
+  font-weight: bold;
+  color: #1e293b;
+}
+
+.sign-modal-close {
+  width: 60rpx;
+  height: 60rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sign-canvas-wrapper {
+  margin-bottom: 24rpx;
+}
+
+.sign-canvas-container {
+  position: relative;
+  width: 100%;
+  height: 300rpx;
+  border-radius: 16rpx;
+  overflow: hidden;
+  border: 2rpx solid #e2e8f0;
+}
+
+.sign-canvas {
+  width: 100%;
+  height: 100%;
+  background: #fff;
+}
+
+.sign-hint {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 28rpx;
+  color: #cbd5e1;
+  pointer-events: none;
+}
+
+.sign-modal-btns {
+  display: flex;
+  gap: 24rpx;
+}
+
+.sign-btn {
+  flex: 1;
+  height: 88rpx;
+  border-radius: 44rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12rpx;
+  font-size: 28rpx;
+  font-weight: 500;
+}
+
+.sign-btn.secondary {
+  background: #f1f5f9;
+  color: #64748b;
+}
+
+.sign-btn.primary {
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+  color: #fff;
+  box-shadow: 0 4rpx 16rpx rgba(37, 99, 235, 0.3);
+}
+
+.sign-btn:active {
+  transform: scale(0.98);
+}

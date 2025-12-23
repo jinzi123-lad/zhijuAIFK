@@ -6,7 +6,14 @@ Page({
   data: {
     contract: null,
     loading: true,
-    contractId: ''
+    contractId: '',
+    // 签名相关
+    showSignModal: false,
+    canvasWidth: 0,
+    canvasHeight: 0,
+    isDrawing: false,
+    lastX: 0,
+    lastY: 0
   },
 
   onLoad(options) {
@@ -53,10 +60,122 @@ Page({
     }
   },
 
-  // 房东签名
-  async signContract() {
-    // TODO: 打开签名板
-    wx.showToast({ title: '签名功能开发中', icon: 'none' })
+  // 跳转到全屏签名页
+  signContract() {
+    wx.navigateTo({
+      url: `/pages/landlord/contract/sign/index?id=${this.data.contractId}`
+    });
+  },
+
+  // 初始化Canvas
+  initCanvas() {
+    this.ctx = wx.createCanvasContext('signCanvas', this)
+    this.ctx.setStrokeStyle('#000000')
+    this.ctx.setLineWidth(3)
+    this.ctx.setLineCap('round')
+    this.ctx.setLineJoin('round')
+    this.clearCanvas()
+  },
+
+  // 关闭签名板
+  closeSignModal() {
+    this.setData({ showSignModal: false })
+  },
+
+  // 阻止冒泡
+  stopPropagation() { },
+
+  // 触摸开始
+  touchStart(e) {
+    const touch = e.touches[0]
+    this.setData({
+      isDrawing: true,
+      lastX: touch.x,
+      lastY: touch.y
+    })
+  },
+
+  // 触摸移动
+  touchMove(e) {
+    if (!this.data.isDrawing) return
+
+    const touch = e.touches[0]
+    const { lastX, lastY } = this.data
+
+    this.ctx.beginPath()
+    this.ctx.moveTo(lastX, lastY)
+    this.ctx.lineTo(touch.x, touch.y)
+    this.ctx.stroke()
+    this.ctx.draw(true)
+
+    this.setData({
+      lastX: touch.x,
+      lastY: touch.y
+    })
+  },
+
+  // 触摸结束
+  touchEnd() {
+    this.setData({ isDrawing: false })
+  },
+
+  // 清除画布
+  clearCanvas() {
+    if (this.ctx) {
+      this.ctx.clearRect(0, 0, this.data.canvasWidth, this.data.canvasHeight)
+      this.ctx.setFillStyle('#ffffff')
+      this.ctx.fillRect(0, 0, this.data.canvasWidth, this.data.canvasHeight)
+      this.ctx.draw()
+    }
+  },
+
+  // 确认签名
+  async confirmSign() {
+    wx.showLoading({ title: '保存签名中...' })
+
+    try {
+      // 将canvas转为图片
+      const tempFilePath = await new Promise((resolve, reject) => {
+        wx.canvasToTempFilePath({
+          canvasId: 'signCanvas',
+          success: (res) => resolve(res.tempFilePath),
+          fail: reject
+        }, this)
+      })
+
+      // 读取图片为base64（简化处理，实际可上传到存储）
+      const base64 = await new Promise((resolve, reject) => {
+        wx.getFileSystemManager().readFile({
+          filePath: tempFilePath,
+          encoding: 'base64',
+          success: (res) => resolve('data:image/png;base64,' + res.data),
+          fail: reject
+        })
+      })
+
+      // 保存到数据库
+      const { error } = await supabase
+        .from('contracts')
+        .update({
+          landlord_signature: base64,
+          landlord_signed_at: new Date().toISOString(),
+          status: this.data.contract.tenant_signature ? 'signed' : 'pending_tenant'
+        })
+        .eq('id', this.data.contractId)
+        .exec()
+
+      if (error) throw error
+
+      wx.hideLoading()
+      wx.showToast({ title: '签名成功', icon: 'success' })
+      this.closeSignModal()
+      // 刷新数据
+      this.loadContract(this.data.contractId)
+    } catch (err) {
+      console.error('签名失败', err)
+      wx.hideLoading()
+      wx.showToast({ title: '签名失败', icon: 'none' })
+    }
   },
 
   // 终止合同
@@ -64,6 +183,7 @@ Page({
     wx.showModal({
       title: '终止合同',
       content: '确定要终止该合同吗？此操作不可撤销。',
+      confirmColor: '#ef4444',
       success: async (res) => {
         if (res.confirm) {
           wx.showLoading({ title: '处理中...' })
