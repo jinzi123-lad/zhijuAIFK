@@ -1,0 +1,39 @@
+<view class="container">
+  <navbar title="合同预览" showBack="{{true}}"></navbar>
+  
+  <scroll-view scroll-y class="contract-body">
+    <view class="contract-paper">
+      <!-- 合同标题 -->
+      <view class="contract-title">{{template.title}}</view>
+      
+      <!-- 合同编号 -->
+      <view class="contract-no">合同编号：__________</view>
+
+      <!-- 合同正文 -->
+      <view class="contract-content">
+        <rich-text nodes="{{template.content}}"></rich-text>
+      </view>
+
+      <!-- 签署区域 -->
+      <view class="sign-section">
+        <view class="sign-row">
+          <view class="sign-col">
+            <text class="sign-label">甲方（出租人）签章：</text>
+            <view class="sign-line"></view>
+            <text class="sign-date">日期：____年____月____日</text>
+          </view>
+          <view class="sign-col">
+            <text class="sign-label">乙方（承租人）签章：</text>
+            <view class="sign-line"></view>
+            <text class="sign-date">日期：____年____月____日</text>
+          </view>
+        </view>
+      </view>
+    </view>
+  </scroll-view>
+
+  <!-- 底部操作 -->
+  <view class="bottom-actions">
+    <button class="btn-use" bindtap="useTemplate">使用此模板</button>
+  </view>
+</view>

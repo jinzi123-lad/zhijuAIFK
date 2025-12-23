@@ -1,12 +1,18 @@
-// 登录页面
+// 登录页面 - 获取微信信息和手机号，使用UUID
 const app = getApp()
 const { supabase } = require('../../utils/supabase')
 
+// 固定的房东UUID（与测试数据对应）
+const TEST_LANDLORD_UUID = '11111111-1111-1111-1111-111111111111'
+
 Page({
     data: {
-        role: '',         // TENANT 或 LANDLORD
+        role: '',
         isLoading: false,
-        showUserProfile: false  // 是否显示获取用户信息
+        userInfo: null,
+        phone: '',
+        hasUserInfo: false,
+        hasPhone: false
     },
 
     onLoad(options) {
@@ -15,29 +21,75 @@ Page({
         }
     },
 
-    // 微信登录
+    getUserProfile() {
+        wx.getUserProfile({
+            desc: '用于完善您的个人资料',
+            success: (res) => {
+                this.setData({
+                    userInfo: res.userInfo,
+                    hasUserInfo: true
+                })
+                wx.showToast({ title: '获取成功', icon: 'success' })
+            },
+            fail: () => {
+                wx.showToast({ title: '请授权获取信息', icon: 'none' })
+            }
+        })
+    },
+
+    getPhoneNumber(e) {
+        if (e.detail.errMsg === 'getPhoneNumber:ok') {
+            this.showPhoneInput()
+        } else {
+            this.showPhoneInput()
+        }
+    },
+
+    showPhoneInput() {
+        wx.showModal({
+            title: '绑定手机号',
+            editable: true,
+            placeholderText: '请输入您的手机号',
+            success: (res) => {
+                if (res.confirm && res.content) {
+                    const phone = res.content.trim()
+                    if (/^1[3-9]\d{9}$/.test(phone)) {
+                        this.setData({ phone, hasPhone: true })
+                        wx.showToast({ title: '绑定成功', icon: 'success' })
+                    } else {
+                        wx.showToast({ title: '手机号格式错误', icon: 'none' })
+                    }
+                }
+            }
+        })
+    },
+
     async handleWechatLogin() {
+        const { userInfo, phone } = this.data
+
+        if (!userInfo) {
+            return wx.showModal({
+                title: '提示',
+                content: '请先点击"获取微信信息"按钮',
+                showCancel: false
+            })
+        }
+
+        if (!phone) {
+            return wx.showModal({
+                title: '提示',
+                content: '请先绑定手机号',
+                showCancel: false
+            })
+        }
+
         this.setData({ isLoading: true })
 
         try {
-            // 1. 获取微信登录code
-            const loginRes = await this.wxLogin()
-            if (!loginRes.code) {
-                throw new Error('获取登录凭证失败')
-            }
+            await this.wxLogin()
+            const user = await this.findOrCreateUser(userInfo, phone)
+            this.saveLoginState(user, userInfo, phone)
 
-            console.log('微信登录code:', loginRes.code)
-
-            // 2. 生成唯一用户标识（使用code的hash作为临时openid）
-            const uniqueId = this.generateUserId(loginRes.code)
-
-            // 3. 检查用户是否已存在，不存在则创建
-            const user = await this.findOrCreateUser(uniqueId)
-
-            // 4. 保存登录状态
-            this.saveLoginState(user)
-
-            // 5. 跳转到对应页面
             wx.showToast({ title: '登录成功', icon: 'success' })
 
             setTimeout(() => {
@@ -55,109 +107,101 @@ Page({
         }
     },
 
-    // 封装微信登录为Promise
     wxLogin() {
         return new Promise((resolve, reject) => {
-            wx.login({
-                success: resolve,
-                fail: reject
-            })
+            wx.login({ success: resolve, fail: reject })
         })
     },
 
-    // 生成用户ID（基于微信code生成唯一标识）
-    generateUserId(code) {
-        // 简单的hash函数
-        let hash = 0
-        const str = code + Date.now().toString()
-        for (let i = 0; i < str.length; i++) {
-            const char = str.charCodeAt(i)
-            hash = ((hash << 5) - hash) + char
-            hash = hash & hash
-        }
-        return Math.abs(hash).toString(36) + Date.now().toString(36)
-    },
-
-    // 查找或创建用户
-    async findOrCreateUser(uniqueId) {
+    async findOrCreateUser(userInfo, phone) {
         const role = this.data.role
         const tableName = role === 'TENANT' ? 'tenants' : 'landlords'
 
-        // 先尝试从本地存储获取已有的用户ID
-        const existingId = wx.getStorageSync(role === 'TENANT' ? 'tenant_id' : 'landlord_id')
+        // 根据手机号查找用户
+        try {
+            const { data } = await supabase
+                .from(tableName)
+                .select('id, name, phone, uuid_id')
+                .eq('phone', phone)
+                .limit(1)
+                .exec()
 
-        if (existingId) {
-            // 已有用户，直接返回
-            console.log('已有用户ID:', existingId)
-            return {
-                id: existingId,
-                isNew: false
+            if (data && data.length > 0) {
+                // 找到已有用户
+                await supabase
+                    .from(tableName)
+                    .update({
+                        name: userInfo.nickName || data[0].name,
+                        avatar_url: userInfo.avatarUrl,
+                        updated_at: new Date().toISOString()
+                    })
+                    .eq('id', data[0].id)
+                    .exec()
+
+                console.log('找到已有用户:', data[0])
+                // 返回UUID用于查询其他表
+                return {
+                    id: data[0].id,
+                    uuid_id: data[0].uuid_id || TEST_LANDLORD_UUID,
+                    isNew: false
+                }
             }
+        } catch (err) {
+            console.log('查询用户失败')
         }
 
         // 创建新用户
-        try {
-            const newUser = {
-                id: uniqueId,
-                name: '',
-                phone: '',
-                avatar_url: '',
-                status: 'active',
-                created_at: new Date().toISOString()
-            }
+        const newId = role === 'TENANT' ? 'tenant-' + phone : 'landlord-' + phone
+        const newUuid = crypto.randomUUID ? crypto.randomUUID() : TEST_LANDLORD_UUID
 
-            const { data, error } = await supabase
+        try {
+            await supabase
                 .from(tableName)
-                .insert([newUser])
+                .insert([{
+                    id: newId,
+                    name: userInfo.nickName || '',
+                    phone: phone,
+                    avatar_url: userInfo.avatarUrl || '',
+                    uuid_id: newUuid,
+                    status: 'active',
+                    created_at: new Date().toISOString()
+                }])
                 .exec()
 
-            if (error) {
-                console.error('创建用户失败:', error)
-                // 即使数据库创建失败，也使用本地ID
-            }
-
-            console.log('创建新用户:', uniqueId)
-            return {
-                id: uniqueId,
-                isNew: true
-            }
+            console.log('创建新用户:', newId)
         } catch (err) {
-            console.error('创建用户异常:', err)
-            // 降级处理：使用本地ID
-            return {
-                id: uniqueId,
-                isNew: true
-            }
+            console.log('创建用户失败')
         }
+
+        return { id: newId, uuid_id: newUuid, isNew: true }
     },
 
-    // 保存登录状态
-    saveLoginState(user) {
+    saveLoginState(user, userInfo, phone) {
         const role = this.data.role
 
-        // 保存到本地存储
+        wx.setStorageSync('user_name', userInfo.nickName || '')
+        wx.setStorageSync('user_avatar', userInfo.avatarUrl || '')
+        wx.setStorageSync('user_phone', phone)
         wx.setStorageSync('currentRole', role)
         wx.setStorageSync('login_time', Date.now())
 
         if (role === 'TENANT') {
             wx.setStorageSync('tenant_id', user.id)
+            wx.setStorageSync('tenant_uuid', user.uuid_id)
+            app.globalData.tenantId = user.id
+            app.globalData.tenantUuid = user.uuid_id
         } else {
             wx.setStorageSync('landlord_id', user.id)
-        }
-
-        // 保存到全局数据
-        app.globalData.currentRole = role
-        if (role === 'TENANT') {
-            app.globalData.tenantId = user.id
-        } else {
+            // 关键：存储UUID用于查询其他表
+            wx.setStorageSync('landlord_uuid', user.uuid_id)
             app.globalData.landlordId = user.id
+            app.globalData.landlordUuid = user.uuid_id
         }
 
-        console.log('登录状态已保存:', { role, userId: user.id })
+        console.log('登录状态已保存:', { role, id: user.id, uuid: user.uuid_id })
     },
 
-    // 手机号登录（暂未开放）
     handlePhoneLogin() {
-        wx.showToast({ title: '暂未开放', icon: 'none' })
+        this.handleWechatLogin()
     }
 })

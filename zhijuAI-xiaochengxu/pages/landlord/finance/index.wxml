@@ -2,114 +2,157 @@
   <view class="mesh-gradient"></view>
   <navbar title="智居AI-财务报表" showBack="{{true}}"></navbar>
 
-  <view class="main-body px-4 pt-4">
-    <!-- Period Selector -->
-    <view class="flex-row mb-4">
-      <block wx:for="{{['month', 'quarter', 'year']}}" wx:key="*this">
-        <view 
-            class="period-pill {{selectedPeriod === item ? 'active bg-primary text-white' : 'glass-card text-muted'}} icon-hover-bounce"
-            bindtap="setPeriod" 
-            data-period="{{item}}">
-            {{item === 'month' ? '月度' : (item === 'quarter' ? '季度' : '年度')}}
-        </view>
-      </block>
+  <view class="main-body">
+    <!-- 加载中 -->
+    <view wx:if="{{loading}}" class="loading-container">
+      <view class="loading-spinner"></view>
+      <text class="loading-text">加载中...</text>
     </view>
 
-    <!-- Summary Cards -->
-    <view class="summary-grid mb-4">
+    <!-- 无数据空状态 -->
+    <view wx:elif="{{!recentPayments.length && financialSummary.totalIncome === '0'}}" class="empty-state">
+      <view class="empty-illustration">
+        <view class="empty-icon-bg">
+          <icon name="dollar" color="#2563eb" size="80"></icon>
+        </view>
+        <view class="empty-chart">
+          <view class="chart-bar" style="height: 40rpx;"></view>
+          <view class="chart-bar" style="height: 60rpx;"></view>
+          <view class="chart-bar" style="height: 30rpx;"></view>
+          <view class="chart-bar" style="height: 50rpx;"></view>
+          <view class="chart-bar" style="height: 45rpx;"></view>
+        </view>
+      </view>
+      <text class="empty-title">暂无财务数据</text>
+      <text class="empty-desc">添加租客并记录收支后，这里将展示您的财务报表</text>
+      <view class="empty-actions">
+        <button class="empty-btn primary" bindtap="goAddTenant">
+          <icon name="plus" color="#fff" size="28"></icon>
+          <text>添加租客</text>
+        </button>
+        <button class="empty-btn secondary" bindtap="goProperties">
+          <icon name="home" color="#2563eb" size="28"></icon>
+          <text>管理房源</text>
+        </button>
+      </view>
+      <view class="empty-tips glass-card">
+        <view class="tip-item">
+          <icon name="check" color="#10b981" size="28"></icon>
+          <text>添加房源并设置租金</text>
+        </view>
+        <view class="tip-item">
+          <icon name="check" color="#10b981" size="28"></icon>
+          <text>录入租客信息生成合同</text>
+        </view>
+        <view class="tip-item">
+          <icon name="check" color="#10b981" size="28"></icon>
+          <text>系统自动生成财务报表</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 有数据时的正常展示 -->
+    <block wx:else>
+      <!-- Period Selector -->
+      <view class="period-row">
+        <block wx:for="{{['month', 'quarter', 'year']}}" wx:key="*this">
+          <view 
+              class="period-pill {{selectedPeriod === item ? 'active' : ''}}"
+              bindtap="setPeriod" 
+              data-period="{{item}}">
+              {{item === 'month' ? '月度' : (item === 'quarter' ? '季度' : '年度')}}
+          </view>
+        </block>
+      </view>
+
+      <!-- Summary Cards -->
+      <view class="summary-grid">
         <!-- Income -->
-        <view class="summary-card glass-card shadow-md">
-            <view class="flex-row space-between mb-2">
-                <text class="text-xs text-muted">总收入</text>
-                <icon name="property" color="#10b981" size="32"></icon> <!-- TrendingUp -->
+        <view class="summary-card glass-card">
+          <view class="card-header">
+            <text class="card-label">总收入</text>
+            <view class="card-icon success">
+              <icon name="arrowUp" color="#10b981" size="28"></icon>
             </view>
-            <view class="text-2xl font-bold mb-1">¥{{financialSummary.totalIncome}}</view>
-            <view class="flex-row text-xs text-success">
-                <text>↑ {{financialSummary.incomeGrowth}}%</text>
-            </view>
+          </view>
+          <view class="card-amount">¥{{financialSummary.totalIncome}}</view>
+          <view class="card-growth success" wx:if="{{financialSummary.incomeGrowth > 0}}">
+            <icon name="arrowUp" color="#10b981" size="20"></icon>
+            <text>{{financialSummary.incomeGrowth}}%</text>
+          </view>
         </view>
 
         <!-- Expense -->
-        <view class="summary-card glass-card shadow-md">
-             <view class="flex-row space-between mb-2">
-                <text class="text-xs text-muted">总支出</text>
-                <!-- TrendingDown icon? Use chart for now or generic -->
-                <icon name="chart" color="#ef4444" size="32"></icon>
+        <view class="summary-card glass-card">
+          <view class="card-header">
+            <text class="card-label">总支出</text>
+            <view class="card-icon danger">
+              <icon name="arrowDown" color="#ef4444" size="28"></icon>
             </view>
-            <view class="text-2xl font-bold mb-1">¥{{financialSummary.totalExpense}}</view>
-             <view class="flex-row text-xs text-success">
-                <!-- Abs for growth shown as positive here? Next.js logic was Abs -->
-                <text>↓ {{financialSummary.expenseGrowth}}%</text>
-            </view>
+          </view>
+          <view class="card-amount">¥{{financialSummary.totalExpense}}</view>
+          <view class="card-growth danger" wx:if="{{financialSummary.expenseGrowth > 0}}">
+            <icon name="arrowDown" color="#ef4444" size="20"></icon>
+            <text>{{financialSummary.expenseGrowth}}%</text>
+          </view>
         </view>
 
         <!-- Net Profit -->
-        <view class="summary-card glass-card shadow-md col-span-2">
-             <view class="flex-row space-between mb-2">
-                <text class="text-xs text-muted">净利润</text>
-                <icon name="dollar" color="#2563eb" size="32"></icon>
+        <view class="summary-card glass-card full-width">
+          <view class="card-header">
+            <text class="card-label">净利润</text>
+            <view class="card-icon primary">
+              <icon name="dollar" color="#2563eb" size="28"></icon>
             </view>
-            <view class="text-3xl font-bold text-primary mb-1">¥{{financialSummary.netProfit}}</view>
-            <view class="flex-row text-xs text-success">
-                <text>较上月增长 {{financialSummary.profitGrowth}}%</text>
+          </view>
+          <view class="card-amount large primary">¥{{financialSummary.netProfit}}</view>
+          <view class="collect-rate" wx:if="{{collectRate > 0}}">
+            <text class="rate-label">收租率</text>
+            <view class="rate-bar">
+              <view class="rate-fill" style="width: {{collectRate}}%;"></view>
             </view>
+            <text class="rate-value">{{collectRate}}%</text>
+          </view>
         </view>
-    </view>
+      </view>
 
-    <!-- Revenue Trend Chart Mock -->
-    <view class="section mb-4">
-        <text class="section-title">收入趋势</text>
-        <view class="glass-card p-4 rounded-2xl">
-            <view class="chart-list">
-                <block wx:for="{{monthlyRevenue}}" wx:key="month">
-                    <view class="chart-item mb-2">
-                        <view class="flex-row space-between text-xs mb-1">
-                            <text class="text-muted">{{item.month}}</text>
-                            <text class="text-bold">¥{{item.income}}</text>
-                        </view>
-                        <view class="progress-bar-bg">
-                            <view class="progress-bar-fill" style="width: {{item.percent}}%;"></view>
-                        </view>
-                    </view>
-                </block>
-            </view>
-        </view>
-    </view>
-
-    <!-- Recent Payments -->
-    <view class="section">
-        <view class="flex-row space-between mb-2">
-            <text class="section-title">最近账单</text>
-            <view class="flex-row text-primary text-xs" bindtap="viewAllPayments">
-                <text>查看全部</text>
-                <icon name="chevronRight" color="#2563eb" size="24"></icon>
-            </view>
+      <!-- Recent Payments -->
+      <view class="section">
+        <view class="section-header">
+          <text class="section-title">最近账单</text>
+          <view class="view-all" bindtap="viewAllPayments">
+            <text>查看全部</text>
+            <icon name="chevronRight" color="#2563eb" size="24"></icon>
+          </view>
         </view>
         
         <view class="payment-list">
-            <block wx:for="{{recentPayments}}" wx:key="id">
-                <view class="payment-card glass-card p-4 mb-2 icon-hover-bounce">
-                    <view class="flex-row space-between mb-1">
-                        <view>
-                            <text class="text-sm font-bold block">{{item.typeLabel}} - 房间{{item.propertyId}}</text>
-                             <text class="text-xs text-muted">应缴日期: {{item.dueDate}}</text>
-                        </view>
-                        <view class="text-right">
-                             <view class="text-lg font-bold text-primary">¥{{item.amount}}</view>
-                             <view class="badge {{item.statusClass}}">{{item.statusLabel}}</view>
-                        </view>
-                    </view>
-                    
-                     <block wx:if="{{item.status === 'overdue'}}">
-                        <view class="flex-row text-destructive text-xs mt-1">
-                             <icon name="alert" color="#ef4444" size="24"></icon>
-                             <text class="ml-1">已逾期</text> 
-                        </view>
-                     </block>
+          <block wx:for="{{recentPayments}}" wx:key="id">
+            <view class="payment-card glass-card">
+              <view class="payment-left">
+                <view class="payment-type-icon {{item.status === 'paid' ? 'success' : (item.status === 'overdue' ? 'danger' : 'warning')}}">
+                  <icon name="{{item.status === 'paid' ? 'check' : (item.status === 'overdue' ? 'alert' : 'clock')}}" color="{{item.status === 'paid' ? '#10b981' : (item.status === 'overdue' ? '#ef4444' : '#f59e0b')}}" size="32"></icon>
                 </view>
-            </block>
-        </view>
-    </view>
+                <view class="payment-info">
+                  <text class="payment-title">{{item.typeLabel}}</text>
+                  <text class="payment-property">{{item.propertyId}}</text>
+                  <text class="payment-date">{{item.dueDate}}</text>
+                </view>
+              </view>
+              <view class="payment-right">
+                <text class="payment-amount">¥{{item.amount}}</text>
+                <view class="payment-badge {{item.statusClass}}">{{item.statusLabel}}</view>
+              </view>
+            </view>
+          </block>
 
+          <!-- 账单为空 -->
+          <view wx:if="{{recentPayments.length === 0}}" class="empty-payments">
+            <icon name="file" color="#94a3b8" size="48"></icon>
+            <text>暂无账单记录</text>
+          </view>
+        </view>
+      </view>
+    </block>
   </view>
 </view>

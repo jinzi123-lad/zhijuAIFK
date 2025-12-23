@@ -1,0 +1,107 @@
+/* 合同预览页面样式 */
+.container {
+  min-height: 100vh;
+  background: #f0f0f0;
+  display: flex;
+  flex-direction: column;
+}
+
+.contract-body {
+  flex: 1;
+  padding: 24rpx;
+  padding-bottom: 140rpx;
+}
+
+.contract-paper {
+  background: #fff;
+  border-radius: 16rpx;
+  padding: 48rpx 40rpx;
+  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.08);
+}
+
+.contract-title {
+  text-align: center;
+  font-size: 40rpx;
+  font-weight: bold;
+  color: #1a1a1a;
+  margin-bottom: 24rpx;
+  letter-spacing: 4rpx;
+}
+
+.contract-no {
+  text-align: right;
+  font-size: 24rpx;
+  color: #666;
+  margin-bottom: 32rpx;
+}
+
+.contract-content {
+  font-size: 28rpx;
+  color: #333;
+  line-height: 2;
+  text-align: justify;
+}
+
+/* 签署区域 */
+.sign-section {
+  margin-top: 60rpx;
+  padding-top: 40rpx;
+  border-top: 1rpx solid #e0e0e0;
+}
+
+.sign-row {
+  display: flex;
+  justify-content: space-between;
+}
+
+.sign-col {
+  width: 45%;
+}
+
+.sign-label {
+  display: block;
+  font-size: 26rpx;
+  color: #333;
+  margin-bottom: 16rpx;
+}
+
+.sign-line {
+  height: 80rpx;
+  border-bottom: 1rpx solid #333;
+  margin-bottom: 16rpx;
+}
+
+.sign-date {
+  font-size: 24rpx;
+  color: #666;
+}
+
+/* 底部操作 */
+.bottom-actions {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 24rpx 32rpx;
+  padding-bottom: calc(24rpx + env(safe-area-inset-bottom));
+  background: #fff;
+  box-shadow: 0 -4rpx 20rpx rgba(0, 0, 0, 0.08);
+}
+
+.btn-use {
+  width: 100%;
+  height: 88rpx;
+  background: linear-gradient(135deg, #2563eb, #7c3aed);
+  color: #fff;
+  font-size: 32rpx;
+  font-weight: 600;
+  border-radius: 16rpx;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-use::after {
+  border: none;
+}

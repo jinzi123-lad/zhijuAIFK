@@ -1,7 +1,45 @@
-/* pages/login/index.wxss */
+/* 登录页面样式 */
 .container {
-  /* Inherits centered flex from app.wxss */
-  background: white; /* Clean white background for login */
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40rpx;
+  background: #fff;
+}
+
+.mesh-bg {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: -1;
+  overflow: hidden;
+}
+
+.mesh-blob {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  opacity: 0.5;
+}
+
+.mesh-blob-1 {
+  width: 400rpx;
+  height: 400rpx;
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  top: -100rpx;
+  right: -100rpx;
+}
+
+.mesh-blob-2 {
+  width: 300rpx;
+  height: 300rpx;
+  background: linear-gradient(135deg, #f093fb, #f5576c);
+  bottom: 200rpx;
+  left: -100rpx;
 }
 
 .login-box {
@@ -16,13 +54,13 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  margin-bottom: 100rpx;
+  margin-bottom: 60rpx;
 }
 
 .role-badge {
-  background: #F3F4F6;
-  color: #4B5563;
-  padding: 8rpx 24rpx;
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  color: #fff;
+  padding: 12rpx 32rpx;
   font-size: 24rpx;
   border-radius: 100rpx;
   margin-bottom: 32rpx;
@@ -30,49 +68,161 @@
 }
 
 .login-title {
-  font-size: 56rpx;
+  font-size: 48rpx;
   font-weight: 700;
-  color: var(--text-main);
+  color: #1a1a1a;
   margin-bottom: 16rpx;
 }
 
 .login-subtitle {
-  font-size: 30rpx;
-  color: var(--text-secondary);
+  font-size: 28rpx;
+  color: #64748b;
 }
 
+/* 步骤区域 */
+.steps-box {
+  width: 100%;
+  background: #fff;
+  border-radius: 24rpx;
+  box-shadow: 0 8rpx 32rpx rgba(0, 0, 0, 0.08);
+  margin-bottom: 40rpx;
+  overflow: hidden;
+}
+
+.step-item {
+  display: flex;
+  align-items: center;
+  padding: 32rpx;
+  border-bottom: 1rpx solid #f0f0f0;
+}
+
+.step-item:last-child {
+  border-bottom: none;
+}
+
+.step-item.completed {
+  background: #f0fdf4;
+}
+
+.step-num {
+  width: 56rpx;
+  height: 56rpx;
+  border-radius: 50%;
+  background: #e5e7eb;
+  color: #64748b;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28rpx;
+  font-weight: 600;
+  margin-right: 24rpx;
+  flex-shrink: 0;
+}
+
+.step-item.completed .step-num {
+  background: #10b981;
+  color: #fff;
+}
+
+.step-content {
+  flex: 1;
+}
+
+.step-title {
+  display: block;
+  font-size: 30rpx;
+  font-weight: 600;
+  color: #1a1a1a;
+  margin-bottom: 4rpx;
+}
+
+.step-desc {
+  font-size: 24rpx;
+  color: #94a3b8;
+}
+
+.step-btn {
+  padding: 16rpx 32rpx;
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  color: #fff;
+  font-size: 26rpx;
+  font-weight: 500;
+  border-radius: 12rpx;
+  border: none;
+  line-height: 1.5;
+}
+
+.step-btn::after {
+  border: none;
+}
+
+.step-done {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+}
+
+.user-avatar {
+  width: 60rpx;
+  height: 60rpx;
+  border-radius: 50%;
+}
+
+.user-name {
+  font-size: 26rpx;
+  color: #10b981;
+  font-weight: 500;
+}
+
+.phone-text {
+  font-size: 26rpx;
+  color: #10b981;
+  font-weight: 500;
+}
+
+/* 登录按钮 */
 .login-actions {
   width: 100%;
   display: flex;
   flex-direction: column;
-  gap: 32rpx;
+  align-items: center;
+  gap: 24rpx;
 }
 
 .action-btn {
   width: 100% !important;
-  border-radius: 100rpx;
+  border-radius: 20rpx;
   padding: 32rpx 0;
   font-size: 32rpx;
   font-weight: 600;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.2s;
+  border: none;
 }
 
-.action-btn::after { border: none; }
+.action-btn::after {
+  border: none;
+}
 
 .wechat-btn {
-  background: #18191C; /* Stylish Black */
+  background: linear-gradient(135deg, #667eea, #764ba2);
   color: white;
-  box-shadow: 0 8rpx 20rpx rgba(0, 0, 0, 0.15);
+  box-shadow: 0 8rpx 24rpx rgba(102, 126, 234, 0.4);
 }
 
-.phone-btn {
-  background: #F3F4F6;
-  color: #1F2937;
+.wechat-btn.disabled {
+  background: #e5e7eb;
+  color: #94a3b8;
+  box-shadow: none;
 }
 
+.skip-text {
+  font-size: 26rpx;
+  color: #667eea;
+}
+
+/* 底部协议 */
 .footer-agreement {
   position: absolute;
   bottom: 80rpx;
@@ -83,7 +233,6 @@
 }
 
 .link {
-  color: #18191C;
+  color: #667eea;
   font-weight: 500;
-  margin: 0 4rpx;
 }

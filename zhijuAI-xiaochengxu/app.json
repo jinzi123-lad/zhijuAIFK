@@ -41,6 +41,8 @@
     "pages/landlord/settings/index",
     "pages/landlord/settings/payment/index",
     "pages/landlord/settings/reminder/index",
+    "pages/landlord/settings/contract/index",
+    "pages/landlord/settings/contract/preview/index",
     "pages/landlord/profile/index",
     "pages/landlord/profile/verify/index",
     "pages/landlord/profile/certification/index",

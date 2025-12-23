@@ -1,3 +1,7 @@
 {
-  "usingComponents": {}
+  "usingComponents": {
+    "navbar": "/components/navbar/index",
+    "icon": "/components/icon/index"
+  },
+  "navigationStyle": "custom"
 }

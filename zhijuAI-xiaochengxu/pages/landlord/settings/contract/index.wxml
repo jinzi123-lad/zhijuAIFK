@@ -1,0 +1,79 @@
+<view class="container">
+  <view class="mesh-gradient"></view>
+  <navbar title="合同设置" showBack="{{true}}"></navbar>
+
+  <scroll-view scroll-y class="main-body">
+    <!-- 预设合同模板 -->
+    <view class="section">
+      <view class="section-header">
+        <text class="section-title">预设合同模板</text>
+        <text class="section-desc">系统提供的标准合同模板</text>
+      </view>
+      
+      <view class="template-list">
+        <view 
+          wx:for="{{presetTemplates}}" 
+          wx:key="id" 
+          class="template-item glass-card"
+        >
+          <view class="template-left">
+            <view class="template-icon">
+              <text class="icon-text">📄</text>
+            </view>
+            <view class="template-info">
+              <text class="template-name">{{item.name}}</text>
+              <text class="template-desc">{{item.description}}</text>
+            </view>
+          </view>
+          <view class="template-btns">
+            <view class="btn-item preview" bindtap="previewTemplate" data-id="{{item.id}}">预览</view>
+            <view class="btn-item use" bindtap="useTemplate" data-id="{{item.id}}">使用</view>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 自定义合同 -->
+    <view class="section">
+      <view class="section-header">
+        <text class="section-title">我的合同模板</text>
+        <text class="section-desc">您上传的自定义合同</text>
+      </view>
+      
+      <view wx:if="{{customTemplates.length > 0}}" class="template-list">
+        <view 
+          wx:for="{{customTemplates}}" 
+          wx:key="index" 
+          class="template-item glass-card mb-3"
+        >
+          <view class="template-left">
+            <view class="template-icon custom">
+              <text class="icon-text">📁</text>
+            </view>
+            <view class="template-info">
+              <text class="template-name">{{item.name}}</text>
+              <text class="template-desc">上传于 {{item.uploadDate}}</text>
+            </view>
+          </view>
+          <view class="template-btns">
+            <view class="btn-item preview" bindtap="previewTemplate" data-id="{{item.id}}">预览</view>
+            <view class="btn-item delete" bindtap="deleteTemplate" data-id="{{item.id}}">删除</view>
+          </view>
+        </view>
+      </view>
+
+      <view wx:else class="empty-box glass-card">
+        <text class="empty-icon">📂</text>
+        <text class="empty-text">暂无自定义合同</text>
+      </view>
+
+      <!-- 上传按钮 -->
+      <view class="upload-btn" bindtap="uploadContract">
+        <text class="upload-icon">+</text>
+        <text>上传自定义合同</text>
+      </view>
+    </view>
+
+    <view style="height: 60rpx;"></view>
+  </scroll-view>
+</view>

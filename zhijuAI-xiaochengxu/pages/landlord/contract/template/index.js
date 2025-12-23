@@ -1,5 +1,4 @@
-// 房东-合同模板管理页面
-const app = getApp()
+// 合同模板页面
 const { supabase } = require('../../../../utils/supabase')
 
 Page({
@@ -17,11 +16,10 @@ Page({
   },
 
   async loadTemplates() {
-    const landlordId = wx.getStorageSync('landlord_id')
     this.setData({ loading: true })
 
     try {
-      // 加载系统模板和自定义模板
+      // 从数据库加载模板
       const { data, error } = await supabase
         .from('contract_templates')
         .select('*')
@@ -30,25 +28,39 @@ Page({
 
       if (error) {
         console.error('加载模板失败', error)
-        this.setData({ loading: false })
-        return
       }
 
-      const templates = (data || []).map(t => ({
+      let templates = (data || []).map(t => ({
         ...t,
-        typeLabel: t.is_default ? '系统模板' : '自定义',
-        canEdit: !t.is_default
+        typeLabel: t.is_default ? '系统模板' : '自定义模板',
+        description: t.description || (t.is_default ? '标准住房租赁合同，适用于大多数场景' : '')
       }))
 
       // 如果没有模板，添加默认模板
       if (templates.length === 0) {
-        templates.push({
-          id: 'default',
-          name: '标准住房租赁合同',
-          is_default: true,
-          typeLabel: '系统模板',
-          canEdit: false
-        })
+        templates = [
+          {
+            id: 'default-1',
+            name: '标准住房租赁合同',
+            is_default: true,
+            typeLabel: '系统模板',
+            description: '适用于普通住宅租赁，包含基本条款'
+          },
+          {
+            id: 'default-2',
+            name: '商业物业租赁合同',
+            is_default: true,
+            typeLabel: '系统模板',
+            description: '适用于商铺、写字楼等商业物业'
+          },
+          {
+            id: 'default-3',
+            name: '短租合同模板',
+            is_default: true,
+            typeLabel: '系统模板',
+            description: '适用于3个月以下的短期租赁'
+          }
+        ]
       }
 
       this.setData({ templates, loading: false })
@@ -58,82 +70,34 @@ Page({
     }
   },
 
-  // 设为默认
-  async setAsDefault(e) {
-    const id = e.currentTarget.dataset.id
-    const landlordId = wx.getStorageSync('landlord_id')
-
-    wx.showLoading({ title: '设置中...' })
-    try {
-      // 先取消其他默认
-      await supabase
-        .from('contract_templates')
-        .update({ is_default: false })
-        .eq('landlord_id', landlordId)
-        .exec()
-
-      // 设置新默认
-      const { error } = await supabase
-        .from('contract_templates')
-        .update({ is_default: true })
-        .eq('id', id)
-        .exec()
-
-      if (error) throw error
-
-      wx.hideLoading()
-      wx.showToast({ title: '已设为默认', icon: 'success' })
-      this.loadTemplates()
-    } catch (err) {
-      wx.hideLoading()
-      wx.showToast({ title: '设置失败', icon: 'none' })
-    }
-  },
-
   // 预览模板
   previewTemplate(e) {
     const id = e.currentTarget.dataset.id
-    wx.showToast({ title: '模板预览开发中', icon: 'none' })
+    wx.showToast({ title: '预览功能开发中', icon: 'none' })
+  },
+
+  // 使用模板
+  useTemplate(e) {
+    const id = e.currentTarget.dataset.id
+    wx.navigateTo({
+      url: `/pages/landlord/contract/create/index?templateId=${id}`
+    })
   },
 
   // 编辑模板
   editTemplate(e) {
     const id = e.currentTarget.dataset.id
-    wx.showToast({ title: '模板编辑开发中', icon: 'none' })
+    wx.showToast({ title: '编辑功能开发中', icon: 'none' })
   },
 
-  // 删除模板
-  deleteTemplate(e) {
-    const id = e.currentTarget.dataset.id
-    wx.showModal({
-      title: '删除模板',
-      content: '确定要删除该模板吗？',
-      success: async (res) => {
-        if (res.confirm) {
-          wx.showLoading({ title: '删除中...' })
-          try {
-            const { error } = await supabase
-              .from('contract_templates')
-              .delete()
-              .eq('id', id)
-              .exec()
-
-            if (error) throw error
-
-            wx.hideLoading()
-            wx.showToast({ title: '已删除', icon: 'success' })
-            this.loadTemplates()
-          } catch (err) {
-            wx.hideLoading()
-            wx.showToast({ title: '删除失败', icon: 'none' })
-          }
-        }
-      }
-    })
+  // 创建新模板
+  createTemplate() {
+    wx.showToast({ title: '创建功能开发中', icon: 'none' })
   },
 
-  // 新建模板
-  addTemplate() {
-    wx.showToast({ title: '新建模板开发中', icon: 'none' })
+  // 选中模板
+  selectTemplate(e) {
+    // 点击卡片默认使用该模板
+    this.useTemplate(e)
   }
 })

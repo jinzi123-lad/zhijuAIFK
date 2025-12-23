@@ -1,16 +1,18 @@
 /** index.wxss **/
 .container { min-height: 100vh; }
-.main-body { padding-top: 180rpx; }
+.main-body { padding: 24rpx; }
 
 .search-bar { padding: 24rpx; border-radius: 32rpx; align-items: center; gap: 16rpx; }
 .search-input { flex: 1; font-size: 28rpx; height: 48rpx; }
 .template-btn { 
-    padding: 8rpx 20rpx; 
-    background: #2563eb; 
+    padding: 16rpx 32rpx; 
+    background: linear-gradient(135deg, #2563eb, #7c3aed); 
     color: #fff; 
-    font-size: 24rpx; 
-    border-radius: 16rpx; 
+    font-size: 26rpx; 
+    font-weight: 500;
+    border-radius: 20rpx; 
     white-space: nowrap;
+    box-shadow: 0 4rpx 12rpx rgba(37, 99, 235, 0.3);
 }
 
 /* Stats Matrix */
@@ -98,7 +100,8 @@
     width: 112rpx;
     height: 112rpx;
     border-radius: 50%;
-    box-shadow: 0 10px 25px -5px rgba(37, 99, 235, 0.4);
+    background: linear-gradient(135deg, #2563eb, #7c3aed);
+    box-shadow: 0 12rpx 32rpx rgba(37, 99, 235, 0.5);
     z-index: 100;
 }
 .centered { display: flex; justify-content: center; align-items: center; }

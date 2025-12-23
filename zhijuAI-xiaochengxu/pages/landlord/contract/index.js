@@ -31,18 +31,14 @@ Page({
     },
 
     async loadContracts() {
-        const landlordId = wx.getStorageSync('landlord_id')
-        if (!landlordId) {
-            this.setData({ loading: false })
-            return
-        }
+        const landlordUuid = wx.getStorageSync('landlord_uuid') || '11111111-1111-1111-1111-111111111111'
 
         this.setData({ loading: true })
         try {
             const { data, error } = await supabase
                 .from('contracts')
                 .select('*')
-                .eq('landlord_id', landlordId)
+                .eq('landlord_id', landlordUuid)
                 .order('created_at', { ascending: false })
                 .exec()
 

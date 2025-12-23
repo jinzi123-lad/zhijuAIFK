@@ -5,32 +5,53 @@
   </view>
   
   <view class="login-box">
-    <!-- Centered Header -->
+    <!-- Header -->
     <view class="login-header">
       <view class="role-badge">{{role === 'TENANT' ? '租客端' : '房东端'}}</view>
       <text class="login-title">欢迎使用智居AI</text>
-      <text class="login-subtitle">请完成登录以继续</text>
+      <text class="login-subtitle">请完成以下步骤登录</text>
     </view>
 
-    <!-- Centered Actions -->
+    <!-- 步骤提示 -->
+    <view class="steps-box">
+      <!-- 步骤1：获取微信信息 -->
+      <view class="step-item {{hasUserInfo ? 'completed' : ''}}">
+        <view class="step-num">{{hasUserInfo ? '✓' : '1'}}</view>
+        <view class="step-content">
+          <text class="step-title">获取微信信息</text>
+          <text class="step-desc">用于显示您的昵称和头像</text>
+        </view>
+        <button wx:if="{{!hasUserInfo}}" class="step-btn" bindtap="getUserProfile">授权</button>
+        <view wx:else class="step-done">
+          <image class="user-avatar" src="{{userInfo.avatarUrl}}" mode="aspectFill"></image>
+          <text class="user-name">{{userInfo.nickName}}</text>
+        </view>
+      </view>
+
+      <!-- 步骤2：绑定手机号 -->
+      <view class="step-item {{hasPhone ? 'completed' : ''}}">
+        <view class="step-num">{{hasPhone ? '✓' : '2'}}</view>
+        <view class="step-content">
+          <text class="step-title">绑定手机号</text>
+          <text class="step-desc">用于接收通知和找回账号</text>
+        </view>
+        <button wx:if="{{!hasPhone}}" class="step-btn" open-type="getPhoneNumber" bindgetphonenumber="getPhoneNumber">绑定</button>
+        <text wx:else class="phone-text">{{phone}}</text>
+      </view>
+    </view>
+
+    <!-- 登录按钮 -->
     <view class="login-actions">
       <button 
-        class="action-btn wechat-btn" 
+        class="action-btn wechat-btn {{hasUserInfo && hasPhone ? '' : 'disabled'}}" 
         bindtap="handleWechatLogin" 
         loading="{{isLoading}}"
-        hover-class="btn-hover"
+        disabled="{{!hasUserInfo || !hasPhone || isLoading}}"
       >
-        <image class="wechat-icon" src="/images/wechat-icon.png" wx:if="{{false}}"></image> <!-- Placeholder -->
-        <text>微信一键登录</text>
+        <text>登录</text>
       </button>
       
-      <button 
-        class="action-btn phone-btn" 
-        bindtap="handlePhoneLogin"
-        hover-class="btn-hover"
-      >
-        手机号码登录
-      </button>
+      <text class="skip-text" bindtap="showPhoneInput" wx:if="{{!hasPhone}}">手动输入手机号</text>
     </view>
   </view>
 

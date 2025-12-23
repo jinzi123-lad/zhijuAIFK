@@ -68,6 +68,13 @@
         <text class="menu-label">催租提醒</text>
         <icon name="chevronRight" color="#ccc" size="32"></icon>
       </view>
+      <view class="menu-item" bindtap="goTo" data-path="/pages/landlord/settings/contract/index">
+        <view class="menu-icon-box">
+          <icon name="file" color="#2563eb" size="40"></icon>
+        </view>
+        <text class="menu-label">合同设置</text>
+        <icon name="chevronRight" color="#ccc" size="32"></icon>
+      </view>
       <view class="menu-item" bindtap="goTo" data-path="/pages/landlord/settings/index">
         <view class="menu-icon-box">
           <icon name="settings" color="#64748b" size="40"></icon>

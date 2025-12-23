@@ -1,4 +1,10 @@
+// 财务报表页面
 const { supabase } = require('../../../utils/supabase');
+
+// 获取房东UUID
+function getLandlordUuid() {
+    return wx.getStorageSync('landlord_uuid') || '11111111-1111-1111-1111-111111111111';
+}
 
 Page({
     data: {
@@ -11,19 +17,16 @@ Page({
             expenseGrowth: 0,
             profitGrowth: 0,
         },
-        monthlyRevenue: [
-            // Mock chart data kept for visual fullness until we have historical payment records
-            { month: "7月", income: '38,000', percent: 80 },
-            { month: "8月", income: '39,500', percent: 83 },
-            { month: "9月", income: '41,000', percent: 85 },
-            { month: "10月", income: '42,800', percent: 88 },
-            { month: "11月", income: '44,200', percent: 92 },
-            { month: "12月", income: '45,600', percent: 100 },
-        ],
-        recentPayments: []
+        collectRate: 0,
+        recentPayments: [],
+        loading: true
     },
 
     onLoad() {
+        this.fetchFinancialData();
+    },
+
+    onShow() {
         this.fetchFinancialData();
     },
 
@@ -34,7 +37,9 @@ Page({
     },
 
     setPeriod(e) {
-        this.setData({ selectedPeriod: e.currentTarget.dataset.period });
+        const period = e.currentTarget.dataset.period;
+        this.setData({ selectedPeriod: period });
+        this.fetchFinancialData();
     },
 
     viewAllPayments() {
@@ -42,56 +47,105 @@ Page({
     },
 
     async fetchFinancialData() {
-        // 1. Calculate Expected Monthly Revenue from Active Tenants
-        // In a real system, we'd query a 'transactions' table.
-        // For MVP, we sum 'rent_amount' from 'tenants' table (PROJECTION).
+        const landlordUuid = getLandlordUuid();
+        this.setData({ loading: true });
 
-        const landlordId = getApp().globalData.landlordId;
-        const { data: tenants, error } = await supabase
-            .from('tenants')
-            .select('rent_amount, name, property_name, contract_end_date')
-            .eq('status', 'active')
-            .eq('landlord_id', landlordId)
-            .exec();
+        try {
+            // 1. 从contracts表获取收入
+            const { data: contracts } = await supabase
+                .from('contracts')
+                .select('id, rent_amount, tenant_name, property_title, status')
+                .eq('landlord_id', landlordUuid)
+                .exec();
 
-        if (error) {
-            console.error('Fetch finance data failed', error);
-            return;
+            let totalMonthlyRent = 0;
+            const activeContracts = [];
+
+            if (contracts) {
+                contracts.forEach(c => {
+                    if (c.status === 'active' || c.status === 'signed') {
+                        totalMonthlyRent += (c.rent_amount || 0);
+                        activeContracts.push(c);
+                    }
+                });
+            }
+
+            // 2. 从payments表获取账单
+            const { data: payments } = await supabase
+                .from('payments')
+                .select('id, amount, payment_type, status, due_date, paid_date, property_id')
+                .eq('landlord_id', landlordUuid)
+                .order('created_at', { ascending: false })
+                .limit(10)
+                .exec();
+
+            let paidAmount = 0;
+            let totalDueAmount = 0;
+            const recentPayments = [];
+
+            if (payments) {
+                payments.forEach(p => {
+                    totalDueAmount += (p.amount || 0);
+                    if (p.status === 'paid' || p.status === 'confirmed') {
+                        paidAmount += (p.amount || 0);
+                    }
+                    recentPayments.push({
+                        id: p.id,
+                        propertyId: p.property_id,
+                        amount: (p.amount || 0).toLocaleString(),
+                        typeLabel: p.payment_type === 'rent' ? '租金' : (p.payment_type === 'deposit' ? '押金' : '其他'),
+                        status: p.status,
+                        statusLabel: p.status === 'paid' ? '已支付' : (p.status === 'overdue' ? '已逾期' : '待支付'),
+                        statusClass: p.status === 'paid' ? 'badge-success' : (p.status === 'overdue' ? 'badge-error' : 'badge-warning'),
+                        dueDate: p.due_date
+                    });
+                });
+            }
+
+            // 如果没有payments但有合同，生成预期账单展示
+            if (recentPayments.length === 0 && activeContracts.length > 0) {
+                activeContracts.slice(0, 5).forEach((c, index) => {
+                    recentPayments.push({
+                        id: index,
+                        propertyId: c.property_title,
+                        amount: (c.rent_amount || 0).toLocaleString(),
+                        typeLabel: '租金',
+                        status: 'pending',
+                        statusLabel: '待支付',
+                        statusClass: 'badge-warning',
+                        dueDate: new Date().toISOString().split('T')[0]
+                    });
+                });
+            }
+
+            const collectRate = totalDueAmount > 0 ? Math.round((paidAmount / totalDueAmount) * 100) : 0;
+            const totalExpense = Math.round(totalMonthlyRent * 0.15);
+            const netProfit = totalMonthlyRent - totalExpense;
+
+            this.setData({
+                financialSummary: {
+                    totalIncome: totalMonthlyRent.toLocaleString(),
+                    totalExpense: totalExpense.toLocaleString(),
+                    netProfit: netProfit.toLocaleString(),
+                    incomeGrowth: 0,
+                    expenseGrowth: 0,
+                    profitGrowth: 0,
+                },
+                collectRate,
+                recentPayments,
+                loading: false
+            });
+        } catch (err) {
+            console.error('获取财务数据失败', err);
+            this.setData({ loading: false });
         }
+    },
 
-        const activeTenants = tenants || [];
-        let totalMonthlyRent = 0;
+    goAddTenant() {
+        wx.navigateTo({ url: '/pages/landlord/tenant/add/index' });
+    },
 
-        // Mock recent payments list from real tenants
-        const mockRecentPayments = activeTenants.map((t, index) => ({
-            id: index,
-            propertyId: t.property_name, // Simplified
-            amount: t.rent_amount.toString(),
-            typeLabel: "租金",
-            status: index % 3 === 0 ? "paid" : (index % 5 === 0 ? "overdue" : "pending"), // Random status for demo
-            statusLabel: index % 3 === 0 ? "已支付" : (index % 5 === 0 ? "已逾期" : "待支付"),
-            statusClass: index % 3 === 0 ? "badge-success" : (index % 5 === 0 ? "badge-error" : "badge-warning"),
-            dueDate: new Date().toISOString().split('T')[0] // Today
-        }));
-
-        activeTenants.forEach(t => {
-            totalMonthlyRent += (t.rent_amount || 0);
-        });
-
-        // Mock Expense (fix calculated 20% of income)
-        const totalExpense = totalMonthlyRent * 0.2;
-        const netProfit = totalMonthlyRent - totalExpense;
-
-        this.setData({
-            financialSummary: {
-                totalIncome: totalMonthlyRent.toLocaleString(),
-                totalExpense: totalExpense.toLocaleString(),
-                netProfit: netProfit.toLocaleString(),
-                incomeGrowth: 12.5, // Mock
-                expenseGrowth: 3.2, // Mock
-                profitGrowth: 15.8, // Mock
-            },
-            recentPayments: mockRecentPayments
-        });
+    goProperties() {
+        wx.navigateTo({ url: '/pages/landlord/property/list/index' });
     }
 })
