@@ -39,16 +39,16 @@ Page({
         console.log('landlord_uuid:', landlordUuid)
 
         try {
+            // 暂时不过滤landlord_id，查看全部数据
             const { data, error } = await supabase
                 .from('contract_templates')
                 .select('*')
-                .eq('landlord_id', landlordUuid)
                 .order('created_at', { ascending: false })
                 .exec()
 
-            console.log('Supabase返回 error:', error)
-            console.log('Supabase返回 data:', data)
-            console.log('data是数组吗:', Array.isArray(data))
+            console.log('查询全部模板, error:', error)
+            console.log('查询全部模板, data类型:', typeof data, Array.isArray(data))
+            console.log('查询全部模板, data:', JSON.stringify(data))
             console.log('data长度:', data ? data.length : 0)
 
             if (!data || data.length === 0) {
