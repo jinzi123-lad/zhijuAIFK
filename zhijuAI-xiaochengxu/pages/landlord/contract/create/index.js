@@ -47,7 +47,8 @@ Page({
   },
 
   async loadData() {
-    const landlordId = wx.getStorageSync('landlord_id')
+    // 使用UUID查询
+    const landlordUuid = wx.getStorageSync('landlord_uuid') || '11111111-1111-1111-1111-111111111111'
     this.setData({ loading: true })
 
     try {
@@ -55,17 +56,18 @@ Page({
       const { data: properties, error } = await supabase
         .from('properties')
         .select('*')
-        .eq('landlord_id', landlordId)
-        .eq('status', 'available')
+        .eq('landlord_id', landlordUuid)
+        .range(0, 99)
         .order('title')
         .exec()
 
       if (error) console.error('加载房源失败', error)
 
-      // 加载合同模板
+      // 加载合同模板（预设+自定义）
       const { data: templates } = await supabase
         .from('contract_templates')
         .select('*')
+        .range(0, 99)
         .exec()
 
       const defaultTemplate = (templates || []).find(t => t.is_default) || templates?.[0]
@@ -206,7 +208,7 @@ Page({
   // 提交合同
   async submitContract() {
     const { selectedProperty, selectedTemplateId, selectedTenant, contractData } = this.data
-    const landlordId = wx.getStorageSync('landlord_id')
+    const landlordUuid = wx.getStorageSync('landlord_uuid') || '11111111-1111-1111-1111-111111111111'
 
     // 校验
     if (!selectedProperty) {
@@ -235,7 +237,7 @@ Page({
         .from('contracts')
         .insert([{
           property_id: selectedProperty.id,
-          landlord_id: landlordId,
+          landlord_id: landlordUuid,
           tenant_id: selectedTenant.id,
           tenant_phone: selectedTenant.phone,
           template_id: selectedTemplateId,

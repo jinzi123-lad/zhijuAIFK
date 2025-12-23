@@ -123,12 +123,13 @@ Page({
     },
 
     async fetchProperties() {
-        // Use Supabase
-        const landlordId = getApp().globalData.landlordId;
+        // 使用UUID查询
+        const landlordUuid = wx.getStorageSync('landlord_uuid') || '11111111-1111-1111-1111-111111111111';
         const { data, error } = await supabase
             .from('properties')
             .select('*')
-            .eq('landlord_id', landlordId) // Isolation
+            .eq('landlord_id', landlordUuid)
+            .range(0, 99)
             .order('created_at', { ascending: false })
             .exec();
 

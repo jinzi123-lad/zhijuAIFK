@@ -35,44 +35,28 @@ Page({
 
     async loadCustomTemplates() {
         const landlordUuid = wx.getStorageSync('landlord_uuid') || '11111111-1111-1111-1111-111111111111'
-        console.log('=== 开始加载模板 ===')
-        console.log('landlord_uuid:', landlordUuid)
 
         try {
-            // 暂时不过滤landlord_id，查看全部数据
             const { data, error } = await supabase
                 .from('contract_templates')
                 .select('*')
-                .range(0, 99)  // 返回最多100条
+                .eq('landlord_id', landlordUuid)
+                .range(0, 99)
                 .order('created_at', { ascending: false })
                 .exec()
 
-            console.log('查询全部模板, error:', error)
-            console.log('查询全部模板, data类型:', typeof data, Array.isArray(data))
-            console.log('查询全部模板, data:', JSON.stringify(data))
-            console.log('data长度:', data ? data.length : 0)
-
-            if (!data || data.length === 0) {
-                console.log('没有查询到数据')
+            if (error || !data || data.length === 0) {
                 this.setData({ customTemplates: [] })
                 return
             }
 
-            // 直接用查询到的数据，不做任何过滤
-            const customTemplates = data.map((t, index) => {
-                console.log(`处理第${index + 1}条:`, t.id, t.name)
-                return {
-                    id: t.id || `temp-${index}-${Date.now()}`,
-                    name: t.name || `合同${index + 1}`,
-                    uploadDate: t.created_at ? new Date(t.created_at).toLocaleDateString('zh-CN') : '未知'
-                }
-            })
-
-            console.log('最终customTemplates数组:', customTemplates)
-            console.log('数组长度:', customTemplates.length)
+            const customTemplates = data.map((t, index) => ({
+                id: t.id || `temp-${index}`,
+                name: t.name || `合同${index + 1}`,
+                uploadDate: t.created_at ? new Date(t.created_at).toLocaleDateString('zh-CN') : '未知'
+            }))
 
             this.setData({ customTemplates })
-            console.log('setData完成')
         } catch (err) {
             console.error('加载自定义模板失败', err)
         }

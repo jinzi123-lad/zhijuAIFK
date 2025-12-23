@@ -22,10 +22,9 @@ Page({
             const isExpired = loginTime && (Date.now() - loginTime > 30 * 24 * 60 * 60 * 1000)
 
             if (!isExpired) {
-                // 确保设置UUID用于测试
-                if (!wx.getStorageSync('landlord_uuid')) {
-                    wx.setStorageSync('landlord_uuid', TEST_LANDLORD_UUID)
-                }
+                // 强制设置UUID用于测试（覆盖旧值）
+                wx.setStorageSync('landlord_uuid', TEST_LANDLORD_UUID)
+                console.log('Current Landlord UUID:', TEST_LANDLORD_UUID)
 
                 const url = currentRole === 'TENANT'
                     ? '/pages/tenant/home/index'

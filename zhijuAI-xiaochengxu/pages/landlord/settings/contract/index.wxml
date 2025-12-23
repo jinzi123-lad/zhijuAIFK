@@ -32,21 +32,12 @@
     <!-- 自定义合同 -->
     <view class="section">
       <view class="section-header">
-        <text class="section-title">我的合同模板 ({{customTemplates.length}}份)</text>
+        <text class="section-title">我的合同模板 ({{customTemplates.length}})</text>
         <text class="section-desc">您上传的自定义合同</text>
       </view>
       
-      <!-- 调试：显示每个模板名称 -->
-      <view style="background:#ffe; padding:20rpx; margin-bottom:20rpx; border-radius:12rpx;">
-        <text style="font-size:24rpx; color:#666;">调试信息：共 {{customTemplates.length}} 份\n</text>
-        <block wx:for="{{customTemplates}}" wx:key="index">
-          <text style="font-size:22rpx; display:block;">{{index+1}}. {{item.name}}\n</text>
-        </block>
-      </view>
-      
-      <!-- 正式列表 -->
       <block wx:for="{{customTemplates}}" wx:key="index">
-        <view class="template-item glass-card" style="margin-bottom:16rpx;">
+        <view class="template-item glass-card">
           <view class="template-left">
             <view class="template-icon custom">
               <text class="icon-text">📁</text>

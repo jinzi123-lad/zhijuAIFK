@@ -39,6 +39,7 @@ Page({
                 .from('contracts')
                 .select('*')
                 .eq('landlord_id', landlordUuid)
+                .range(0, 99)
                 .order('created_at', { ascending: false })
                 .exec()
 

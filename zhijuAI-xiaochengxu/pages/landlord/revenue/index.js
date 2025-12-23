@@ -24,22 +24,19 @@ Page({
     },
 
     async loadRevenue() {
-        const landlordId = wx.getStorageSync('landlord_id')
+        // 使用UUID查询
+        const landlordUuid = wx.getStorageSync('landlord_uuid') || '11111111-1111-1111-1111-111111111111'
         const { selectedYear } = this.data
         this.setData({ loading: true })
 
         try {
             // 从payments表加载已确认的收款
-            const startDate = `${selectedYear}-01-01`
-            const endDate = `${selectedYear}-12-31`
-
             const { data, error } = await supabase
                 .from('payments')
                 .select('*')
-                .eq('landlord_id', landlordId)
+                .eq('landlord_id', landlordUuid)
                 .eq('status', 'confirmed')
-                .gte('paid_date', startDate)
-                .lte('paid_date', endDate)
+                .range(0, 199)
                 .exec()
 
             if (error) {
@@ -48,7 +45,7 @@ Page({
                 return
             }
 
-            // 按月汇总
+            // 按月汇总（过滤当年数据）
             const monthlyMap = {}
             for (let i = 1; i <= 12; i++) {
                 monthlyMap[i] = 0
@@ -56,6 +53,10 @@ Page({
 
             let totalIncome = 0
                 ; (data || []).forEach(p => {
+                    // 过滤选中年份的数据
+                    const paidYear = p.paid_date?.split('-')[0]
+                    if (paidYear !== selectedYear) return
+
                     const month = parseInt(p.paid_date?.split('-')[1] || 1)
                     const amount = p.amount || 0
                     monthlyMap[month] += amount

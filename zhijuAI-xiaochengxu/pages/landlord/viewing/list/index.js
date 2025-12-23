@@ -30,11 +30,8 @@ Page({
     },
 
     async loadAppointments() {
-        const landlordId = wx.getStorageSync('landlord_id')
-        if (!landlordId) {
-            this.setData({ loading: false, appointments: [] })
-            return
-        }
+        // 使用UUID查询
+        const landlordUuid = wx.getStorageSync('landlord_uuid') || '11111111-1111-1111-1111-111111111111'
 
         this.setData({ loading: true })
         try {
@@ -42,7 +39,8 @@ Page({
             let query = supabase
                 .from('viewing_appointments')
                 .select('*')
-                .eq('landlord_id', landlordId)
+                .eq('landlord_id', landlordUuid)
+                .range(0, 99)  // 返回最多100条
                 .order('created_at', { ascending: false })
 
             // 状态筛选

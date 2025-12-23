@@ -37,19 +37,16 @@ Page({
   },
 
   async loadMembers() {
-    const landlordId = wx.getStorageSync('landlord_id')
-    if (!landlordId) {
-      this.setData({ loading: false, members: [] })
-      return
-    }
+    // 使用UUID查询
+    const landlordUuid = wx.getStorageSync('landlord_uuid') || '11111111-1111-1111-1111-111111111111'
 
     this.setData({ loading: true })
     try {
       const { data, error } = await supabase
         .from('team_members')
         .select('*')
-        .eq('landlord_id', landlordId)
-        .order('created_at', { ascending: false })
+        .eq('landlord_id', landlordUuid)
+        .range(0, 99)
         .exec()
 
       if (error) {
@@ -192,8 +189,7 @@ Page({
       const { error } = await supabase
         .from('team_members')
         .update({
-          role: selectedMember.role,
-          updated_at: new Date().toISOString()
+          role: selectedMember.role
         })
         .eq('id', selectedMember.id)
         .exec()

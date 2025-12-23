@@ -30,11 +30,8 @@ Page({
     },
 
     async fetchTenants() {
-        const landlordId = wx.getStorageSync('landlord_id');
-        if (!landlordId) {
-            this.setData({ isLoading: false, allTenants: [], filteredTenants: [] });
-            return;
-        }
+        // 使用UUID查询
+        const landlordUuid = wx.getStorageSync('landlord_uuid') || '11111111-1111-1111-1111-111111111111';
 
         this.setData({ isLoading: true });
 
@@ -43,7 +40,8 @@ Page({
             const { data, error } = await supabase
                 .from('contracts')
                 .select('*')
-                .eq('landlord_id', landlordId)
+                .eq('landlord_id', landlordUuid)
+                .range(0, 99)
                 .order('created_at', { ascending: false })
                 .exec();
 

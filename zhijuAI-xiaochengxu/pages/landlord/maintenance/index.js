@@ -39,18 +39,16 @@ Page({
     },
 
     async loadRepairs() {
-        const landlordId = wx.getStorageSync('landlord_id')
-        if (!landlordId) {
-            this.setData({ loading: false })
-            return
-        }
+        // 使用UUID查询
+        const landlordUuid = wx.getStorageSync('landlord_uuid') || '11111111-1111-1111-1111-111111111111'
 
         this.setData({ loading: true })
         try {
             const { data, error } = await supabase
                 .from('repair_orders')
                 .select('*')
-                .eq('landlord_id', landlordId)
+                .eq('landlord_id', landlordUuid)
+                .range(0, 99)
                 .order('created_at', { ascending: false })
                 .exec()
 
@@ -155,5 +153,10 @@ Page({
 
     onAddRequest() {
         wx.showToast({ title: '房东端暂不支持新建工单', icon: 'none' })
+    },
+
+    // 别名方法
+    navToDetail(e) {
+        this.goToDetail(e)
     }
 })

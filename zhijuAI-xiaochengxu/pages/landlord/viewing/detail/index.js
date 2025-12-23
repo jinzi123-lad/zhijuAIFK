@@ -250,5 +250,10 @@ Page({
         } else {
             wx.showToast({ title: '暂无联系方式', icon: 'none' })
         }
+    },
+
+    // 阻止冒泡
+    stopPropagation() {
+        // 空方法，仅用于阻止事件冒泡
     }
 })

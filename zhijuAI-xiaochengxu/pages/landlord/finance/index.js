@@ -56,6 +56,7 @@ Page({
                 .from('contracts')
                 .select('id, rent_amount, tenant_name, property_title, status')
                 .eq('landlord_id', landlordUuid)
+                .range(0, 99)
                 .exec();
 
             let totalMonthlyRent = 0;
@@ -75,8 +76,8 @@ Page({
                 .from('payments')
                 .select('id, amount, payment_type, status, due_date, paid_date, property_id')
                 .eq('landlord_id', landlordUuid)
+                .range(0, 49)
                 .order('created_at', { ascending: false })
-                .limit(10)
                 .exec();
 
             let paidAmount = 0;

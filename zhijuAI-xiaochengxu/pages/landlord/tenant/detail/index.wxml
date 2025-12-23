@@ -1,0 +1,125 @@
+<view class="container">
+  <view class="mesh-gradient"></view>
+  <navbar title="租客详情" showBack="{{true}}"></navbar>
+
+  <!-- 加载中 -->
+  <view wx:if="{{loading}}" class="loading-container">
+    <view class="loading-spinner"></view>
+    <text class="loading-text">加载中...</text>
+  </view>
+
+  <!-- 详情内容 -->
+  <scroll-view wx:else scroll-y class="main-body">
+    <!-- 租客基本信息卡片 -->
+    <view class="profile-section">
+      <view class="profile-card glass-card">
+        <view class="avatar-wrapper">
+          <view class="avatar-large">
+            <text class="avatar-text">{{tenant.name[0] || '租'}}</text>
+          </view>
+          <view class="tenant-status {{tenant.statusClass}}">{{tenant.statusText}}</view>
+        </view>
+        <view class="profile-info">
+          <text class="tenant-name">{{tenant.name}}</text>
+          <view class="contact-row" bindtap="callTenant">
+            <icon name="smartphone" color="#2563eb" size="32"></icon>
+            <text class="contact-text">{{tenant.phone}}</text>
+            <view class="call-btn">
+              <icon name="phone" color="#fff" size="24"></icon>
+            </view>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 当前房源信息 -->
+    <view class="section">
+      <view class="section-header">
+        <icon name="home" color="#2563eb" size="36"></icon>
+        <text class="section-title">当前租住</text>
+      </view>
+      <view class="info-card glass-card">
+        <view class="info-row">
+          <text class="info-label">房源</text>
+          <text class="info-value">{{tenant.property}}</text>
+        </view>
+        <view class="info-row">
+          <text class="info-label">月租金</text>
+          <text class="info-value highlight">¥{{tenant.rent}}</text>
+        </view>
+        <view class="info-row">
+          <text class="info-label">押金</text>
+          <text class="info-value">¥{{tenant.deposit}}</text>
+        </view>
+        <view class="info-row">
+          <text class="info-label">入住日期</text>
+          <text class="info-value">{{tenant.startDate}}</text>
+        </view>
+        <view class="info-row">
+          <text class="info-label">到期日期</text>
+          <text class="info-value {{tenant.isExpiringSoon ? 'warning' : ''}}">{{tenant.endDate}}</text>
+        </view>
+        <view class="info-row">
+          <text class="info-label">缴费日</text>
+          <text class="info-value">每月{{tenant.paymentDay}}日</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 合同信息 -->
+    <view class="section">
+      <view class="section-header">
+        <icon name="file" color="#10b981" size="36"></icon>
+        <text class="section-title">合同信息</text>
+      </view>
+      <view class="info-card glass-card" bindtap="goToContract">
+        <view class="contract-row">
+          <view class="contract-info">
+            <text class="contract-no">合同编号: {{tenant.contractId || '—'}}</text>
+            <text class="contract-date">{{tenant.startDate}} 至 {{tenant.endDate}}</text>
+          </view>
+          <view class="arrow-right">
+            <icon name="chevronRight" color="#94a3b8" size="40"></icon>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 账单记录 -->
+    <view class="section">
+      <view class="section-header">
+        <icon name="dollar" color="#f59e0b" size="36"></icon>
+        <text class="section-title">账单记录</text>
+      </view>
+      <view class="bill-list">
+        <block wx:for="{{bills}}" wx:key="id">
+          <view class="bill-item glass-card">
+            <view class="bill-left">
+              <text class="bill-type">{{item.typeLabel}}</text>
+              <text class="bill-date">{{item.dueDate}}</text>
+            </view>
+            <view class="bill-right">
+              <text class="bill-amount">¥{{item.amount}}</text>
+              <view class="bill-status {{item.statusClass}}">{{item.statusLabel}}</view>
+            </view>
+          </view>
+        </block>
+        <view wx:if="{{bills.length === 0}}" class="empty-text">暂无账单记录</view>
+      </view>
+    </view>
+
+    <!-- 操作按钮 -->
+    <view class="action-section">
+      <view class="action-btn primary" bindtap="renewContract">
+        <icon name="refresh" color="#fff" size="32"></icon>
+        <text>续租</text>
+      </view>
+      <view class="action-btn warning" bindtap="terminateContract">
+        <icon name="x" color="#fff" size="32"></icon>
+        <text>退租</text>
+      </view>
+    </view>
+
+    <view style="height: 60rpx;"></view>
+  </scroll-view>
+</view>

@@ -44,6 +44,7 @@ Page({
                 .from('properties')
                 .select('id, status')
                 .eq('landlord_id', landlordUuid)
+                .range(0, 99)
                 .exec();
 
             if (error) {
@@ -73,8 +74,8 @@ Page({
                 .select('id, guest_name, appointment_date, status')
                 .eq('landlord_id', landlordUuid)
                 .eq('status', 'pending')
+                .range(0, 9)
                 .order('created_at', { ascending: false })
-                .limit(3)
                 .exec();
 
             if (viewings && viewings.length > 0) {
@@ -97,8 +98,8 @@ Page({
                 .select('id, title, priority, created_at')
                 .eq('landlord_id', landlordUuid)
                 .eq('status', 'pending')
+                .range(0, 9)
                 .order('created_at', { ascending: false })
-                .limit(3)
                 .exec();
 
             if (repairs && repairs.length > 0) {
@@ -121,8 +122,8 @@ Page({
                 .select('id, amount, due_date')
                 .eq('landlord_id', landlordUuid)
                 .eq('status', 'overdue')
+                .range(0, 9)
                 .order('due_date', { ascending: true })
-                .limit(3)
                 .exec();
 
             if (overduePayments && overduePayments.length > 0) {
