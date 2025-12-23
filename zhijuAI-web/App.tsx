@@ -13,10 +13,12 @@ import SystemSettings from './components/SystemSettings';
 import ClientManagement from './components/ClientManagement';
 import AcquisitionChannel from './components/AcquisitionChannel';
 import BigScreenDashboard from './components/BigScreenDashboard';
+import AccountManagement from './components/AccountManagement';
 import { searchPropertiesWithAI, parsePropertyInfoWithAI, configureAI, generatePropertyDescription } from './services/geminiService';
 import { uploadFile } from './services/storageService';
 import { seedAllProperties, syncKnowledgeBase } from './services/seeder';
 import { db } from './services/db';
+import { supabase } from './services/supabaseClient';
 
 const LoginPage = ({ onLogin, error, config, loading }: { onLogin: (u: string, p: string) => void; error: string; config: SystemConfig; loading: boolean }) => {
     const [u, setU] = useState('');
@@ -2186,7 +2188,7 @@ const App: React.FC = () => {
             )}
 
             {activePage === 'users' && (
-                <UserManagement users={users} currentUser={currentUser!} onAddUser={handleAddUser} onUpdateUser={handleUpdateUser} onDeleteUser={handleDeleteUser} />
+                <AccountManagement supabase={supabase} />
             )}
 
             {activePage === 'system-settings' && (
