@@ -43,6 +43,7 @@ Page({
             const { data, error } = await supabase
                 .from('contract_templates')
                 .select('*')
+                .range(0, 99)  // 返回最多100条
                 .order('created_at', { ascending: false })
                 .exec()
 
