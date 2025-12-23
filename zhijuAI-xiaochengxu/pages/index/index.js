@@ -26,6 +26,10 @@ Page({
                 wx.setStorageSync('landlord_uuid', TEST_LANDLORD_UUID)
                 console.log('Current Landlord UUID:', TEST_LANDLORD_UUID)
 
+                // 设置测试账号全功能权限
+                wx.setStorageSync('is_verified', true)  // 已实名认证
+                wx.setStorageSync('is_test_account', true)  // 测试账号标记
+
                 const url = currentRole === 'TENANT'
                     ? '/pages/tenant/home/index'
                     : '/pages/landlord/home/index'

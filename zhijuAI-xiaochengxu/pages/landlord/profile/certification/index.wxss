@@ -5,6 +5,7 @@
 
 .main-body {
   padding: 24rpx;
+  padding-top: 160rpx;
 }
 
 .loading {
@@ -13,198 +14,76 @@
   color: #666;
 }
 
-/* 提示卡片 */
-.tip-card {
-  display: flex;
-  align-items: flex-start;
-  padding: 24rpx;
-  margin-bottom: 24rpx;
-  border-radius: 20rpx;
-  background: linear-gradient(135deg, rgba(37, 99, 235, 0.1), rgba(124, 58, 237, 0.1));
-}
-
-.tip-icon {
-  font-size: 40rpx;
-  margin-right: 16rpx;
-}
-
-.tip-content {
-  flex: 1;
-}
-
-.tip-title {
-  font-size: 28rpx;
-  font-weight: 600;
-  color: #2563eb;
-  display: block;
-  margin-bottom: 8rpx;
-}
-
-.tip-desc {
-  font-size: 24rpx;
-  color: #666;
-  line-height: 1.5;
-}
-
-/* 备案列表 */
-.cert-list {
-  display: flex;
-  flex-direction: column;
-  gap: 20rpx;
-  margin-bottom: 24rpx;
-}
-
-.cert-item {
-  padding: 24rpx;
-  border-radius: 20rpx;
-}
-
-.cert-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 16rpx;
-}
-
-.cert-info {
-  flex: 1;
-}
-
-.cert-address {
-  font-size: 30rpx;
-  font-weight: 600;
-  color: #1a1a1a;
-  display: block;
-  margin-bottom: 8rpx;
-}
-
-.cert-owner {
-  font-size: 24rpx;
-  color: #666;
-}
-
-.cert-status {
-  font-size: 24rpx;
-  padding: 6rpx 16rpx;
-  border-radius: 12rpx;
-}
-
-.cert-status.pending { background: #fef3c7; color: #d97706; }
-.cert-status.approved { background: #d1fae5; color: #059669; }
-.cert-status.rejected { background: #fee2e2; color: #dc2626; }
-
-.cert-image {
-  width: 100%;
-  height: 300rpx;
-  border-radius: 16rpx;
-  background: #f5f7fa;
-  margin-bottom: 12rpx;
-}
-
-.reject-reason {
-  font-size: 24rpx;
-  color: #dc2626;
-  padding: 16rpx;
-  background: #fee2e2;
-  border-radius: 12rpx;
-}
-
-/* 空状态 */
-.empty-state {
+/* 状态卡片 - 与实名认证风格一致 */
+.status-card {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 80rpx 40rpx;
-  border-radius: 24rpx;
-  margin-bottom: 24rpx;
+  text-align: center;
+  padding: 48rpx 32rpx;
+  margin-bottom: 32rpx;
+  border-radius: 32rpx;
 }
 
-.empty-icon {
-  font-size: 80rpx;
-  margin-bottom: 24rpx;
-}
-
-.empty-title {
-  font-size: 32rpx;
-  font-weight: 600;
-  color: #1a1a1a;
-  margin-bottom: 12rpx;
-}
-
-.empty-desc {
-  font-size: 26rpx;
-  color: #666;
-}
-
-/* 添加按钮 */
-.add-btn {
-  width: 100%;
-  padding: 28rpx;
-  background: linear-gradient(135deg, #2563eb, #7c3aed);
-  color: #fff;
-  font-size: 32rpx;
-  font-weight: 600;
-  border-radius: 20rpx;
-  border: none;
-}
-
-/* 弹窗 */
-.modal-mask {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
+.status-icon-box {
+  width: 120rpx;
+  height: 120rpx;
+  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1000;
+  margin-bottom: 24rpx;
+  background: rgba(255, 255, 255, 0.6);
 }
 
-.modal-content {
-  width: 90%;
-  max-height: 80vh;
-  background: #fff;
-  border-radius: 24rpx;
-  overflow: hidden;
+.status-card.none { background: linear-gradient(135deg, rgba(148, 163, 184, 0.2), rgba(100, 116, 139, 0.1)); }
+.status-card.pending { background: linear-gradient(135deg, rgba(245, 158, 11, 0.2), rgba(217, 119, 6, 0.1)); }
+.status-card.approved { background: linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(5, 150, 105, 0.1)); }
+
+.status-info {
+  width: 100%;
 }
 
-.modal-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 32rpx;
-  border-bottom: 1rpx solid #f0f0f0;
-}
-
-.modal-title {
-  font-size: 32rpx;
-  font-weight: 600;
+.status-title {
+  font-size: 40rpx;
+  font-weight: bold;
+  display: block;
+  margin-bottom: 16rpx;
   color: #1a1a1a;
 }
 
-.close-btn {
-  font-size: 36rpx;
-  color: #999;
-  padding: 8rpx;
+.status-desc {
+  font-size: 28rpx;
+  color: #64748b;
+  line-height: 1.6;
 }
 
-.modal-body {
+/* 表单区域 - 与实名认证一致 */
+.form-section {
   padding: 32rpx;
-  max-height: 60vh;
-  overflow-y: auto;
+  margin-bottom: 24rpx;
+  border-radius: 24rpx;
+}
+
+.form-title {
+  font-size: 32rpx;
+  font-weight: 600;
+  color: #1a1a1a;
+  margin-bottom: 24rpx;
+  padding-left: 12rpx;
+  border-left: 8rpx solid #2563eb;
 }
 
 .form-group {
-  margin-bottom: 24rpx;
+  margin-bottom: 28rpx;
 }
 
 .form-label {
   display: block;
   font-size: 28rpx;
   color: #333;
-  margin-bottom: 12rpx;
+  margin-bottom: 16rpx;
+  font-weight: 500;
 }
 
 .required {
@@ -213,68 +92,164 @@
 
 .form-input {
   width: 100%;
-  padding: 24rpx;
-  background: #f5f7fa;
-  border-radius: 16rpx;
-  font-size: 28rpx;
+  height: 100rpx;
+  padding: 0 32rpx;
+  background: #f8fafc;
+  border-radius: 20rpx;
+  font-size: 32rpx;
   box-sizing: border-box;
+  border: 2rpx solid #e2e8f0;
 }
 
-.upload-area {
+.form-input:focus {
+  border-color: #2563eb;
+}
+
+/* 证件上传 - 与实名认证一致 */
+.upload-row {
+  display: flex;
+  justify-content: center;
+}
+
+.upload-item {
+  width: 100%;
+}
+
+.upload-box {
+  width: 100%;
+  height: 280rpx;
   border: 2rpx dashed #d1d5db;
-  border-radius: 16rpx;
-  padding: 40rpx;
+  border-radius: 20rpx;
   display: flex;
   justify-content: center;
   align-items: center;
   overflow: hidden;
+  background: #f8fafc;
+}
+
+.upload-box.has-image {
+  border: 2rpx solid #2563eb;
 }
 
 .upload-placeholder {
   display: flex;
   flex-direction: column;
   align-items: center;
-}
-
-.upload-icon {
-  font-size: 48rpx;
-  margin-bottom: 12rpx;
+  gap: 16rpx;
 }
 
 .upload-text {
   font-size: 28rpx;
-  color: #666;
+  color: #64748b;
 }
 
-.cert-preview-img {
+.cert-image {
   width: 100%;
-  height: 200rpx;
+  height: 100%;
 }
 
-.modal-footer {
+/* 备案列表 */
+.cert-list {
   display: flex;
-  gap: 16rpx;
-  padding: 24rpx 32rpx;
-  border-top: 1rpx solid #f0f0f0;
+  flex-direction: column;
+  gap: 24rpx;
+  margin-bottom: 24rpx;
 }
 
-.cancel-btn,
-.submit-btn {
+.cert-item {
+  padding: 32rpx;
+  border-radius: 24rpx;
+}
+
+.cert-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 20rpx;
+}
+
+.cert-info {
   flex: 1;
-  padding: 24rpx;
-  font-size: 30rpx;
-  border-radius: 16rpx;
-  border: none;
 }
 
-.cancel-btn {
+.cert-address {
+  font-size: 32rpx;
+  font-weight: 600;
+  color: #1a1a1a;
+  display: block;
+  margin-bottom: 12rpx;
+}
+
+.cert-owner {
+  font-size: 26rpx;
+  color: #64748b;
+}
+
+.cert-status {
+  font-size: 24rpx;
+  padding: 8rpx 20rpx;
+  border-radius: 20rpx;
+  font-weight: 500;
+}
+
+.cert-status.pending { background: #fef3c7; color: #d97706; }
+.cert-status.approved { background: #d1fae5; color: #059669; }
+.cert-status.rejected { background: #fee2e2; color: #dc2626; }
+
+.cert-preview {
+  width: 100%;
+  height: 320rpx;
+  border-radius: 20rpx;
   background: #f5f7fa;
-  color: #666;
+  margin-bottom: 16rpx;
 }
 
+.reject-reason {
+  font-size: 26rpx;
+  color: #dc2626;
+  padding: 20rpx;
+  background: #fee2e2;
+  border-radius: 16rpx;
+}
+
+/* 空状态 */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 100rpx 40rpx;
+  border-radius: 32rpx;
+  margin-bottom: 24rpx;
+}
+
+.empty-title {
+  font-size: 36rpx;
+  font-weight: 600;
+  color: #1a1a1a;
+  margin-top: 24rpx;
+  margin-bottom: 16rpx;
+}
+
+.empty-desc {
+  font-size: 28rpx;
+  color: #64748b;
+}
+
+/* 提交按钮 */
 .submit-btn {
+  width: 100%;
+  height: 100rpx;
   background: linear-gradient(135deg, #2563eb, #7c3aed);
   color: #fff;
+  font-size: 34rpx;
+  font-weight: 600;
+  border-radius: 50rpx;
+  border: none;
+  margin-top: 24rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12rpx;
 }
 
 .submit-btn[disabled] {
