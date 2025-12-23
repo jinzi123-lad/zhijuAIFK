@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import LandlordDetailModal from './LandlordDetailModal';
 
 // 类型定义
 interface User {
@@ -24,6 +25,7 @@ const AccountManagement: React.FC<AccountManagementProps> = ({ supabase }) => {
     const [searchTerm, setSearchTerm] = useState('');
     const [showAddModal, setShowAddModal] = useState(false);
     const [newUser, setNewUser] = useState({ name: '', phone: '', email: '', role: 'employee' });
+    const [selectedLandlord, setSelectedLandlord] = useState<{ id: string; name: string } | null>(null);
 
     // 加载用户数据
     useEffect(() => {
@@ -235,7 +237,14 @@ const AccountManagement: React.FC<AccountManagementProps> = ({ supabase }) => {
                                             )}
                                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{user.createdAt}</td>
                                             <td className="px-6 py-4 whitespace-nowrap text-sm">
-                                                <button className="text-indigo-600 hover:text-indigo-900 mr-3">查看</button>
+                                                {activeTab === 'landlord' && (
+                                                    <button
+                                                        onClick={() => setSelectedLandlord({ id: user.id, name: user.name })}
+                                                        className="text-indigo-600 hover:text-indigo-900 mr-3"
+                                                    >
+                                                        查看详情
+                                                    </button>
+                                                )}
                                                 {user.status === 'active' ? (
                                                     <button
                                                         onClick={() => handleStatusChange(user.id, 'disabled')}
@@ -311,6 +320,16 @@ const AccountManagement: React.FC<AccountManagementProps> = ({ supabase }) => {
                         </div>
                     </div>
                 </div>
+            )}
+
+            {/* 房东详情弹窗 */}
+            {selectedLandlord && (
+                <LandlordDetailModal
+                    supabase={supabase}
+                    landlordId={selectedLandlord.id}
+                    landlordName={selectedLandlord.name}
+                    onClose={() => setSelectedLandlord(null)}
+                />
             )}
         </div>
     );
