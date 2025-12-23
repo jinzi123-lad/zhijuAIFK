@@ -49,10 +49,13 @@ const AccountManagement: React.FC<AccountManagementProps> = ({ supabase }) => {
             }
 
             // 从Supabase获取真实数据
+            console.log('正在查询表:', tableName);
             const { data, error } = await supabase
                 .from(tableName)
                 .select('*')
                 .order('created_at', { ascending: false });
+
+            console.log('查询结果:', { data, error });
 
             if (error) {
                 console.error('加载用户失败', error);
