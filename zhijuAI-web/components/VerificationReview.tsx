@@ -40,19 +40,19 @@ const VerificationReview: React.FC<VerificationReviewProps> = ({ supabase }) => 
         setLoading(true);
         try {
             // TODO: 从Supabase获取真实数据
-            const mockData: Verification[] = [
+            const mockData = [
                 {
                     id: '1',
                     userId: 'u1',
                     userName: '李小姐',
                     userPhone: '138****1234',
-                    userType: 'tenant',
-                    type: 'identity',
+                    userType: 'tenant' as const,
+                    type: 'identity' as const,
                     realName: '李晓明',
                     idNumber: '110***********1234',
                     idCardFront: 'https://example.com/front.jpg',
                     idCardBack: 'https://example.com/back.jpg',
-                    status: 'pending',
+                    status: 'pending' as const,
                     submittedAt: '2024-12-20 14:30'
                 },
                 {
@@ -60,14 +60,14 @@ const VerificationReview: React.FC<VerificationReviewProps> = ({ supabase }) => 
                     userId: 'u2',
                     userName: '张先生',
                     userPhone: '139****5678',
-                    userType: 'landlord',
-                    type: 'property',
+                    userType: 'landlord' as const,
+                    type: 'property' as const,
                     propertyAddress: '朝阳区阳光花园3号楼302室',
                     propertyCertImage: 'https://example.com/cert.jpg',
-                    status: 'pending',
+                    status: 'pending' as const,
                     submittedAt: '2024-12-21 09:15'
                 }
-            ].filter(v => v.type === activeTab && (statusFilter === 'all' || v.status === statusFilter));
+            ].filter(v => v.type === activeTab && (statusFilter === 'all' || v.status === statusFilter)) as Verification[];
 
             setVerifications(mockData);
         } catch (err) {
@@ -144,8 +144,8 @@ const VerificationReview: React.FC<VerificationReviewProps> = ({ supabase }) => 
                                     key={tab.key}
                                     onClick={() => setActiveTab(tab.key as any)}
                                     className={`flex-1 py-4 px-6 text-center border-b-2 font-medium text-sm ${activeTab === tab.key
-                                            ? 'border-indigo-500 text-indigo-600'
-                                            : 'border-transparent text-gray-500 hover:text-gray-700'
+                                        ? 'border-indigo-500 text-indigo-600'
+                                        : 'border-transparent text-gray-500 hover:text-gray-700'
                                         }`}
                                 >
                                     <span className="mr-2">{tab.icon}</span>
@@ -162,8 +162,8 @@ const VerificationReview: React.FC<VerificationReviewProps> = ({ supabase }) => 
                                 key={status}
                                 onClick={() => setStatusFilter(status as any)}
                                 className={`px-4 py-2 rounded-lg text-sm ${statusFilter === status
-                                        ? 'bg-indigo-100 text-indigo-700'
-                                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                                    ? 'bg-indigo-100 text-indigo-700'
+                                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                                     }`}
                             >
                                 {status === 'pending' ? '待审核' : '全部'}

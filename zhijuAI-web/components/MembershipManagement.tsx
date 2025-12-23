@@ -34,12 +34,12 @@ const MembershipManagement: React.FC<MembershipManagementProps> = ({ supabase })
         setLoading(true);
         try {
             // TODO: 从Supabase获取真实数据
-            const mockData: Member[] = [
-                { id: '1', landlordId: 'l1', landlordName: '张先生', membershipStatus: 'paid', membershipType: '年度会员', expiresAt: '2025-12-31', propertyCount: 15, createdAt: '2024-01-15' },
-                { id: '2', landlordId: 'l2', landlordName: '李女士', membershipStatus: 'trial', membershipType: '试用', expiresAt: '2025-01-15', propertyCount: 3, createdAt: '2024-06-01' },
-                { id: '3', landlordId: 'l3', landlordName: '王老板', membershipStatus: 'free', propertyCount: 2, createdAt: '2024-09-20' },
-                { id: '4', landlordId: 'l4', landlordName: '赵总', membershipStatus: 'partner', membershipType: '战略合作', propertyCount: 50, createdAt: '2023-06-01' },
-            ].filter(m => statusFilter === 'all' || m.membershipStatus === statusFilter);
+            const mockData = [
+                { id: '1', landlordId: 'l1', landlordName: '张先生', membershipStatus: 'paid' as const, membershipType: '年度会员', expiresAt: '2025-12-31', propertyCount: 15, createdAt: '2024-01-15' },
+                { id: '2', landlordId: 'l2', landlordName: '李女士', membershipStatus: 'trial' as const, membershipType: '试用', expiresAt: '2025-01-15', propertyCount: 3, createdAt: '2024-06-01' },
+                { id: '3', landlordId: 'l3', landlordName: '王老板', membershipStatus: 'free' as const, propertyCount: 2, createdAt: '2024-09-20' },
+                { id: '4', landlordId: 'l4', landlordName: '赵总', membershipStatus: 'partner' as const, membershipType: '战略合作', propertyCount: 50, createdAt: '2023-06-01' },
+            ].filter(m => statusFilter === 'all' || m.membershipStatus === statusFilter) as Member[];
 
             setMembers(mockData);
         } catch (err) {
@@ -149,8 +149,8 @@ const MembershipManagement: React.FC<MembershipManagementProps> = ({ supabase })
                                     key={status}
                                     onClick={() => setStatusFilter(status)}
                                     className={`px-3 py-1.5 rounded-lg text-sm ${statusFilter === status
-                                            ? 'bg-indigo-100 text-indigo-700'
-                                            : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                                        ? 'bg-indigo-100 text-indigo-700'
+                                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                                         }`}
                                 >
                                     {status === 'all' ? '全部' :
