@@ -51,7 +51,7 @@
       <text class="section-title text-foreground">待办事项</text>
       <view class="todo-list">
         <block wx:for="{{todos}}" wx:key="id">
-          <view class="todo-item glass-card glass-shimmer shadow-md" bindtap="handleTodo" data-id="{{item.id}}">
+          <view class="todo-item glass-card glass-shimmer shadow-md" bindtap="handleTodo" data-path="{{item.path}}" data-id="{{item.id}}">
             <view class="todo-content">
               <view class="todo-icon-box {{item.urgent ? 'bg-destructive-10 icon-pulse' : 'bg-primary-10'}}">
                  <icon name="{{item.iconName}}" color="{{item.urgent ? '#ef4444' : '#2563eb'}}" size="40"></icon>
@@ -70,6 +70,9 @@
         </block>
       </view>
     </view>
+    
+    <!-- 底部留白，避免被导航栏遮挡 -->
+    <view style="height: 180rpx;"></view>
   </view>
   
   <!-- TabBar Component -->

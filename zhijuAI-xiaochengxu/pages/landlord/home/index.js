@@ -26,8 +26,30 @@ Page({
     },
 
     onShow() {
+        // 检查是否已实名认证
+        this.checkVerification();
         this.fetchStats();
         this.fetchTodos();
+    },
+
+    // 检查实名认证状态
+    checkVerification() {
+        const isVerified = wx.getStorageSync('is_verified');
+
+        if (!isVerified) {
+            // 未实名认证，显示提示并跳转
+            wx.showModal({
+                title: '实名认证',
+                content: '为保障您的权益，请先完成实名认证后再使用',
+                showCancel: false,
+                confirmText: '去认证',
+                success: () => {
+                    wx.navigateTo({
+                        url: '/pages/landlord/profile/verify/index'
+                    });
+                }
+            });
+        }
     },
 
     // 获取房东UUID（用于查询数据库）

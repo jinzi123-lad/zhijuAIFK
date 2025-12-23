@@ -31,45 +31,12 @@ Page({
     },
 
     async loadMessages() {
-        const landlordId = wx.getStorageSync('landlord_id')
-        if (!landlordId) {
-            this.setData({ loading: false })
-            return
-        }
-
         this.setData({ loading: true })
-        try {
-            let query = supabase
-                .from('messages')
-                .select('*')
-                .eq('recipient_id', landlordId)
-                .order('created_at', { ascending: false })
-                .limit(50)
 
-            const { data, error } = await query.exec()
-
-            if (error) {
-                console.error('加载消息失败', error)
-                // 使用模拟数据
-                this.setData({
-                    messages: this.getMockMessages(),
-                    loading: false
-                })
-                return
-            }
-
-            const messages = (data || []).map(m => ({
-                ...m,
-                timeText: this.formatTime(m.created_at),
-                typeIcon: this.getTypeIcon(m.type)
-            }))
-
-            const unreadCount = messages.filter(m => !m.is_read).length
-            this.setData({ messages, unreadCount, loading: false })
-        } catch (err) {
-            console.error('加载消息失败', err)
-            this.setData({ messages: this.getMockMessages(), loading: false })
-        }
+        // messages表暂不存在，直接使用模拟数据
+        const messages = this.getMockMessages()
+        const unreadCount = messages.filter(m => !m.is_read).length
+        this.setData({ messages, unreadCount, loading: false })
     },
 
     getMockMessages() {

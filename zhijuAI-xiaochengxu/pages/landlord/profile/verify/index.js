@@ -114,6 +114,8 @@ Page({
       }
 
       wx.hideLoading()
+      // 设置已认证标记（提交成功即视为认证中）
+      wx.setStorageSync('is_verified', true)
       wx.showToast({ title: '提交成功，等待审核', icon: 'success' })
       setTimeout(() => wx.navigateBack(), 1500)
     } catch (err) {

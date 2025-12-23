@@ -10,10 +10,23 @@
 /* 状态卡片 */
 .status-card {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  padding: 32rpx;
+  text-align: center;
+  padding: 48rpx 32rpx;
+  margin-bottom: 32rpx;
+  border-radius: 32rpx;
+}
+
+.status-icon-box {
+  width: 120rpx;
+  height: 120rpx;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   margin-bottom: 24rpx;
-  border-radius: 24rpx;
+  background: rgba(255, 255, 255, 0.6);
 }
 
 .status-card.none { background: linear-gradient(135deg, rgba(148, 163, 184, 0.2), rgba(100, 116, 139, 0.1)); }
@@ -27,21 +40,21 @@
 }
 
 .status-info {
-  flex: 1;
+  width: 100%;
 }
 
 .status-title {
-  font-size: 32rpx;
+  font-size: 40rpx;
   font-weight: bold;
   display: block;
-  margin-bottom: 8rpx;
+  margin-bottom: 16rpx;
   color: #1a1a1a;
 }
 
 .status-desc {
-  font-size: 26rpx;
-  color: #666;
-  line-height: 1.5;
+  font-size: 28rpx;
+  color: #64748b;
+  line-height: 1.6;
 }
 
 /* 表单区域 */
@@ -77,11 +90,17 @@
 
 .form-input {
   width: 100%;
-  padding: 24rpx;
-  background: #f5f7fa;
-  border-radius: 16rpx;
-  font-size: 28rpx;
+  height: 100rpx;
+  padding: 0 32rpx;
+  background: #f8fafc;
+  border-radius: 20rpx;
+  font-size: 32rpx;
   box-sizing: border-box;
+  border: 2rpx solid #e2e8f0;
+}
+
+.form-input:focus {
+  border-color: #2563eb;
 }
 
 /* 证件上传 */

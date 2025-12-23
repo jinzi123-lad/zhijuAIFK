@@ -50,10 +50,14 @@ Page({
         }
 
         try {
+            // 使用UUID查询
+            const landlordUuid = wx.getStorageSync('landlord_uuid') || '11111111-1111-1111-1111-111111111111';
+
             const { data, error } = await supabase
                 .from('properties')
-                .select('id, title, address, rent_price, status')
-                .eq('owner_id', landlordId)
+                .select('id, title, address, rent_amount, status')
+                .eq('landlord_id', landlordUuid)
+                .range(0, 99)
                 .order('created_at', { ascending: false })
                 .exec();
 
@@ -71,7 +75,7 @@ Page({
                 id: p.id,
                 title: p.title || p.address || '未命名房源',
                 address: p.address,
-                rentPrice: p.rent_price
+                rentPrice: p.rent_amount
             }));
 
             this.setData({ propertyOptions });

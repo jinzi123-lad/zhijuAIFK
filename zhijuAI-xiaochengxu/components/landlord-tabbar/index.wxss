@@ -33,7 +33,7 @@
 
 .center-item {
   position: relative;
-  top: -40rpx; /* Pop out effect */
+  /* 不再弹出 */
 }
 
 .tab-icon {
@@ -46,13 +46,13 @@
 }
 
 .add-btn {
-  width: 112rpx; /* w-14 */
-  height: 112rpx; /* h-14 */
-  border-radius: 50%;
+  width: 96rpx;
+  height: 80rpx;
+  border-radius: 16rpx; /* 方形圆角 */
   display: flex;
   justify-content: center;
   align-items: center;
-  box-shadow: 0 10px 25px -5px rgba(37, 99, 235, 0.4); 
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3); 
 }
 
 .bg-gradient-brand {
