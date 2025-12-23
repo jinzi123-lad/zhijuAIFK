@@ -25,11 +25,13 @@ Page({
         const landlordId = wx.getStorageSync('landlord_id')
         const userName = wx.getStorageSync('user_name')
         const userPhone = wx.getStorageSync('user_phone')
+        const userAvatar = wx.getStorageSync('user_avatar')
 
         this.setData({
             userInfo: {
                 name: userName || '房东用户',
-                phone: userPhone || ''
+                phone: userPhone || '',
+                avatar: userAvatar || ''
             }
         })
 

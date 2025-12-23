@@ -8,7 +8,8 @@
     <view class="profile-card glass-card">
       <view class="avatar-section">
         <view class="avatar">
-          <text class="avatar-text">{{userInfo.name ? userInfo.name[0] : '房'}}</text>
+          <image wx:if="{{userInfo.avatar}}" class="avatar-img" src="{{userInfo.avatar}}" mode="aspectFill"></image>
+          <text wx:if="{{!userInfo.avatar}}" class="avatar-text">{{userInfo.name ? userInfo.name[0] : '房'}}</text>
         </view>
         <view class="user-info">
           <text class="user-name">{{userInfo.name || '房东用户'}}</text>

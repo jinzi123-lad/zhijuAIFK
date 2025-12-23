@@ -1,52 +1,91 @@
-<view class="container" style="padding-top: {{navHeight}}px;">
-    <view class="mesh-gradient"></view>
-    <navbar title="添加租客"></navbar>
+<view class="container">
+  <view class="mesh-gradient"></view>
+  <navbar title="添加租客"></navbar>
 
-    <view class="p-4">
-        <view class="glass-card rounded-2xl p-4">
-            <!-- Header -->
-            <view class="mb-4 text-center">
-                <text class="text-lg font-bold">基本信息</text>
-            </view>
+  <view class="main-body">
+    <view class="form-card glass-card">
+      <!-- 标题 -->
+      <view class="form-header">
+        <icon name="user" color="#2563eb" size="40"></icon>
+        <text class="form-title">租客信息</text>
+      </view>
 
-            <!-- Form -->
-            <view class="form-group mb-4">
-                <text class="label block text-sm text-muted mb-2">姓名</text>
-                <input class="input-field" placeholder="请输入租客姓名" bindinput="onInput" data-field="name" />
-            </view>
+      <!-- 姓名 -->
+      <view class="form-group">
+        <text class="form-label">租客姓名 <text class="required">*</text></text>
+        <input class="form-input" placeholder="请输入租客姓名" value="{{formData.name}}" bindinput="onInput" data-field="name" />
+      </view>
 
-            <view class="form-group mb-4">
-                <text class="label block text-sm text-muted mb-2">联系电话</text>
-                <input class="input-field" type="number" placeholder="请输入手机号" bindinput="onInput" data-field="phone" />
-            </view>
+      <!-- 电话 -->
+      <view class="form-group">
+        <text class="form-label">联系电话 <text class="required">*</text></text>
+        <input class="form-input" type="number" maxlength="11" placeholder="请输入手机号" value="{{formData.phone}}" bindinput="onInput" data-field="phone" />
+      </view>
 
-            <view class="form-group mb-4">
-                <text class="label block text-sm text-muted mb-2">关联房源 (名称)</text>
-                <input class="input-field" placeholder="如: 阳光小区 101" bindinput="onInput" data-field="propertyName" />
-            </view>
-
-            <view class="form-group mb-4">
-                <text class="label block text-sm text-muted mb-2">月租金 (元)</text>
-                <input class="input-field" type="digit" placeholder="0.00" bindinput="onInput" data-field="rent" />
-            </view>
-            
-            <view class="flex-row gap-4 mb-4">
-                <view class="flex-1">
-                     <text class="label block text-sm text-muted mb-2">起租日期</text>
-                     <picker mode="date" value="{{formData.startDate}}" bindchange="bindStartDateChange">
-                        <view class="picker-box input-field">{{formData.startDate}}</view>
-                     </picker>
-                </view>
-                <view class="flex-1">
-                     <text class="label block text-sm text-muted mb-2">到期日期</text>
-                     <picker mode="date" value="{{formData.endDate}}" bindchange="bindEndDateChange">
-                        <view class="picker-box input-field">{{formData.endDate}}</view>
-                     </picker>
-                </view>
-            </view>
-
-            <!-- Submit Button -->
-            <button class="submit-btn w-full mt-4" hover-class="btn-hover" bindtap="onSubmit">确认添加</button>
-        </view>
+      <!-- 身份证 -->
+      <view class="form-group">
+        <text class="form-label">身份证号</text>
+        <input class="form-input" maxlength="18" placeholder="请输入身份证号（选填）" value="{{formData.idNumber}}" bindinput="onInput" data-field="idNumber" />
+      </view>
     </view>
+
+    <view class="form-card glass-card">
+      <!-- 标题 -->
+      <view class="form-header">
+        <icon name="home" color="#10b981" size="40"></icon>
+        <text class="form-title">合同信息</text>
+      </view>
+
+      <!-- 选择房源 -->
+      <view class="form-group">
+        <text class="form-label">关联房源 <text class="required">*</text></text>
+        <picker mode="selector" range="{{propertyOptions}}" range-key="title" value="{{selectedPropertyIndex}}" bindchange="onPropertyChange">
+          <view class="picker-box {{selectedPropertyIndex >= 0 ? '' : 'placeholder'}}">
+            <text>{{selectedPropertyIndex >= 0 ? propertyOptions[selectedPropertyIndex].title : '请选择房源'}}</text>
+            <icon name="chevronRight" color="#94a3b8" size="28"></icon>
+          </view>
+        </picker>
+        <text class="form-hint" wx:if="{{propertyOptions.length === 0}}">暂无可用房源，请先添加房源</text>
+      </view>
+
+      <!-- 月租金 -->
+      <view class="form-group">
+        <text class="form-label">月租金（元） <text class="required">*</text></text>
+        <input class="form-input" type="digit" placeholder="请输入月租金" value="{{formData.rent}}" bindinput="onInput" data-field="rent" />
+      </view>
+
+      <!-- 起租日期 -->
+      <view class="form-row">
+        <view class="form-col">
+          <text class="form-label">起租日期</text>
+          <picker mode="date" value="{{formData.startDate}}" bindchange="onStartDateChange">
+            <view class="picker-box">
+              <text>{{formData.startDate}}</text>
+              <icon name="calendar" color="#94a3b8" size="28"></icon>
+            </view>
+          </picker>
+        </view>
+        <view class="form-col">
+          <text class="form-label">到期日期</text>
+          <picker mode="date" value="{{formData.endDate}}" bindchange="onEndDateChange">
+            <view class="picker-box">
+              <text>{{formData.endDate}}</text>
+              <icon name="calendar" color="#94a3b8" size="28"></icon>
+            </view>
+          </picker>
+        </view>
+      </view>
+
+      <!-- 备注 -->
+      <view class="form-group">
+        <text class="form-label">备注</text>
+        <textarea class="form-textarea" placeholder="添加备注信息（选填）" value="{{formData.notes}}" bindinput="onInput" data-field="notes"></textarea>
+      </view>
+    </view>
+
+    <!-- 提交按钮 -->
+    <button class="submit-btn" bindtap="onSubmit" disabled="{{submitting}}">
+      {{submitting ? '添加中...' : '确认添加'}}
+    </button>
+  </view>
 </view>

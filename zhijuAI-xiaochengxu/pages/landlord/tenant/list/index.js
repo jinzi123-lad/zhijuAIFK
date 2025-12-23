@@ -1,4 +1,5 @@
-const { supabase } = require('../../../utils/supabase');
+// 房东-租客管理列表页
+const { supabase } = require('../../../../utils/supabase');
 
 Page({
     data: {
@@ -18,6 +19,10 @@ Page({
         this.fetchTenants();
     },
 
+    onShow() {
+        this.fetchTenants();
+    },
+
     onPullDownRefresh() {
         this.fetchTenants().then(() => {
             wx.stopPullDownRefresh();
@@ -25,51 +30,63 @@ Page({
     },
 
     async fetchTenants() {
-        this.setData({ isLoading: true });
-
-        // Fetch tenants
-        // Assuming 'tenants' table exists
-        const { data, error } = await supabase
-            .from('tenants')
-            .select('*')
-            .order('created_at', { ascending: false })
-            .exec();
-
-        if (error) {
-            console.error('Fetch tenants error', error);
-            wx.showToast({ title: '加载失败', icon: 'none' });
-            this.setData({ isLoading: false });
+        const landlordId = wx.getStorageSync('landlord_id');
+        if (!landlordId) {
+            this.setData({ isLoading: false, allTenants: [], filteredTenants: [] });
             return;
         }
 
-        const allTenants = (data || []).map(t => ({
-            id: t.id,
-            name: t.name,
-            phone: t.phone,
-            property: t.property_name || '未关联房源', // Ideally join with properties table
-            rent: t.rent_amount || 0,
-            contractEndDate: t.contract_end_date, // YYYY-MM-DD
-            status: t.status || 'active'
-        }));
+        this.setData({ isLoading: true });
 
-        this.setData({ allTenants, isLoading: false }, () => {
-            this.processData();
-        });
+        try {
+            // 从合同表获取租客信息
+            const { data, error } = await supabase
+                .from('contracts')
+                .select('*')
+                .eq('landlord_id', landlordId)
+                .order('created_at', { ascending: false })
+                .exec();
+
+            if (error) {
+                console.error('获取租客失败', error);
+                // 如果是表不存在或字段错误，显示空列表而不是报错
+                this.setData({ isLoading: false, allTenants: [], filteredTenants: [] });
+                return;
+            }
+
+            const allTenants = (data || []).map(c => ({
+                id: c.id,
+                name: c.tenant_name || '租客',
+                phone: c.tenant_phone || '',
+                property: c.property_title || c.property_address || '房源',
+                rent: c.rent_amount || 0,
+                contractEndDate: c.end_date,
+                status: c.status || 'active',
+                contractId: c.id
+            }));
+
+            this.setData({ allTenants, isLoading: false }, () => {
+                this.processData();
+            });
+        } catch (err) {
+            console.error('获取租客失败', err);
+            this.setData({ isLoading: false, allTenants: [], filteredTenants: [] });
+        }
     },
 
     processData() {
         const { searchQuery, filterStatus, allTenants } = this.data;
         const today = new Date();
 
-        // 1. Calculate stats first
+        // 1. 计算统计和标记即将到期
         let expiringCount = 0;
         const processed = allTenants.map(t => {
             let isExpiringSoon = false;
 
             if (t.contractEndDate) {
                 const endDate = new Date(t.contractEndDate);
-                // Check if valid date
                 if (!isNaN(endDate.getTime())) {
+                    // 90天内到期算即将到期
                     isExpiringSoon = (endDate > today) && ((endDate - today) / (1000 * 3600 * 24) < 90);
                 }
             }
@@ -82,13 +99,15 @@ Page({
             };
         });
 
-        // 2. Filter
+        // 2. 筛选
         const filtered = processed.filter(t => {
-            const matchesSearch = (t.name || '').includes(searchQuery) || (t.phone || '').includes(searchQuery) || (t.property || '').includes(searchQuery);
+            const matchesSearch = (t.name || '').includes(searchQuery) ||
+                (t.phone || '').includes(searchQuery) ||
+                (t.property || '').includes(searchQuery);
             if (!matchesSearch) return false;
 
             if (filterStatus === 'all') return true;
-            if (filterStatus === 'active') return t.status === 'active';
+            if (filterStatus === 'active') return t.status === 'active' || t.status === 'signed';
             if (filterStatus === 'expiring') return t.isExpiringSoon;
             return true;
         });
@@ -97,7 +116,7 @@ Page({
             filteredTenants: filtered,
             stats: {
                 total: allTenants.length,
-                active: allTenants.filter(t => t.status === 'active').length,
+                active: allTenants.filter(t => t.status === 'active' || t.status === 'signed').length,
                 expiring: expiringCount
             }
         });
@@ -124,6 +143,16 @@ Page({
 
     navToDetail(e) {
         const id = e.currentTarget.dataset.id;
-        wx.showToast({ title: '查看租客详情: ' + id, icon: 'none' });
+        wx.navigateTo({
+            url: '/pages/landlord/tenant/detail/index?id=' + id
+        });
+    },
+
+    // 拨打电话
+    callTenant(e) {
+        const phone = e.currentTarget.dataset.phone;
+        if (phone) {
+            wx.makePhoneCall({ phoneNumber: phone });
+        }
     }
 })

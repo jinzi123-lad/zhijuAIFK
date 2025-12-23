@@ -3,7 +3,7 @@
   min-height: 100vh;
 }
 .main-body {
-  padding-top: 180rpx;
+  padding: 24rpx;
 }
 
 /* Period Selector */

@@ -33,16 +33,51 @@ const AccountManagement: React.FC<AccountManagementProps> = ({ supabase }) => {
     const loadUsers = async () => {
         setLoading(true);
         try {
-            // TODO: 从Supabase获取真实数据
-            const mockData: User[] = [
-                { id: '1', name: '张管理员', phone: '13800138001', email: 'admin@example.com', role: 'employee', status: 'active', createdAt: '2024-01-15' },
-                { id: '2', name: '李房东', phone: '13900139002', role: 'landlord', status: 'active', verificationStatus: 'approved', membershipStatus: 'paid', createdAt: '2024-03-01' },
-                { id: '3', name: '王租客', phone: '13700137003', role: 'tenant', status: 'active', verificationStatus: 'pending', createdAt: '2024-06-15' },
-            ].filter(u => u.role === activeTab);
+            let tableName = '';
+            let roleFilter = activeTab;
 
-            setUsers(mockData);
+            // 根据Tab确定查询的表
+            if (activeTab === 'landlord') {
+                tableName = 'landlords';
+            } else if (activeTab === 'tenant') {
+                tableName = 'tenants';
+            } else {
+                // 员工暂用模拟数据
+                setUsers([]);
+                setLoading(false);
+                return;
+            }
+
+            // 从Supabase获取真实数据
+            const { data, error } = await supabase
+                .from(tableName)
+                .select('*')
+                .order('created_at', { ascending: false });
+
+            if (error) {
+                console.error('加载用户失败', error);
+                setUsers([]);
+                setLoading(false);
+                return;
+            }
+
+            // 转换为统一格式
+            const formattedUsers: User[] = (data || []).map((row: any) => ({
+                id: row.id,
+                name: row.name || '未设置',
+                phone: row.phone || '',
+                email: row.email,
+                role: activeTab,
+                status: row.status || 'active',
+                verificationStatus: row.verification_status,
+                membershipStatus: row.membership_type || 'free',
+                createdAt: row.created_at ? new Date(row.created_at).toLocaleDateString('zh-CN') : ''
+            }));
+
+            setUsers(formattedUsers);
         } catch (err) {
             console.error('加载用户失败', err);
+            setUsers([]);
         } finally {
             setLoading(false);
         }
@@ -112,8 +147,8 @@ const AccountManagement: React.FC<AccountManagementProps> = ({ supabase }) => {
                                     key={tab.key}
                                     onClick={() => setActiveTab(tab.key as any)}
                                     className={`flex-1 py-4 px-6 text-center border-b-2 font-medium text-sm ${activeTab === tab.key
-                                            ? 'border-indigo-500 text-indigo-600'
-                                            : 'border-transparent text-gray-500 hover:text-gray-700'
+                                        ? 'border-indigo-500 text-indigo-600'
+                                        : 'border-transparent text-gray-500 hover:text-gray-700'
                                         }`}
                                 >
                                     <span className="mr-2">{tab.icon}</span>

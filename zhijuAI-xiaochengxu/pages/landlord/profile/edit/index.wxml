@@ -1,0 +1,60 @@
+<!--房东-编辑资料页面-->
+<view class="container">
+  <view class="mesh-gradient"></view>
+  <navbar title="编辑资料" showBack="{{true}}"></navbar>
+
+  <view class="main-body">
+    <!-- 头像区域 -->
+    <view class="avatar-section glass-card">
+      <view class="avatar-box" bindtap="chooseAvatar">
+        <image wx:if="{{avatarUrl}}" class="avatar-img" src="{{avatarUrl}}" mode="aspectFill"></image>
+        <view wx:if="{{!avatarUrl}}" class="avatar-placeholder">
+          <text>{{userInfo.name ? userInfo.name[0] : '房'}}</text>
+        </view>
+        <view class="avatar-edit">
+          <icon name="camera" color="#fff" size="24"></icon>
+        </view>
+      </view>
+      <text class="avatar-tip">点击更换头像</text>
+    </view>
+
+    <!-- 基本信息 -->
+    <view class="form-section glass-card">
+      <view class="form-title">基本信息</view>
+      
+      <view class="form-item">
+        <text class="form-label">昵称</text>
+        <input class="form-input" placeholder="请输入昵称" value="{{userInfo.name}}" bindinput="onNameInput" />
+      </view>
+      
+      <view class="form-item">
+        <text class="form-label">手机号</text>
+        <view class="phone-row">
+          <text class="phone-value" wx:if="{{userInfo.phone}}">{{userInfo.phone}}</text>
+          <text class="phone-placeholder" wx:if="{{!userInfo.phone}}">未绑定手机号</text>
+          <button class="phone-btn" open-type="getPhoneNumber" bindgetphonenumber="getPhoneNumber">
+            {{userInfo.phone ? '更换' : '绑定'}}
+          </button>
+        </view>
+      </view>
+    </view>
+
+    <!-- 微信授权 -->
+    <view class="form-section glass-card" wx:if="{{!hasWxInfo}}">
+      <view class="form-title">微信授权</view>
+      <view class="wx-auth-tip">
+        <icon name="user" color="#2563eb" size="40"></icon>
+        <text>授权微信信息，快速填充昵称头像</text>
+      </view>
+      <button class="wx-auth-btn" bindtap="getUserProfile">
+        <icon name="wechat" color="#10b981" size="32"></icon>
+        <text>获取微信昵称头像</text>
+      </button>
+    </view>
+
+    <!-- 保存按钮 -->
+    <button class="save-btn" bindtap="saveProfile" disabled="{{saving}}">
+      {{saving ? '保存中...' : '保存'}}
+    </button>
+  </view>
+</view>

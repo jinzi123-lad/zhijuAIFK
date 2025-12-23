@@ -4,8 +4,7 @@
 }
 
 .main-body {
-  padding: 20rpx;
-  padding-top: 200rpx;
+  padding: 24rpx;
   padding-bottom: 180rpx;
 }
 
