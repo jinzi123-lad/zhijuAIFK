@@ -2,17 +2,6 @@ import React, { useState, useEffect } from 'react';
 import LandlordDetailModal from './LandlordDetailModal';
 
 // ============== 类型定义 ==============
-interface Employee {
-    id: string;
-    name: string;
-    username: string;
-    password?: string;
-    role: string;
-    group?: string;
-    managerId?: string;
-    permissions: string[];
-}
-
 interface LandlordAccount {
     id: string;
     name: string;
@@ -34,7 +23,6 @@ interface TenantAccount {
 
 interface UnifiedAccountManagementProps {
     supabase: any;
-    // 员工相关 - 使用 any 兼容现有 User 类型
     employees: any[];
     onAddEmployee: (e: any) => void;
     onUpdateEmployee: (id: string, e: any) => void;
@@ -62,7 +50,6 @@ const UnifiedAccountManagement: React.FC<UnifiedAccountManagementProps> = ({
     const [tenants, setTenants] = useState<TenantAccount[]>([]);
     const [selectedTenant, setSelectedTenant] = useState<TenantAccount | null>(null);
 
-    // 加载数据
     useEffect(() => {
         if (activeTab === 'landlord') {
             loadLandlords();
@@ -107,7 +94,7 @@ const UnifiedAccountManagement: React.FC<UnifiedAccountManagementProps> = ({
 
     // 过滤搜索
     const filteredEmployees = employees.filter(e =>
-        e.name.includes(searchTerm) || e.username.includes(searchTerm)
+        e.name?.includes(searchTerm) || e.username?.includes(searchTerm)
     );
     const filteredLandlords = landlords.filter(l =>
         l.name?.includes(searchTerm) || l.phone?.includes(searchTerm)
@@ -128,7 +115,7 @@ const UnifiedAccountManagement: React.FC<UnifiedAccountManagementProps> = ({
             pending: '待审核',
         };
         return (
-            <span className={`px-2 py-1 rounded-full text-xs ${styles[status] || 'bg-gray-100'}`}>
+            <span className={`px-2 py-1 rounded-full text-xs font-medium ${styles[status] || 'bg-slate-100 text-slate-600'}`}>
                 {labels[status] || status || '正常'}
             </span>
         );
@@ -139,195 +126,224 @@ const UnifiedAccountManagement: React.FC<UnifiedAccountManagementProps> = ({
         return new Date(dateStr).toLocaleDateString('zh-CN');
     };
 
-    const tabConfig = [
-        { key: 'employee' as TabKey, label: '👔 员工账号', color: 'indigo' },
-        { key: 'landlord' as TabKey, label: '🏠 房东账号', color: 'orange' },
-        { key: 'tenant' as TabKey, label: '👤 租客账号', color: 'green' },
-    ];
+    const getTitle = () => {
+        if (activeTab === 'employee') return '员工账号管理';
+        if (activeTab === 'landlord') return '房东账号管理';
+        return '租客账号管理';
+    };
+
+    const getDescription = () => {
+        if (activeTab === 'employee') return '管理内部员工、分配销售团队及细化权限';
+        if (activeTab === 'landlord') return '管理房东/业主账号，查看关联房源和业务数据';
+        return '管理租客账号，查看租赁合同和缴费记录';
+    };
+
+    const getCount = () => {
+        if (activeTab === 'employee') return filteredEmployees.length;
+        if (activeTab === 'landlord') return filteredLandlords.length;
+        return filteredTenants.length;
+    };
 
     return (
-        <div className="p-6 bg-gray-50 min-h-screen">
-            <div className="max-w-7xl mx-auto">
-                {/* 标题 */}
-                <div className="mb-6">
-                    <h1 className="text-2xl font-bold text-gray-900">账号管理</h1>
-                    <p className="text-gray-500 mt-1">管理系统中的员工、房东和租客账号</p>
+        <div className="space-y-6">
+            {/* 标题区 - 与全局风格一致 */}
+            <div className="flex justify-between items-center">
+                <div>
+                    <h2 className="text-xl font-bold text-slate-800">{getTitle()}</h2>
+                    <p className="text-sm text-slate-500 mt-1">{getDescription()}</p>
+                </div>
+                {activeTab === 'employee' && (
+                    <button className="px-4 py-2 bg-indigo-600 text-white rounded-lg font-bold text-sm shadow-lg shadow-indigo-200 hover:bg-indigo-700 transition-colors">
+                        + 新增员工
+                    </button>
+                )}
+            </div>
+
+            {/* Tab切换 - 白色圆角按钮组 */}
+            <div className="flex bg-white rounded-lg p-1 border border-slate-200 w-fit shadow-sm">
+                <button
+                    onClick={() => { setActiveTab('employee'); setSearchTerm(''); }}
+                    className={`px-5 py-2.5 text-sm font-medium rounded-md transition-all ${activeTab === 'employee'
+                            ? 'bg-indigo-600 text-white shadow-md'
+                            : 'text-slate-600 hover:bg-slate-50'
+                        }`}
+                >
+                    👔 员工账号
+                </button>
+                <button
+                    onClick={() => { setActiveTab('landlord'); setSearchTerm(''); }}
+                    className={`px-5 py-2.5 text-sm font-medium rounded-md transition-all ${activeTab === 'landlord'
+                            ? 'bg-orange-500 text-white shadow-md'
+                            : 'text-slate-600 hover:bg-slate-50'
+                        }`}
+                >
+                    🏠 房东账号
+                </button>
+                <button
+                    onClick={() => { setActiveTab('tenant'); setSearchTerm(''); }}
+                    className={`px-5 py-2.5 text-sm font-medium rounded-md transition-all ${activeTab === 'tenant'
+                            ? 'bg-green-600 text-white shadow-md'
+                            : 'text-slate-600 hover:bg-slate-50'
+                        }`}
+                >
+                    👤 租客账号
+                </button>
+            </div>
+
+            {/* 数据表格卡片 */}
+            <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                {/* 工具栏 */}
+                <div className="p-4 border-b border-slate-100 flex justify-between items-center">
+                    <div className="relative">
+                        <input
+                            type="text"
+                            placeholder={activeTab === 'employee' ? '搜索姓名/账号...' : '搜索姓名/手机号...'}
+                            value={searchTerm}
+                            onChange={e => setSearchTerm(e.target.value)}
+                            className="pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-lg w-64 text-sm outline-none focus:ring-2 focus:ring-indigo-500 transition-all text-slate-700"
+                        />
+                        <span className="absolute left-3 top-2.5 text-slate-400">🔍</span>
+                    </div>
+                    <span className="text-sm text-slate-500">共 {getCount()} 条记录</span>
                 </div>
 
-                {/* Tab切换 */}
-                <div className="bg-white rounded-xl shadow-sm mb-6">
-                    <div className="flex border-b border-gray-200">
-                        {tabConfig.map(tab => (
-                            <button
-                                key={tab.key}
-                                onClick={() => { setActiveTab(tab.key); setSearchTerm(''); }}
-                                className={`flex-1 py-4 px-6 text-center font-medium text-sm border-b-2 transition-colors ${activeTab === tab.key
-                                    ? `border-${tab.color}-500 text-${tab.color}-600 bg-${tab.color}-50`
-                                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50'
-                                    }`}
-                                style={{
-                                    borderBottomColor: activeTab === tab.key ? (tab.color === 'orange' ? '#f97316' : tab.color === 'green' ? '#22c55e' : '#6366f1') : 'transparent',
-                                    color: activeTab === tab.key ? (tab.color === 'orange' ? '#ea580c' : tab.color === 'green' ? '#16a34a' : '#4f46e5') : undefined,
-                                    backgroundColor: activeTab === tab.key ? (tab.color === 'orange' ? '#fff7ed' : tab.color === 'green' ? '#f0fdf4' : '#eef2ff') : undefined
-                                }}
-                            >
-                                {tab.label}
-                            </button>
-                        ))}
-                    </div>
-
-                    {/* 工具栏 */}
-                    <div className="p-4 flex justify-between items-center border-b">
-                        <div className="relative">
-                            <input
-                                type="text"
-                                placeholder={activeTab === 'employee' ? '搜索姓名/账号' : '搜索姓名/手机号'}
-                                value={searchTerm}
-                                onChange={e => setSearchTerm(e.target.value)}
-                                className="pl-10 pr-4 py-2 border rounded-lg w-64 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                            />
-                            <span className="absolute left-3 top-2.5 text-gray-400">🔍</span>
+                {/* 表格内容 */}
+                <div className="overflow-x-auto">
+                    {loading ? (
+                        <div className="py-20 text-center text-slate-400">
+                            <div className="w-6 h-6 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
+                            加载中...
                         </div>
-                        <div className="text-sm text-gray-500">
-                            共 {activeTab === 'employee' ? filteredEmployees.length : activeTab === 'landlord' ? filteredLandlords.length : filteredTenants.length} 条记录
-                        </div>
-                    </div>
-
-                    {/* 内容区 */}
-                    <div className="overflow-x-auto">
-                        {loading ? (
-                            <div className="py-20 text-center text-gray-500">加载中...</div>
-                        ) : (
-                            <>
-                                {/* 员工Tab */}
-                                {activeTab === 'employee' && (
-                                    <table className="w-full">
-                                        <thead className="bg-gray-50">
-                                            <tr>
-                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">姓名/账号</th>
-                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">角色</th>
-                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">备注/组</th>
-                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">权限数</th>
-                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">操作</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody className="bg-white divide-y divide-gray-200">
-                                            {filteredEmployees.length === 0 ? (
-                                                <tr><td colSpan={5} className="px-6 py-12 text-center text-gray-400">暂无员工数据</td></tr>
-                                            ) : filteredEmployees.map(emp => (
-                                                <tr key={emp.id} className="hover:bg-gray-50">
-                                                    <td className="px-6 py-4">
-                                                        <div className="flex items-center">
-                                                            <div className="w-8 h-8 bg-indigo-100 rounded-full flex items-center justify-center text-indigo-600 font-medium">
-                                                                {emp.name[0]}
-                                                            </div>
-                                                            <div className="ml-3">
-                                                                <div className="text-sm font-medium text-gray-900">{emp.name}</div>
-                                                                <div className="text-xs text-gray-500">{emp.username}</div>
-                                                            </div>
+                    ) : (
+                        <>
+                            {/* 员工Tab */}
+                            {activeTab === 'employee' && (
+                                <table className="w-full text-sm">
+                                    <thead className="bg-slate-50 text-slate-500 font-medium border-b border-slate-100">
+                                        <tr>
+                                            <th className="px-6 py-4 text-left">姓名/账号</th>
+                                            <th className="px-6 py-4 text-left">角色</th>
+                                            <th className="px-6 py-4 text-left">备注/组</th>
+                                            <th className="px-6 py-4 text-left">权限数</th>
+                                            <th className="px-6 py-4 text-left">操作</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-slate-100">
+                                        {filteredEmployees.length === 0 ? (
+                                            <tr><td colSpan={5} className="px-6 py-16 text-center text-slate-400">暂无员工数据</td></tr>
+                                        ) : filteredEmployees.map(emp => (
+                                            <tr key={emp.id} className="hover:bg-slate-50 transition-colors">
+                                                <td className="px-6 py-4">
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="w-9 h-9 bg-indigo-100 rounded-full flex items-center justify-center text-indigo-600 font-bold text-sm">
+                                                            {emp.name?.[0] || '?'}
                                                         </div>
-                                                    </td>
-                                                    <td className="px-6 py-4">
-                                                        <span className="px-2 py-1 bg-indigo-100 text-indigo-700 rounded text-xs">{emp.role}</span>
-                                                    </td>
-                                                    <td className="px-6 py-4 text-sm text-gray-500">{emp.group || '-'}</td>
-                                                    <td className="px-6 py-4 text-sm text-gray-500">{emp.permissions?.length || 0}项</td>
-                                                    <td className="px-6 py-4 text-sm">
-                                                        <button className="text-indigo-600 hover:text-indigo-900 mr-3">配置</button>
-                                                        <button className="text-red-600 hover:text-red-900" onClick={() => onDeleteEmployee(emp.id)}>删除</button>
-                                                    </td>
-                                                </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
-                                )}
-
-                                {/* 房东Tab */}
-                                {activeTab === 'landlord' && (
-                                    <table className="w-full">
-                                        <thead className="bg-gray-50">
-                                            <tr>
-                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">姓名</th>
-                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">手机号</th>
-                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">状态</th>
-                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">注册时间</th>
-                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">操作</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody className="bg-white divide-y divide-gray-200">
-                                            {filteredLandlords.length === 0 ? (
-                                                <tr><td colSpan={5} className="px-6 py-12 text-center text-gray-400">暂无房东数据</td></tr>
-                                            ) : filteredLandlords.map(landlord => (
-                                                <tr key={landlord.id} className="hover:bg-gray-50">
-                                                    <td className="px-6 py-4">
-                                                        <div className="flex items-center">
-                                                            <div className="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center text-orange-600 font-medium">
-                                                                {(landlord.name || '?')[0]}
-                                                            </div>
-                                                            <span className="ml-3 text-sm text-gray-900">{landlord.name || '未设置'}</span>
+                                                        <div>
+                                                            <div className="font-medium text-slate-800">{emp.name}</div>
+                                                            <div className="text-xs text-slate-400">{emp.username}</div>
                                                         </div>
-                                                    </td>
-                                                    <td className="px-6 py-4 text-sm text-gray-500">{landlord.phone}</td>
-                                                    <td className="px-6 py-4">{getStatusBadge(landlord.status)}</td>
-                                                    <td className="px-6 py-4 text-sm text-gray-500">{formatDate(landlord.created_at)}</td>
-                                                    <td className="px-6 py-4 text-sm">
-                                                        <button
-                                                            onClick={() => setSelectedLandlord({ id: landlord.id, name: landlord.name || '房东' })}
-                                                            className="text-orange-600 hover:text-orange-900 font-medium"
-                                                        >
-                                                            查看详情
-                                                        </button>
-                                                    </td>
-                                                </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
-                                )}
-
-                                {/* 租客Tab */}
-                                {activeTab === 'tenant' && (
-                                    <table className="w-full">
-                                        <thead className="bg-gray-50">
-                                            <tr>
-                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">姓名</th>
-                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">手机号</th>
-                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">状态</th>
-                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">注册时间</th>
-                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">操作</th>
+                                                    </div>
+                                                </td>
+                                                <td className="px-6 py-4">
+                                                    <span className="px-2.5 py-1 bg-indigo-50 text-indigo-700 rounded-lg text-xs font-bold border border-indigo-100">{emp.role}</span>
+                                                </td>
+                                                <td className="px-6 py-4 text-slate-500">{emp.group || '-'}</td>
+                                                <td className="px-6 py-4 text-slate-500">{emp.permissions?.length || 0}项</td>
+                                                <td className="px-6 py-4">
+                                                    <button className="text-indigo-600 hover:text-indigo-800 font-medium mr-4">配置</button>
+                                                    <button className="text-red-500 hover:text-red-700 font-medium" onClick={() => onDeleteEmployee(emp.id)}>删除</button>
+                                                </td>
                                             </tr>
-                                        </thead>
-                                        <tbody className="bg-white divide-y divide-gray-200">
-                                            {filteredTenants.length === 0 ? (
-                                                <tr><td colSpan={5} className="px-6 py-12 text-center text-gray-400">暂无租客数据</td></tr>
-                                            ) : filteredTenants.map(tenant => (
-                                                <tr key={tenant.id} className="hover:bg-gray-50">
-                                                    <td className="px-6 py-4">
-                                                        <div className="flex items-center">
-                                                            <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center text-green-600 font-medium">
-                                                                {(tenant.name || '?')[0]}
-                                                            </div>
-                                                            <span className="ml-3 text-sm text-gray-900">{tenant.name || '未设置'}</span>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            )}
+
+                            {/* 房东Tab */}
+                            {activeTab === 'landlord' && (
+                                <table className="w-full text-sm">
+                                    <thead className="bg-slate-50 text-slate-500 font-medium border-b border-slate-100">
+                                        <tr>
+                                            <th className="px-6 py-4 text-left">姓名</th>
+                                            <th className="px-6 py-4 text-left">手机号</th>
+                                            <th className="px-6 py-4 text-left">状态</th>
+                                            <th className="px-6 py-4 text-left">注册时间</th>
+                                            <th className="px-6 py-4 text-left">操作</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-slate-100">
+                                        {filteredLandlords.length === 0 ? (
+                                            <tr><td colSpan={5} className="px-6 py-16 text-center text-slate-400">暂无房东数据</td></tr>
+                                        ) : filteredLandlords.map(landlord => (
+                                            <tr key={landlord.id} className="hover:bg-slate-50 transition-colors">
+                                                <td className="px-6 py-4">
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="w-9 h-9 bg-orange-100 rounded-full flex items-center justify-center text-orange-600 font-bold text-sm">
+                                                            {(landlord.name || '?')[0]}
                                                         </div>
-                                                    </td>
-                                                    <td className="px-6 py-4 text-sm text-gray-500">{tenant.phone}</td>
-                                                    <td className="px-6 py-4">{getStatusBadge(tenant.status)}</td>
-                                                    <td className="px-6 py-4 text-sm text-gray-500">{formatDate(tenant.created_at)}</td>
-                                                    <td className="px-6 py-4 text-sm">
-                                                        <button
-                                                            onClick={() => setSelectedTenant(tenant)}
-                                                            className="text-green-600 hover:text-green-900 font-medium"
-                                                        >
-                                                            查看详情
-                                                        </button>
-                                                    </td>
-                                                </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
-                                )}
-                            </>
-                        )}
-                    </div>
+                                                        <span className="font-medium text-slate-800">{landlord.name || '未设置'}</span>
+                                                    </div>
+                                                </td>
+                                                <td className="px-6 py-4 text-slate-500">{landlord.phone}</td>
+                                                <td className="px-6 py-4">{getStatusBadge(landlord.status)}</td>
+                                                <td className="px-6 py-4 text-slate-500">{formatDate(landlord.created_at)}</td>
+                                                <td className="px-6 py-4">
+                                                    <button
+                                                        onClick={() => setSelectedLandlord({ id: landlord.id, name: landlord.name || '房东' })}
+                                                        className="text-orange-600 hover:text-orange-800 font-medium"
+                                                    >
+                                                        查看详情
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            )}
+
+                            {/* 租客Tab */}
+                            {activeTab === 'tenant' && (
+                                <table className="w-full text-sm">
+                                    <thead className="bg-slate-50 text-slate-500 font-medium border-b border-slate-100">
+                                        <tr>
+                                            <th className="px-6 py-4 text-left">姓名</th>
+                                            <th className="px-6 py-4 text-left">手机号</th>
+                                            <th className="px-6 py-4 text-left">状态</th>
+                                            <th className="px-6 py-4 text-left">注册时间</th>
+                                            <th className="px-6 py-4 text-left">操作</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-slate-100">
+                                        {filteredTenants.length === 0 ? (
+                                            <tr><td colSpan={5} className="px-6 py-16 text-center text-slate-400">暂无租客数据</td></tr>
+                                        ) : filteredTenants.map(tenant => (
+                                            <tr key={tenant.id} className="hover:bg-slate-50 transition-colors">
+                                                <td className="px-6 py-4">
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="w-9 h-9 bg-green-100 rounded-full flex items-center justify-center text-green-600 font-bold text-sm">
+                                                            {(tenant.name || '?')[0]}
+                                                        </div>
+                                                        <span className="font-medium text-slate-800">{tenant.name || '未设置'}</span>
+                                                    </div>
+                                                </td>
+                                                <td className="px-6 py-4 text-slate-500">{tenant.phone}</td>
+                                                <td className="px-6 py-4">{getStatusBadge(tenant.status)}</td>
+                                                <td className="px-6 py-4 text-slate-500">{formatDate(tenant.created_at)}</td>
+                                                <td className="px-6 py-4">
+                                                    <button
+                                                        onClick={() => setSelectedTenant(tenant)}
+                                                        className="text-green-600 hover:text-green-800 font-medium"
+                                                    >
+                                                        查看详情
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            )}
+                        </>
+                    )}
                 </div>
             </div>
 
@@ -343,34 +359,34 @@ const UnifiedAccountManagement: React.FC<UnifiedAccountManagementProps> = ({
 
             {/* 租客详情弹窗 */}
             {selectedTenant && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onClick={() => setSelectedTenant(null)}>
-                    <div className="bg-white rounded-xl w-full max-w-2xl overflow-hidden" onClick={e => e.stopPropagation()}>
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setSelectedTenant(null)}>
+                    <div className="bg-white rounded-xl w-full max-w-2xl overflow-hidden shadow-2xl" onClick={e => e.stopPropagation()}>
                         <div className="bg-gradient-to-r from-green-600 to-teal-600 text-white p-6">
                             <div className="flex justify-between items-start">
                                 <div>
                                     <h2 className="text-2xl font-bold">{selectedTenant.name || '租客'}</h2>
-                                    <p className="text-green-200 mt-1">ID: {selectedTenant.id}</p>
+                                    <p className="text-green-200 mt-1 text-sm">ID: {selectedTenant.id}</p>
                                 </div>
-                                <button onClick={() => setSelectedTenant(null)} className="text-white hover:bg-white/20 rounded-full p-2 text-xl">✕</button>
+                                <button onClick={() => setSelectedTenant(null)} className="text-white/80 hover:text-white hover:bg-white/20 rounded-full w-8 h-8 flex items-center justify-center text-xl transition-colors">✕</button>
                             </div>
                         </div>
                         <div className="p-6 space-y-4">
                             <div className="grid grid-cols-2 gap-4">
-                                <div className="p-4 bg-gray-50 rounded-lg">
-                                    <p className="text-sm text-gray-500">手机号</p>
-                                    <p className="font-medium text-gray-900">{selectedTenant.phone}</p>
+                                <div className="p-4 bg-slate-50 rounded-xl border border-slate-100">
+                                    <p className="text-xs text-slate-400 font-medium mb-1">手机号</p>
+                                    <p className="font-bold text-slate-800">{selectedTenant.phone}</p>
                                 </div>
-                                <div className="p-4 bg-gray-50 rounded-lg">
-                                    <p className="text-sm text-gray-500">状态</p>
-                                    <p className="font-medium">{getStatusBadge(selectedTenant.status)}</p>
+                                <div className="p-4 bg-slate-50 rounded-xl border border-slate-100">
+                                    <p className="text-xs text-slate-400 font-medium mb-1">状态</p>
+                                    <div className="mt-1">{getStatusBadge(selectedTenant.status)}</div>
                                 </div>
-                                <div className="p-4 bg-gray-50 rounded-lg">
-                                    <p className="text-sm text-gray-500">注册时间</p>
-                                    <p className="font-medium text-gray-900">{formatDate(selectedTenant.created_at)}</p>
+                                <div className="p-4 bg-slate-50 rounded-xl border border-slate-100">
+                                    <p className="text-xs text-slate-400 font-medium mb-1">注册时间</p>
+                                    <p className="font-bold text-slate-800">{formatDate(selectedTenant.created_at)}</p>
                                 </div>
                             </div>
-                            <div className="pt-4 border-t text-center text-gray-400 text-sm">
-                                租客详细信息（合同、账单、维修等）开发中...
+                            <div className="pt-4 border-t border-slate-100 text-center">
+                                <p className="text-slate-400 text-sm">🚧 租客详细信息（合同、账单、维修记录等）开发中...</p>
                             </div>
                         </div>
                     </div>
