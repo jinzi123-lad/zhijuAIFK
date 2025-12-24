@@ -180,7 +180,7 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property, onClick, isFavori
         )}
 
         <div className="flex flex-wrap gap-1 mb-3">
-          {property.tags.slice(0, 3).map((tag, i) => (
+          {(property.tags || []).slice(0, 3).map((tag, i) => (
             <span key={i} className="px-2 py-1 text-xs bg-slate-100 text-slate-600 rounded">
               {tag}
             </span>

@@ -424,7 +424,7 @@ const PropertyDetail: React.FC<PropertyDetailProps> = ({ property, onBack, onEdi
                     </div>
 
                     <div className="flex flex-wrap gap-2">
-                        {property.tags.map(tag => (
+                        {(property.tags || []).map(tag => (
                             <span key={tag} className="px-3 py-1 bg-indigo-50 text-indigo-600 rounded-full text-sm font-medium border border-indigo-100">
                                 {tag}
                             </span>
@@ -736,7 +736,7 @@ const PropertyDetail: React.FC<PropertyDetailProps> = ({ property, onBack, onEdi
                         <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-6 pt-20">
                             <div className="flex gap-2 mb-2">
                                 <span className="bg-indigo-600 text-white px-2 py-0.5 text-xs rounded font-bold">{property.category}</span>
-                                {property.tags.slice(0, 2).map(t => <span key={t} className="bg-white/20 text-white px-2 py-0.5 text-xs rounded backdrop-blur-sm">{t}</span>)}
+                                {(property.tags || []).slice(0, 2).map(t => <span key={t} className="bg-white/20 text-white px-2 py-0.5 text-xs rounded backdrop-blur-sm">{t}</span>)}
                             </div>
                             <h1 className="text-2xl font-bold text-white leading-tight drop-shadow-md">{property.title}</h1>
                         </div>
@@ -797,7 +797,7 @@ const PropertyDetail: React.FC<PropertyDetailProps> = ({ property, onBack, onEdi
                             <h3 className="font-bold text-slate-800">配套与亮点</h3>
                         </div>
                         <div className="flex flex-wrap gap-2">
-                            {property.tags.map(tag => (
+                            {(property.tags || []).map(tag => (
                                 <span key={tag} className="px-3 py-1.5 bg-slate-50 text-slate-600 text-xs rounded-lg border border-slate-100">
                                     ✅ {tag}
                                 </span>
