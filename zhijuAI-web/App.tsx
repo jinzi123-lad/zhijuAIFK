@@ -14,6 +14,7 @@ import ClientManagement from './components/ClientManagement';
 import AcquisitionChannel from './components/AcquisitionChannel';
 import BigScreenDashboard from './components/BigScreenDashboard';
 import AccountManagement from './components/AccountManagement';
+import LandlordTreeView from './components/LandlordTreeView';
 import { searchPropertiesWithAI, parsePropertyInfoWithAI, configureAI, generatePropertyDescription } from './services/geminiService';
 import { uploadFile } from './services/storageService';
 import { seedAllProperties, syncKnowledgeBase } from './services/seeder';
@@ -2192,10 +2193,9 @@ const App: React.FC = () => {
                     {/* 原有的员工管理组件 */}
                     <UserManagement users={users} currentUser={currentUser!} onAddUser={handleAddUser} onUpdateUser={handleUpdateUser} onDeleteUser={handleDeleteUser} />
 
-                    {/* 房东/租客真实数据（来自Supabase） */}
+                    {/* 房东账号树形视图（来自Supabase） */}
                     <div className="mt-8 pt-8 border-t border-gray-200">
-                        <h2 className="text-xl font-bold text-gray-800 mb-4">📊 小程序注册账号（实时数据）</h2>
-                        <AccountManagement supabase={supabase} />
+                        <LandlordTreeView supabase={supabase} />
                     </div>
                 </div>
             )}
