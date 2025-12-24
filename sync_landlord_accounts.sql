@@ -23,7 +23,6 @@ INSERT INTO landlords (
     avatar_url,
     uuid_id,
     status,
-    membership_type,
     created_at,
     updated_at
 ) VALUES (
@@ -33,7 +32,6 @@ INSERT INTO landlords (
     '',                                          -- 头像URL
     '11111111-1111-1111-1111-111111111111',     -- 关键：UUID用于关联业务表
     'active',                                    -- 状态
-    'paid',                                      -- 会员类型（测试用）
     NOW(),
     NOW()
 );
@@ -42,9 +40,8 @@ INSERT INTO landlords (
 -- 第2步：创建房东设置（收款码等）
 -- =====================================================
 
--- 删除旧的设置记录
+-- 删除旧的设置记录（landlord_id 是 UUID 类型）
 DELETE FROM landlord_settings WHERE landlord_id = '11111111-1111-1111-1111-111111111111';
-DELETE FROM landlord_settings WHERE landlord_id = 'landlord-15840008791';
 
 -- 插入房东设置
 INSERT INTO landlord_settings (
@@ -71,26 +68,22 @@ INSERT INTO landlord_settings (
 -- 第3步：创建房东详细资料（如果landlord_profiles表存在）
 -- =====================================================
 
--- 检查并插入landlord_profiles（如果表存在）
+-- 注意：landlord_profiles 表结构可能不同，这里使用安全的方式
+-- 如果表存在且需要添加记录，请根据实际表结构手动调整
 DO $$
 BEGIN
     IF EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'landlord_profiles') THEN
+        -- 先尝试删除可能存在的旧记录
         DELETE FROM landlord_profiles WHERE landlord_id = '11111111-1111-1111-1111-111111111111';
         DELETE FROM landlord_profiles WHERE phone = '15840008791';
         
-        INSERT INTO landlord_profiles (
-            id,
-            landlord_id,
-            name,
-            phone,
-            created_at
-        ) VALUES (
-            gen_random_uuid(),
-            '11111111-1111-1111-1111-111111111111',
-            '调试房东',
-            '15840008791',
-            NOW()
-        );
+        -- 尝试插入（只使用基本字段）
+        BEGIN
+            INSERT INTO landlord_profiles (landlord_id, name, phone, created_at)
+            VALUES ('11111111-1111-1111-1111-111111111111', '调试房东', '15840008791', NOW());
+        EXCEPTION WHEN others THEN
+            RAISE NOTICE 'landlord_profiles 插入跳过: %', SQLERRM;
+        END;
     END IF;
 END $$;
 
@@ -101,42 +94,34 @@ END $$;
 -- 删除旧的测试房产
 DELETE FROM properties WHERE landlord_id = '11111111-1111-1111-1111-111111111111';
 
--- 插入测试房产1 - 分散式住宅
+-- 插入测试房产1 - 分散式住宅（使用 Web 端对应的字段）
 INSERT INTO properties (
     id,
     landlord_id,
     title,
-    name,
-    property_type,
-    management_type,
-    address,
-    city,
-    district,
-    rent_amount,
-    area,
-    bedrooms,
-    bathrooms,
+    type,
+    category,
     status,
+    price,
+    area,
+    layout,
+    location,
+    address,
     description,
-    created_at,
-    updated_at
+    created_at
 ) VALUES (
     gen_random_uuid(),
-    '11111111-1111-1111-1111-111111111111',    -- 使用UUID关联
+    '11111111-1111-1111-1111-111111111111',
     '阳光花园 3栋201',
-    '阳光花园 3栋201',
+    'RENT',
     'apartment',
-    'scattered',
-    '北京市朝阳区阳光路123号',
-    '北京',
-    '朝阳区',
-    4500.00,
-    85,
-    2,
-    1,
     'available',
+    4500,
+    85,
+    '2室1厅',
+    '北京市朝阳区',
+    '北京市朝阳区阳光路123号',
     '精装修两居室，采光好，交通便利，近地铁口',
-    NOW(),
     NOW()
 );
 
@@ -145,37 +130,29 @@ INSERT INTO properties (
     id,
     landlord_id,
     title,
-    name,
-    property_type,
-    management_type,
-    address,
-    city,
-    district,
-    rent_amount,
-    area,
-    bedrooms,
-    bathrooms,
+    type,
+    category,
     status,
+    price,
+    area,
+    layout,
+    location,
+    address,
     description,
-    created_at,
-    updated_at
+    created_at
 ) VALUES (
     gen_random_uuid(),
     '11111111-1111-1111-1111-111111111111',
     '天悦公寓A座 1601室',
-    '天悦公寓A座 1601室',
+    'RENT',
     'urban_apartment',
-    'centralized',
-    '北京市海淀区中关村大街88号',
-    '北京',
-    '海淀区',
-    5800.00,
+    'available',
+    5800,
     45,
-    1,
-    1,
-    'rented',
+    '1室1厅',
+    '北京市海淀区',
+    '北京市海淀区中关村大街88号',
     '精品公寓，拎包入住，配套齐全',
-    NOW(),
     NOW()
 );
 
@@ -184,37 +161,29 @@ INSERT INTO properties (
     id,
     landlord_id,
     title,
-    name,
-    property_type,
-    management_type,
-    address,
-    city,
-    district,
-    rent_amount,
-    area,
-    bedrooms,
-    bathrooms,
+    type,
+    category,
     status,
+    price,
+    area,
+    layout,
+    location,
+    address,
     description,
-    created_at,
-    updated_at
+    created_at
 ) VALUES (
     gen_random_uuid(),
     '11111111-1111-1111-1111-111111111111',
     '珍珠花园 15B',
-    '珍珠花园 15B',
+    'RENT',
     'apartment',
-    'scattered',
-    '北京市西城区珍珠路45号',
-    '北京',
-    '西城区',
-    3800.00,
-    65,
-    1,
-    1,
     'available',
+    3800,
+    65,
+    '1室1厅',
+    '北京市西城区',
+    '北京市西城区珍珠路45号',
     '温馨一居室，适合单身白领',
-    NOW(),
     NOW()
 );
 
@@ -229,8 +198,7 @@ SELECT
     name as 姓名,
     phone as 手机号,
     uuid_id as UUID,
-    status as 状态,
-    membership_type as 会员类型
+    status as 状态
 FROM landlords 
 WHERE phone = '15840008791';
 
@@ -239,9 +207,9 @@ SELECT
     '房产' as 类型,
     id,
     title as 标题,
-    property_type as 类型,
+    category as 分类,
     status as 状态,
-    rent_amount as 租金,
+    price as 租金,
     landlord_id as 房东UUID
 FROM properties 
 WHERE landlord_id = '11111111-1111-1111-1111-111111111111';
