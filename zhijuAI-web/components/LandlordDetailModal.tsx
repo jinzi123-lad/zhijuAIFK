@@ -346,7 +346,7 @@ const LandlordDetailModal: React.FC<LandlordDetailModalProps> = ({
                                             </div>
                                             {expandedId === p.id && (
                                                 <div className="p-4 bg-white border-t grid grid-cols-2 gap-x-8 gap-y-1">
-                                                    <DetailRow label="房源ID" value={p.id.slice(0, 8) + '...'} />
+                                                    <DetailRow label="房源ID" value={p.id?.slice(0, 8) + '...'} />
                                                     <DetailRow label="类型" value={p.type} />
                                                     <DetailRow label="分类" value={p.category} />
                                                     <DetailRow label="面积" value={p.area ? `${p.area}㎡` : '-'} />
@@ -381,7 +381,7 @@ const LandlordDetailModal: React.FC<LandlordDetailModalProps> = ({
                                                 <div className="flex items-center gap-3">
                                                     <span className="text-xl">📄</span>
                                                     <div>
-                                                        <p className="font-medium text-gray-900">合同 #{c.id.slice(0, 8)}</p>
+                                                        <p className="font-medium text-gray-900">合同 #{c.id?.slice(0, 8)}</p>
                                                         <p className="text-sm text-gray-500">{c.start_date} ~ {c.end_date}</p>
                                                     </div>
                                                 </div>
@@ -393,7 +393,7 @@ const LandlordDetailModal: React.FC<LandlordDetailModalProps> = ({
                                             </div>
                                             {expandedId === c.id && (
                                                 <div className="p-4 bg-white border-t grid grid-cols-2 gap-x-8 gap-y-1">
-                                                    <DetailRow label="合同ID" value={c.id.slice(0, 8) + '...'} />
+                                                    <DetailRow label="合同ID" value={c.id?.slice(0, 8) + '...'} />
                                                     <DetailRow label="租客ID" value={c.tenant_id?.slice(0, 8)} />
                                                     <DetailRow label="房源ID" value={c.property_id?.slice(0, 8)} />
                                                     <DetailRow label="月租金" value={`¥${c.rent_amount}`} />
@@ -478,7 +478,7 @@ const LandlordDetailModal: React.FC<LandlordDetailModalProps> = ({
                                             </div>
                                             {expandedId === m.id && (
                                                 <div className="p-4 bg-white border-t grid grid-cols-2 gap-x-8 gap-y-1">
-                                                    <DetailRow label="记录ID" value={m.id.slice(0, 8)} />
+                                                    <DetailRow label="记录ID" value={m.id?.slice(0, 8)} />
                                                     <DetailRow label="成员ID" value={m.member_id} />
                                                     <DetailRow label="角色" value={m.role} />
                                                     <DetailRow label="房源范围" value={m.property_scope === 'all' ? '全部房源' : '指定房源'} />
@@ -518,7 +518,7 @@ const LandlordDetailModal: React.FC<LandlordDetailModalProps> = ({
                                             </div>
                                             {expandedId === r.id && (
                                                 <div className="p-4 bg-white border-t grid grid-cols-2 gap-x-8 gap-y-1">
-                                                    <DetailRow label="工单ID" value={r.id.slice(0, 8)} />
+                                                    <DetailRow label="工单ID" value={r.id?.slice(0, 8)} />
                                                     <DetailRow label="分类" value={r.category} />
                                                     <DetailRow label="优先级" value={r.priority} />
                                                     <DetailRow label="状态" value={r.status} />
@@ -562,7 +562,7 @@ const LandlordDetailModal: React.FC<LandlordDetailModalProps> = ({
                                             </div>
                                             {expandedId === v.id && (
                                                 <div className="p-4 bg-white border-t grid grid-cols-2 gap-x-8 gap-y-1">
-                                                    <DetailRow label="预约ID" value={v.id.slice(0, 8)} />
+                                                    <DetailRow label="预约ID" value={v.id?.slice(0, 8)} />
                                                     <DetailRow label="房源ID" value={v.property_id?.slice(0, 8)} />
                                                     <DetailRow label="访客姓名" value={v.guest_name} />
                                                     <DetailRow label="访客电话" value={v.guest_phone} />
@@ -606,7 +606,7 @@ const LandlordDetailModal: React.FC<LandlordDetailModalProps> = ({
                                             </div>
                                             {expandedId === p.id && (
                                                 <div className="p-4 bg-white border-t grid grid-cols-2 gap-x-8 gap-y-1">
-                                                    <DetailRow label="账单ID" value={p.id.slice(0, 8)} />
+                                                    <DetailRow label="账单ID" value={p.id?.slice(0, 8)} />
                                                     <DetailRow label="合同ID" value={p.contract_id?.slice(0, 8)} />
                                                     <DetailRow label="金额" value={`¥${p.amount}`} />
                                                     <DetailRow label="类型" value={p.payment_type} />
