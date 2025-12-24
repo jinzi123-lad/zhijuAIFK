@@ -13,7 +13,7 @@ import SystemSettings from './components/SystemSettings';
 import ClientManagement from './components/ClientManagement';
 import AcquisitionChannel from './components/AcquisitionChannel';
 import BigScreenDashboard from './components/BigScreenDashboard';
-import AccountManagement from './components/AccountManagement';
+import UnifiedAccountManagement from './components/UnifiedAccountManagement';
 import LandlordTreeView from './components/LandlordTreeView';
 import { searchPropertiesWithAI, parsePropertyInfoWithAI, configureAI, generatePropertyDescription } from './services/geminiService';
 import { uploadFile } from './services/storageService';
@@ -2189,7 +2189,13 @@ const App: React.FC = () => {
             )}
 
             {activePage === 'users' && (
-                <AccountManagement supabase={supabase} />
+                <UnifiedAccountManagement
+                    supabase={supabase}
+                    employees={users.filter(u => ['SUPER_ADMIN', 'ADMIN', 'MANAGER', 'SALES', 'FINANCE', 'ADMIN_STAFF'].includes(u.role))}
+                    onAddEmployee={handleAddUser}
+                    onUpdateEmployee={handleUpdateUser}
+                    onDeleteEmployee={handleDeleteUser}
+                />
             )}
 
             {activePage === 'system-settings' && (
