@@ -2189,15 +2189,7 @@ const App: React.FC = () => {
             )}
 
             {activePage === 'users' && (
-                <div className="space-y-6">
-                    {/* 原有的员工管理组件 */}
-                    <UserManagement users={users} currentUser={currentUser!} onAddUser={handleAddUser} onUpdateUser={handleUpdateUser} onDeleteUser={handleDeleteUser} />
-
-                    {/* 房东账号树形视图（来自Supabase） */}
-                    <div className="mt-8 pt-8 border-t border-gray-200">
-                        <LandlordTreeView supabase={supabase} />
-                    </div>
-                </div>
+                <AccountManagement supabase={supabase} />
             )}
 
             {activePage === 'system-settings' && (
